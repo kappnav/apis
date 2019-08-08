@@ -1,0 +1,19 @@
+<server description="kAppNav Liberty server">
+
+  <featureManager>
+      <feature>cdi-1.2</feature>
+      <feature>jaxrs-2.0</feature>
+      <feature>beanValidation-1.1</feature>
+      <feature>mpOpenAPI-1.0</feature>
+      <feature>transportSecurity-1.0</feature>
+  </featureManager>
+
+  <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
+      id="defaultHttpEndpoint" host="*" />
+
+  <!-- Automatically expand WAR files and EAR files -->
+  <applicationManager autoExpand="true"/>
+
+  <webApplication name="kappnav" location="${app.location}"/>
+
+</server>
