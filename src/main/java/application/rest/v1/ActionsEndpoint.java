@@ -72,7 +72,7 @@ import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 
 @Path("/resource")
-@Tag(ref="actions")
+@Tag(name = "actions", description="kAppNav Actions API")
 public class ActionsEndpoint extends KAppNavEndpoint {
     
     private static final String CMD_NOT_FOUND = "Command Not Found";

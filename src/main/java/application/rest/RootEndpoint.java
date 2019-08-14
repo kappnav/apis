@@ -28,9 +28,9 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Path("/")
-@Tag(ref="resources")
+@Tag(name = "resources", description="kAppNav Resources Map")
 public class RootEndpoint {
-
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(

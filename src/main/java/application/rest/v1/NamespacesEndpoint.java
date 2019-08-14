@@ -39,7 +39,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1NamespaceList;
 
 @Path("/namespaces")
-@Tag(ref="namespaces")
+@Tag(name = "namespaces", description="Kubernetes Namespace List")
 public class NamespacesEndpoint extends KAppNavEndpoint {
     
     private static final String NAMESPACES_PROPERTY_NAME = "namespaces";

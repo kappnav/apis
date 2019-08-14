@@ -47,9 +47,9 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
 @Path("/application")
-@Tag(ref="application")
+@Tag(name = "application", description="kAppNav Application CRUD API")
 public class ApplicationEndpoint extends KAppNavEndpoint {
-
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}")

@@ -43,7 +43,7 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
 @Path("/applications")
-@Tag(ref="applications")
+@Tag(name = "applications", description="kAppNav Applications API")
 public class ApplicationsEndpoint extends KAppNavEndpoint {
 
     private static final String APPLICATIONS_PROPERTY_NAME = "applications";

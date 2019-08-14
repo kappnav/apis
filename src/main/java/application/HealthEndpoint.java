@@ -26,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Path("health")
-@Tag(ref="health")
+@Tag(name = "health", description="Health Check for kAppNav API")
 public class HealthEndpoint {
 
     @GET

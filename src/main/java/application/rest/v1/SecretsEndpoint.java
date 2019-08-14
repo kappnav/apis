@@ -42,7 +42,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1SecretList;
 
 @Path("/secrets")
-@Tag(ref="secrets")
+@Tag(name = "secrets", description="kAppNav Secrets API")
 public class SecretsEndpoint extends KAppNavEndpoint {
     
     private static final String SECRETS_PROPERTY_NAME = "secrets";

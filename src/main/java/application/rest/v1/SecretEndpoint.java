@@ -48,7 +48,7 @@ import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1Secret;
 
 @Path("/secret")
-@Tag(ref="secret")
+@Tag(name = "secret", description="kAppNav Secret CRUD API")
 public class SecretEndpoint extends KAppNavEndpoint {
     
     @GET

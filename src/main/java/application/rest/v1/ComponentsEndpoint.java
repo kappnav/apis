@@ -46,7 +46,7 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
 @Path("/components")
-@Tag(ref="components")
+@Tag(name = "components", description="kAppNav Components API")
 public class ComponentsEndpoint extends KAppNavEndpoint {
     
     private static final String COMPONENTS_PROPERTY_NAME = "components";

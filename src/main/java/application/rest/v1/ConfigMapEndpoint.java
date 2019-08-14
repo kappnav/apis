@@ -48,7 +48,7 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 
 @Path("/configmap")
-@Tag(ref="configmap")
+@Tag(name = "configmap", description="kAppNav ConfigMap CRUD API")
 public class ConfigMapEndpoint extends KAppNavEndpoint {
     
     @GET

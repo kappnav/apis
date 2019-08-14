@@ -42,7 +42,7 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
 @Path("/status")
-@Tag(ref="status")
+@Tag(name = "status", description="kAppNav Status API")
 public class StatusEndpoint extends KAppNavEndpoint {
     
     private static final String KIND_PROPERTY_NAME = "kind";

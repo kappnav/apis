@@ -22,7 +22,6 @@ import javax.ws.rs.core.Application;
 import org.eclipse.microprofile.openapi.annotations.ExternalDocumentation;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @OpenAPIDefinition(
         info = @Info(
@@ -32,20 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
                 ),
         externalDocs = @ExternalDocumentation(
                 url = "https://github.com/kappnav/apis", 
-                description="Find out more about kAppNav"),
-        tags = {
-                @Tag(name = "actions", description="kAppNav Actions API"),
-                @Tag(name = "applications", description="kAppNav Applications API"),
-                @Tag(name = "application", description="kAppNav Application CRUD API"),
-                @Tag(name = "components", description="kAppNav Components API"),
-                @Tag(name = "configmap", description="kAppNav ConfigMap CRUD API"),
-                @Tag(name = "health", description="Health Check for kAppNav API"),
-                @Tag(name = "namespaces", description="Kubernetes Namespace List"),
-                @Tag(name = "resources", description="kAppNav Resources Map"),
-                @Tag(name = "secret", description="kAppNav Secret CRUD API"),
-                @Tag(name = "secrets", description="kAppNav Secrets API"),
-                @Tag(name = "status", description="kAppNav Status API")
-        }
+                description="Find out more about kAppNav")
         )
 @ApplicationPath("/")
 public class JaxrsApplication extends Application {
