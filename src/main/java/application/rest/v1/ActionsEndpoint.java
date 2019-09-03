@@ -36,7 +36,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -136,7 +135,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         try {
             final ApiClient client = getApiClient();
             ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, namespace, pattern)).getJSON());          
-            return setCacheControl(builder, pattern).build();
+            return builder.build();
         }
         catch (IOException | ApiException e) {
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
@@ -500,20 +499,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             labels.put(KAPPNAV_JOB_COMPONENT_NAMESPACE, namespace);
         }
         return labels;
-    }
-    
-    private ResponseBuilder setCacheControl(ResponseBuilder builder, String pattern) {
-    	int maxAge = 3600; //1 hour
-        if (pattern.contains("${snippet.")) {
-        	maxAge = 120; //2 minutes as these can change more frequently
-        }
-        
-        CacheControl cc = new CacheControl();
-        cc.setMaxAge(maxAge); //max age in seconds that the browser can cache this result
-        cc.setPrivate(true);
-        builder.cacheControl(cc);
-        
-        return builder;
     }
     
     private JsonObject getResource(ApiClient client, String name, String kind, String namespace) throws ApiException {
