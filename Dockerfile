@@ -33,7 +33,7 @@ RUN /opt/ol/wlp/bin/server create \
     && rm -rf $WLP_OUTPUT_DIR/.classCache /output/workarea
 
 
-# Create symlinks && set permissions for non-root user    
+# Create symlinks && set permissions for non-root user
 RUN mkdir /logs \
     && mkdir -p /opt/ol/wlp/usr/shared/resources/lib.index.cache \
     && ln -s /opt/ol/wlp/usr/shared/resources/lib.index.cache /lib.index.cache \
@@ -81,8 +81,8 @@ FROM liberty
 
 LABEL name="Application Navigator" \
       vendor="kAppNav" \
-      version="1.0.0" \
-      release="1.0.0" \
+      version="0.1.0" \
+      release="0.1.0" \
       summary="APIs image for Application Navigator" \
       description="This image contains the APIs for Application Navigator"
 
@@ -96,8 +96,8 @@ RUN  ARCH=$(uname -p) \
    && if [ "$ARCH" != "ppc64le" ] && [ "$ARCH" != "s390x" ]; then \
      ARCH="amd64" ; \
    fi \
-   && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${ARCH}/kubectl \ 
+   && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${ARCH}/kubectl \
    && chmod ug+x ./kubectl \
-   && mv ./kubectl /usr/local/bin/kubectl 
+   && mv ./kubectl /usr/local/bin/kubectl
 
 USER 1001
