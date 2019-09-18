@@ -32,6 +32,7 @@ public final class FunctionResolver implements Resolver {
         functions = new HashMap<>();
         addFunction(new KubectlGetFunction());
         addFunction(new PodlistFunction());
+        addFunction(new AppPodlistFunction());
     }
     
     private static void addFunction(Function function) {
