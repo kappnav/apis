@@ -56,11 +56,11 @@ public class AppPodlistFunction implements Function {
         final ApiClient client = context.getApiClient();
         final ComponentInfoRegistry registry = context.getComponentInfoRegistry();
         final JsonObject resource; 
-        String result = null;     
-
+        List<ComponentKind> componentKinds = null;
+        
         if (parameters.size() == 0) {
             if (!APPLICATION_KIND.equals(context.getResourceKind())) {
-                // The context resource isn't a deployment.
+                // The context resource isn't an application.
                 return null;
             }
             resource = context.getResource();
@@ -74,68 +74,55 @@ public class AppPodlistFunction implements Function {
             try {
                 //get application namespaced object
                 Object o = registry.getNamespacedObject(client, APPLICATION_KIND, appNamespace, appName);
-                resource = KAppNavEndpoint.getItemAsObject(client, o);      
-                result = getPodListFromApp(client, resource, registry);         
+                resource = KAppNavEndpoint.getItemAsObject(client, o);    
+                componentKinds = ComponentKind.getComponentKinds(client, o);                       
             }
             catch (ApiException e) {
                 return null;
             }  
         }
-        return result;                   
+        return getPodListFromApp(client, resource, registry, componentKinds); //return result;                   
     }
 
 
-    private String getPodListFromApp(ApiClient client, JsonObject resource, ComponentInfoRegistry registry) {
+    private String getPodListFromApp(ApiClient client, JsonObject resource, ComponentInfoRegistry registry, List<ComponentKind> componentKinds) {
         PodlistResult result = new PodlistResult();       
-        final Selector aSelector = Selector.getSelector(resource);                
-        if (!aSelector.isEmpty()) {
-            final String alabelSelector = aSelector.toString();           
-            try {  
-                //retrieve deployment object from app with the labels matching 
-                Object deplO = registry.listClusterObject(client, DEPLOYMENT_KIND, null, alabelSelector, null, null);
-                List<JsonObject> deployments = KAppNavEndpoint.getItemsAsList(client, deplO); 
-                deployments.forEach(d -> {
-                    String deplName = null;
-                    String deplNamespace = null;
-                    JsonElement metadata = d.get(METADATA_PROPERTY_NAME);
-                    //get deployment name and namespace
-                    if (metadata != null && metadata.isJsonObject()) {
-                        JsonObject metadataObj = metadata.getAsJsonObject();
-                        JsonElement element  = metadataObj.get("namespace");                            
-                        if (element != null && element.isJsonPrimitive()) {
-                            deplNamespace = element.getAsString();
-                        }
-                        element  = metadataObj.get("name");
-                        if (element != null && element.isJsonPrimitive()) {
-                            deplName = element.getAsString();
-                        }  
-                    } 
-                        
-                    try {
-                        //get deployment namespaced object
-                        Object dO = registry.getNamespacedObject(client, DEPLOYMENT_KIND, deplNamespace, deplName);
-                        Selector dSelector = Selector.getSelector(client, dO);  
-                        if (!dSelector.isEmpty()) {        
-                            final String dlabelSelector = dSelector.toString();
-                            //retrieve pod object from deployment with the label matching
-                            Object podO = registry.listClusterObject(client, POD_KIND, null, dlabelSelector, null, null);
-                            List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, podO);
-                            items.forEach(p -> {
-                                JsonElement element = p.get(METADATA_PROPERTY_NAME);
-                                if (element != null && element.isJsonObject()) {
-                                    JsonObject pmetadata = element.getAsJsonObject();   
-                                    //get pod name  
-                                    JsonElement pName  = pmetadata.get("name");
-                                    if (pName!= null && pName.isJsonPrimitive()) {
-                                        result.add(pName.getAsString());
-                                    }
-                                }
-                            });
-                        }
-                    } catch (ApiException e) {} 
-                });
-            } catch (ApiException e) {}           
-        }
+        //check if app contains "Deployment" component kind        
+        componentKinds.forEach(v -> {  
+            if (v.kind.equals("Deployment")) {
+                final Selector aSelector = Selector.getSelector(resource);    
+                if (!aSelector.isEmpty()) {
+                    final String alabelSelector = aSelector.toString();           
+                    try {  
+                        //retrieve deployment object from app with the labels matching 
+                        Object deplO = registry.listClusterObject(client, DEPLOYMENT_KIND, null, alabelSelector, null, null);
+                        List<JsonObject> deployments = KAppNavEndpoint.getItemsAsList(client, deplO); 
+                        deployments.forEach(d -> {                   
+                            Selector dSelector = Selector.getSelector(d);  
+                            if (!dSelector.isEmpty()) {        
+                                final String dlabelSelector = dSelector.toString();                              
+                                try {
+                                     //retrieve pod object from deployment with the label matching
+                                    Object podO = registry.listClusterObject(client, POD_KIND, null, dlabelSelector, null, null);
+                                    List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, podO);
+                                    items.forEach(p -> {
+                                        JsonElement element = p.get(METADATA_PROPERTY_NAME);
+                                        if (element != null && element.isJsonObject()) {
+                                            JsonObject pmetadata = element.getAsJsonObject();   
+                                            //get pod name  
+                                            JsonElement pName  = pmetadata.get("name");
+                                            if (pName!= null && pName.isJsonPrimitive()) {
+                                                result.add(pName.getAsString());
+                                            }
+                                        }
+                                    });
+                                } catch (ApiException e) {}
+                            }
+                        });
+                    } catch (ApiException e) {}
+                }
+            } 
+        });           
         return result.getJSON();
     }
 
@@ -153,7 +140,8 @@ public class AppPodlistFunction implements Function {
             o.add(PODS_PROPERTY_NAME, pods = new JsonArray());
         }
         public void add(final String name) {
-            pods.add(name);
+            if (! pods.toString().contains(name))
+                pods.add(name);
         }
         public String getJSON() {
             return o.toString();
