@@ -37,6 +37,7 @@ public class PodlistFunction implements Function {
     
     private static final String DEPLOYMENT_KIND = "Deployment";
     private static final String POD_KIND = "Pod";
+    private static final String METADATA_PROPERTY_NAME = "metadata";
 
     @Override
     public String getName() {
@@ -77,7 +78,14 @@ public class PodlistFunction implements Function {
                 return null;
             }  
         }
-        
+        return getPodListFromDeployment(client, resource, registry);  
+    }
+     
+    private String getPodListFromDeployment(ApiClient client, JsonObject resource, ComponentInfoRegistry registry) {
+        PodlistResult result = new PodlistResult();   
+        //retrieve deployment namespace from the resource
+        String deplNamespace = getNameSpaceFromResource(resource);
+
         // Retrieve the pods for the deployment.
         final Selector selector = Selector.getSelector(resource);
         if (!selector.isEmpty()) {
@@ -85,22 +93,41 @@ public class PodlistFunction implements Function {
             try {
                 Object o = registry.listClusterObject(client, POD_KIND, null, labelSelector, null, null);
                 List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, o);
-                PodlistResult result = new PodlistResult();
+                
                 items.forEach(v -> {
-                    JsonElement element = v.get("metadata");
+                    JsonElement element = v.get(METADATA_PROPERTY_NAME);
                     if (element != null && element.isJsonObject()) {
                         JsonObject metadata = element.getAsJsonObject();
-                        element = metadata.get("name");
-                        if (element != null && element.isJsonPrimitive()) {
-                            result.add(element.getAsString());
-                        }
+                        //find pod's namespace matching with deployment's namespace 
+                        JsonElement pNamespace  = metadata.get("namespace");
+                        if (pNamespace!= null && pNamespace.isJsonPrimitive()) {                                           
+                            if (pNamespace.getAsString().equals(deplNamespace)) {
+                                //get pod name  
+                                JsonElement pName  = metadata.get("name");
+                                if (pName!= null && pName.isJsonPrimitive()) {
+                                    result.add(pName.getAsString());
+                                }
+                            }    
+                        }                           
                     }
-                });
-                return result.getJSON();
+                });               
             }
             catch (ApiException e) {}
         }
-        return null;
+        return result.getJSON();
+    }
+
+    private String getNameSpaceFromResource(JsonObject resource) {
+        String deplnamespace = null;
+        JsonElement element = resource.get(METADATA_PROPERTY_NAME);
+        if (element != null && element.isJsonObject()) {
+            JsonObject metadata = element.getAsJsonObject();                                                                                          
+            JsonElement namespace  = metadata.get("namespace");
+            if (namespace!= null && namespace.isJsonPrimitive()) {
+                deplnamespace = namespace.getAsString();
+            }
+        }
+        return deplnamespace;
     }
     
     static final class PodlistResult {
