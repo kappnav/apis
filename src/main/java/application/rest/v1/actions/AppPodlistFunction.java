@@ -85,7 +85,10 @@ public class AppPodlistFunction implements Function {
 
 
     private String getPodListFromApp(ApiClient client, JsonObject resource, ComponentInfoRegistry registry, List<ComponentKind> componentKinds) {
-        PodlistResult result = new PodlistResult();       
+        PodlistResult result = new PodlistResult();             
+        //retrieve app namespace from the resource 
+        String appNamespace = getNameSpaceFromResource(resource);
+        
         //check if app contains "Deployment" component kind        
         componentKinds.forEach(v -> {  
             if (v.kind.equals("Deployment")) {
@@ -107,12 +110,18 @@ public class AppPodlistFunction implements Function {
                                     items.forEach(p -> {
                                         JsonElement element = p.get(METADATA_PROPERTY_NAME);
                                         if (element != null && element.isJsonObject()) {
-                                            JsonObject pmetadata = element.getAsJsonObject();   
-                                            //get pod name  
-                                            JsonElement pName  = pmetadata.get("name");
-                                            if (pName!= null && pName.isJsonPrimitive()) {
-                                                result.add(pName.getAsString());
-                                            }
+                                            JsonObject pmetadata = element.getAsJsonObject();                                                                                          
+                                            //find pod's namespace matching with app's namespace 
+                                            JsonElement pNamespace  = pmetadata.get("namespace");
+                                            if (pNamespace!= null && pNamespace.isJsonPrimitive()) {                                           
+                                                if (pNamespace.getAsString().equals(appNamespace)) {
+                                                    //get pod name  
+                                                    JsonElement pName  = pmetadata.get("name");
+                                                    if (pName!= null && pName.isJsonPrimitive()) {
+                                                        result.add(pName.getAsString());
+                                                    }                                                   
+                                                }
+                                            } 
                                         }
                                     });
                                 } catch (ApiException e) {}
@@ -125,8 +134,20 @@ public class AppPodlistFunction implements Function {
         return result.getJSON();
     }
 
-
-
+    private String getNameSpaceFromResource(JsonObject resource) {
+        String appnamespace = null;
+        JsonElement element = resource.get(METADATA_PROPERTY_NAME);
+        if (element != null && element.isJsonObject()) {
+            JsonObject metadata = element.getAsJsonObject();                                                                                          
+            JsonElement namespace  = metadata.get("namespace");
+            if (namespace!= null && namespace.isJsonPrimitive()) {
+                appnamespace = namespace.getAsString();
+            }
+        }
+        return appnamespace;
+    }
+                               
+          
     static final class PodlistResult {
         private final JsonObject o;
         private final JsonArray pods;
