@@ -1,4 +1,4 @@
-FROM kappnav/base-runtime:8-jre-ubi-min as liberty
+FROM kappnav/base-runtime:8-jre-ubi-min-alt2 as liberty
 ARG LIBERTY_VERSION=19.0.0.4
 ARG LIBERTY_SHA=d4a9be40d4e1e6e859b836f68379636eb2c19c6d
 ARG LIBERTY_DOWNLOAD_URL=https://repo1.maven.org/maven2/io/openliberty/openliberty-runtime/$LIBERTY_VERSION/openliberty-runtime-$LIBERTY_VERSION.zip
