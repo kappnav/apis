@@ -39,6 +39,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import application.rest.v1.configmaps.ConfigMapProcessor;
+import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
@@ -49,12 +50,13 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
     private static final String APPLICATIONS_PROPERTY_NAME = "applications";
     private static final String APPLICATION_PROPERTY_NAME = "application";
     private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
+    private static final String SECTION_MAP_PROPERTY_NAME = "section-map";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
-            summary = "Retrieve application objects and action maps.",
-            description = "Returns a JSON structure of all application objects and their action maps, optionally filtered by namespace."
+            summary = "Retrieve application objects and action and section maps.",
+            description = "Returns a JSON structure of all application objects and their action and section maps, optionally filtered by namespace."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
@@ -81,8 +83,8 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}")
     @Operation(
-            summary = "Retrieve an application object and its action map.",
-            description = "Returns a JSON structure containing the application object and action map for the specified application."
+            summary = "Retrieve an application object and its action and section maps.",
+            description = "Returns a JSON structure containing the application object and action and section maps for the specified application."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
@@ -103,8 +105,9 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
     private Response processApplications(ApiClient client, List<JsonObject> appObjects) throws ApiException {
         final AppResponse response = new AppResponse();
         final ConfigMapProcessor processor = new ConfigMapProcessor(APPLICATION_PROPERTY_NAME);
+        final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(APPLICATION_PROPERTY_NAME);
         appObjects.forEach(v -> {
-            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION));
+            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));   
         });
         return Response.ok(response.getJSON()).build();
     }
@@ -114,21 +117,23 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
         private final JsonArray applications;
         // Constructs:
         // {
-        //   applications: [ { application: {...}, action-map: {...} }, ... ]
+        //   applications: [ { application: {...}, action-map: {...}, section-map: {...}, ... ]
         // }
         //
         // 'applications' is an array of objects.
         // Each object in the applications array is comprised of an application and action-map.
         // An application is an instance of the application CRD.
         // An action-map is a config map containing the action definitions belonging to the associated application. 
+        // An section-map is a config map containing the section and section datasource definitions belonging to the associated application.
         public AppResponse() {
             o = new JsonObject();
             o.add(APPLICATIONS_PROPERTY_NAME, applications = new JsonArray());
         }
-        public void add(final JsonObject application, final JsonObject actionMap) {
+        public void add(final JsonObject application, final JsonObject actionMap, final JsonObject sectionMap) {
             final JsonObject tuple = new JsonObject();
             tuple.add(APPLICATION_PROPERTY_NAME, application != null ? application : new JsonObject());
             tuple.add(ACTION_MAP_PROPERTY_NAME, actionMap != null ? actionMap : new JsonObject());
+            tuple.add(SECTION_MAP_PROPERTY_NAME, sectionMap != null ? sectionMap : new JsonObject());
             applications.add(tuple);
         }
         public String getJSON() {
