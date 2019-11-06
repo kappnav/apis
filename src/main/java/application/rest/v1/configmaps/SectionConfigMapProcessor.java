@@ -281,7 +281,7 @@ public class SectionConfigMapProcessor {
                                 resPair.addProperty(ANNOTATION_PROPERTY_NAME, elemStr);     
                             } 
                             if (metadataType.equals(LABELS_PROPERTY_NAME)) {
-                                resPair.addProperty(LABELS_PROPERTY_NAME, elemStr);  
+                                resPair.addProperty(LABEL_PROPERTY_NAME, elemStr);  
                             }                         
                             resPair.addProperty(VALUE_PROPERTY_NAME, elemE.getAsString());                          
                         }
