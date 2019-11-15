@@ -1,0 +1,92 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: actdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: actdev
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: actdev
+    spec:
+      serviceAccountName: actdev
+      containers:
+        - name: actdev
+          image: kappnav/apis:0.1.1
+          imagePullPolicy: Always
+          env:
+          - name: KAPPNAV_CONFIG_NAMESPACE
+            value: kappnav
+          - name: KUBE_ENV
+            value: okd 
+          - name: mp.openapi.scan.classes
+            value: application.rest.v1.ActionsEndpoint              
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: actdev
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: actdev
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: actdev
+subjects:
+- kind: ServiceAccount
+  name: actdev
+  namespace: actdev
+roleRef:
+  kind: ClusterRole
+  name: actdev
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: actdev
+spec:
+  type: NodePort
+  ports:
+  - port: 9080
+    targetPort: 9080
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/component: actdev
+---
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: actdev
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: actdev
