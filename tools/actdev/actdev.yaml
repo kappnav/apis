@@ -78,15 +78,4 @@ spec:
     name: http
   selector:
     app.kubernetes.io/component: actdev
----
 
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: actdev
-spec:
-  port:
-    targetPort: http
-  to:
-    kind: Service
-    name: actdev

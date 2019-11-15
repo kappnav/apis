@@ -45,6 +45,9 @@ else
         exit 0
     else
         kubectl delete -f actdev-internal.yaml -n actdev
+        if [ x$KUBE_ENV != 'xminikube' ]; then
+            kubectl delete -f actdev-route.yaml -n actdev
+        fi
         echo "Sleeping for 30 seconds before deleting actdev namespace"
         sleep 30
         kubectl delete namespace actdev

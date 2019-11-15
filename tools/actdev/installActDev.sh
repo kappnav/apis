@@ -51,7 +51,11 @@ else
         exit 0
     else
         kubectl create namespace actdev
-        kubectl apply -f actdev-internal.yaml -n actdev --validate=false
+        kubectl apply -f actdev-internal.yaml -n actdev 
+        if [ x$KUBE_ENV != 'xminikube' ]; then
+            kubectl apply -f actdev-route.yaml -n actdev --validate=false
+        fi
+
         if [ $? -eq 0 ]; then
             echo "Successfully installed the tool"
             if [ x$KUBE_ENV = 'xminishift' -o x$KUBE_ENV = 'xokd' -o x$KUBE_ENV = 'xocp' ]; then
@@ -65,6 +69,13 @@ else
                     actdevURL="http://$routeHost/openapi/ui/"
                     echo $actdevURL
                     open $actdevURL
+                    
+                fi
+            else
+                if [ x$KUBE_ENV = 'xminikube' ]; then
+                    echo "Sleeping for 60 seconds before opening the openapi/ui url"
+                    sleep 60
+                    minikube service actdev -n actdev --format "http://{{.IP}}:{{.Port}}/openapi/ui"
                 fi
             fi
         else 
