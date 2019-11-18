@@ -27,10 +27,6 @@ else
     exit 1 
 fi
 
-cat actdev.yaml \
-            | sed "s|value: okd|value: $kubeEnv|" \
-		    > actdev-internal.yaml
-
 # make sure actdev is installed 
 actdev=$(kubectl get deployment actdev -n actdev)
 if [ $? -ne 0 ]; then
