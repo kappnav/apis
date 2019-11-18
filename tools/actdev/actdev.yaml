@@ -15,8 +15,8 @@ spec:
       serviceAccountName: actdev
       containers:
         - name: actdev
-          image: kappnav/apis:0.1.1
-          imagePullPolicy: Always
+          image: kappnav/apis:0.1.2
+          imagePullPolicy: IfNotPresent
           env:
           - name: KAPPNAV_CONFIG_NAMESPACE
             value: kappnav

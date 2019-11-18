@@ -17,18 +17,27 @@
 #*
 #*****************************************************************
 
-# This script will uninstall action development tool from the existing openshift cluster
-# The script required 1 parameter such as minishift, minikube, okd or ocp
+# get kubeEnv
+kubeEnvFile="$HOME/.actdev/kubeenv"
+if [ -e $kubeEnvFile ]; then
+    kubeEnv=$(cat $kubeEnvFile)
+else
+    echo "Error: file $kubeEnvFile not found.  Did you install actdev?  See installActDev.sh script."
+    echo ""
+    exit 1 
+fi
 
-if [[ $# -ne 1 ]]; then
-    echo "Illegal number of parameter. Required one parameter."
-    echo "Specify where you want to uninstall from such as minishift, minikube, okd or ocp."
+cat actdev.yaml \
+            | sed "s|value: okd|value: $kubeEnv|" \
+		    > actdev-internal.yaml
+
+# make sure actdev is installed 
+actdev=$(kubectl get deployment actdev -n actdev)
+if [ $? -ne 0 ]; then
+    echo "Error: actdev is not installed on your cluster."
+    echo "       Please install first with installActDev.sh."
+    echo ""
     exit 1
-else 
-    KUBE_ENV=$1
-    cat actdev.yaml \
-                | sed "s|value: okd|value: $KUBE_ENV|" \
-		        > actdev-internal.yaml
 fi
 
 env=$(oc get nodes)
@@ -44,12 +53,11 @@ else
         echo "Action Development tool does not appear to be installed on the cluster, existing."
         exit 0
     else
-        kubectl delete -f actdev-internal.yaml -n actdev
-        if [ x$KUBE_ENV != 'xminikube' ]; then
+        cat actdev.yaml | sed "s|value: okd|value: $kubeEnv|" \
+                    | kubectl delete -f - -n actdev
+        if [ x$kubeEnv != 'xminikube' ]; then
             kubectl delete -f actdev-route.yaml -n actdev
         fi
-        echo "Sleeping for 30 seconds before deleting actdev namespace"
-        sleep 30
         kubectl delete namespace actdev
     fi
 fi 

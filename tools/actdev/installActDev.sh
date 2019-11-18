@@ -23,67 +23,83 @@
 # First parameter will be the environment such as minishift, minikube, okd or ocp
 # Second parameter will be the namespace where you installed kappnav/appnav 
 
-if [[ $# -ne 2 ]]; then
-    echo "Illegal number of parameter. Required two parameters."
-    echo "Specify where you want to install such as minishift, minikube, okd or ocp as first parameter."
-    echo "And the namespace where you installed kappnav/appnav as second parameter."
-    exit 1
-else 
-    KUBE_ENV=$1
-    kappNavNS=$2
-    cat actdev.yaml \
-                | sed "s|value: okd|value: $KUBE_ENV|" \
-                | sed "s|value: kappnav|value: $kappNavNS|" \
-		        > actdev-internal.yaml
+# check if user asked for help
+if [ x$arg = 'x--?' ]; then
+    echo "Syntax: installActDev.sh"
+    echo ""
+    echo "Where:"
+    echo ""
+    echo " 1. is one of: okd, ocp, minishift, minikube. Default is okd."
+    echo " 2. is namepace in which kAppNav (or Application Navigator) is installed."
+    exit 0
 fi
 
-env=$(oc get nodes)
-if [ $? -ne 0 ]; then
-    echo "You are not login to any okd cluster, please do oc login first"
-    exit $?
-else
-    echo "Installing developer tool for action development on:"
-    echo "          $env"
-    # check if actdev already installed
-    exist=$(kubectl get Deployment -n actdev)
-    if [ "$exist" != "" ]; then
-        echo "Action Development tool already installed, existing."
-        exit 0
-    else
-        kubectl create namespace actdev
-        kubectl apply -f actdev-internal.yaml -n actdev 
-        if [ x$KUBE_ENV != 'xminikube' ]; then
-            kubectl apply -f actdev-route.yaml -n actdev --validate=false
-        fi
+if [[ $# -ne 2 ]]; then
+    echo "Error: wrong number of parameters."
+    echo "Syntax: installActDev.sh"
+    echo ""
+    echo "Where:"
+    echo ""
+    echo " 1. is one of: okd, ocp, minishift, minikube. Default is okd."
+    echo " 2. is namepace in which kAppNav (or Application Navigator) is installed."
+    exit 1
+fi
 
-        if [ $? -eq 0 ]; then
-            echo "Successfully installed the tool"
-            if [ x$KUBE_ENV = 'xminishift' -o x$KUBE_ENV = 'xokd' -o x$KUBE_ENV = 'xocp' ]; then
-                routeHost=$(kubectl get route actdev -n actdev -o=jsonpath={@.spec.host})
-                if [ -z routeHost ]; then
-                    echo "Could not retrieve host from route actdev service"
-                else
-                    echo 'Retrieved host name '$routeHost
-                    echo "Sleeping for 60 seconds before opening the openapi/ui url"
-                    sleep 60
-                    actdevURL="http://$routeHost/openapi/ui/"
-                    echo $actdevURL
-                    open $actdevURL
-                    
-                fi
-            else
-                if [ x$KUBE_ENV = 'xminikube' ]; then
-                    echo "Sleeping for 60 seconds before opening the openapi/ui url"
-                    sleep 60
-                    minikube service actdev -n actdev --format "http://{{.IP}}:{{.Port}}/openapi/ui"
-                fi
-            fi
-        else 
-            echo "Installing failing, cleaning up now"
-            # cleaning up
-            kubectl delete -f actdev.yaml -n actdev
-            kubectl delete namespace actdev
+# To make sure kubectl is available
+kubectl=$(kubectl)
+if [ $? -ne 0 ]; then
+echo "Error: kubectl not found. You must install kubectl before using actdev.sh"
+echo ""
+exit 1
+fi
+
+# make sure user login to the kubernetes cluster already
+nodes=""
+if [ x$kubeEnv = x"minikube" ]; then
+    nodes=$(kubectl get nodes)
+else
+    nodes=$(oc get nodes)
+fi
+if [ $? -ne 0 ]; then
+    echo "Error: you are not configured to access any kubernetes cluster."
+    echo " Please ensure you can access your cluster with kubectl before running this script again."
+    echo ""
+    echo "Hint: 'kubectl get nodes' should display your cluster's nodes."
+    exit 1
+fi
+
+kubeEnv=$1
+kappNavNS=$2
+mkdir $HOME/.actdev
+echo $kubeEnv > $HOME/.actdev/kubeenv
+echo $kappNavNS > $HOME/.actdev/namespace
+nodes=$(kubectl get nodes)
+echo "Installing developer tool for action development on: "
+echo $nodes
+# check if actdev already installed
+exist=$(kubectl get Deployment actdev -n actdev)
+if [ "$exist" != "" ]; then
+    echo "Action Development tool already installed, existing."
+    exit 0
+else
+    kubectl create namespace actdev
+    cat actdev.yaml | sed "s|value: okd|value: $kubeEnv|" \
+                    | sed "s|value: kappnav|value: $kappNavNS|" \
+                    | kubectl create -f - -n actdev
+    if [ x$kubeEnv != 'xminikube' ]; then
+        kubectl apply -f actdev-route.yaml -n actdev --validate=false
+    fi
+
+    if [ $? -eq 0 ]; then
+        echo "Successfully installed the tool"
+    else 
+        echo "Install failed, cleaning up now"
+        # cleaning up
+        kubectl delete -f actdev.yaml -n actdev
+        if [ x$kubeEnv != 'xminikube' ]; then
+            kubectl delete -f actdev-route.yaml -n actdev
         fi
+        kubectl delete namespace actdev
     fi
 fi 
 
