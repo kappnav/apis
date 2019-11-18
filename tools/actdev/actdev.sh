@@ -58,15 +58,19 @@ if [ $? -ne 0 ]; then
 fi
 
 # make sure a kubernetes cluster is accessible 
-nodes=$(kubectl get nodes)
+if [ x$kubeEnv = x"minikube" ]; then
+    nodes=$(kubectl get nodes)
+else
+    nodes=$(oc get nodes)
+fi
 if [ $? -ne 0 ]; then
     echo "Error: you are not configured to access any kubernetes cluster."
-    echo "       Please ensure you can access your cluster with kubectl before"
-    echo "       running this script again."
+    echo " Please ensure you can access your cluster with kubectl before running this script again."
     echo ""
     echo "Hint: \'kubectl get nodes\' should display your cluster\'s nodes."
-    exit 1 
+    exit 1
 fi
+
 
 # make sure actdev is installed 
 actdev=$(kubectl get deployment actdev -n actdev)

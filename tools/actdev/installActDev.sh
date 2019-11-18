@@ -64,7 +64,7 @@ if [ $? -ne 0 ]; then
     echo "Error: you are not configured to access any kubernetes cluster."
     echo " Please ensure you can access your cluster with kubectl before running this script again."
     echo ""
-    echo "Hint: 'kubectl get nodes' should display your cluster's nodes."
+    echo "Hint: \'kubectl get nodes\' should display your cluster\'s nodes."
     exit 1
 fi
 
@@ -73,7 +73,6 @@ kappNavNS=$2
 mkdir $HOME/.actdev
 echo $kubeEnv > $HOME/.actdev/kubeenv
 echo $kappNavNS > $HOME/.actdev/namespace
-nodes=$(kubectl get nodes)
 echo "Installing developer tool for action development on: "
 echo $nodes
 # check if actdev already installed

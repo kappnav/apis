@@ -17,6 +17,29 @@
 #*
 #*****************************************************************
 
+# To make sure kubectl is available
+kubectl=$(kubectl)
+if [ $? -ne 0 ]; then
+echo "Error: kubectl not found. You must install kubectl before using actdev.sh"
+echo ""
+exit 1
+fi
+
+# make sure user login to the kubernetes cluster already
+nodes=""
+if [ x$kubeEnv = x"minikube" ]; then
+    nodes=$(kubectl get nodes)
+else
+    nodes=$(oc get nodes)
+fi
+if [ $? -ne 0 ]; then
+    echo "Error: you are not configured to access any kubernetes cluster."
+    echo " Please ensure you can access your cluster with kubectl before running this script again."
+    echo ""
+    echo "Hint: \'kubectl get nodes\' should display your cluster\'s nodes."
+    exit 1
+fi
+
 # get kubeEnv
 kubeEnvFile="$HOME/.actdev/kubeenv"
 if [ -e $kubeEnvFile ]; then
@@ -36,13 +59,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-env=$(oc get nodes)
 if [ $? -ne 0 ]; then
     echo "You are not login to any okd cluster, please do oc login first"
     exit $?
 else
     echo "Uninstalling developer tool for action development from:"
-    echo "          $env"
+    echo "          $nodes"
     # check if actdev installed
     exist=$(kubectl get Deployment -n actdev)
     if [ "$exist" == "" ]; then
