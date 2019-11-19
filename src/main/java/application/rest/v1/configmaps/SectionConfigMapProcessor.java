@@ -71,10 +71,9 @@ public class SectionConfigMapProcessor {
         final SectionConfigMapBuilder builder = new SectionConfigMapBuilder();
         final String name = KAppNavEndpoint.getComponentName(component);
 
-        if (name != null && !name.isEmpty()) {
-            final String namespace = KAppNavEndpoint.getComponentNamespace(component);
+        if (name != null && !name.isEmpty()) {       
             if (builder.getConfigMap().entrySet().size() == 0) {
-                JsonObject map = getConfigMap(client, namespace, sectionNameWithKind);
+                JsonObject map = getConfigMap(client, sectionNameWithKind);
                 
                 if (map != null) {
                     builder.merge(map);      
@@ -86,33 +85,29 @@ public class SectionConfigMapProcessor {
     } 
          
 
-    private JsonObject getConfigMap(ApiClient client, String namespace, String configMapName) {
+    private JsonObject getConfigMap(ApiClient client, String configMapName) {
         // Return the map from the local cache if it's been previously loaded.
-        final boolean isGlobalNS = GLOBAL_NAMESPACE.equals(namespace);
-        if (isGlobalNS && kappnavNSMapCache.containsKey(configMapName)) {
+        if (kappnavNSMapCache.containsKey(configMapName)) {
             return kappnavNSMapCache.get(configMapName);
         }
         try {
             CoreV1Api api = new CoreV1Api();
             api.setApiClient(client);
-
-            V1ConfigMap map = api.readNamespacedConfigMap(configMapName, namespace, null, null, null);
+            
+            V1ConfigMap map = api.readNamespacedConfigMap(configMapName, GLOBAL_NAMESPACE, null, null, null);
             final JsonElement element = client.getJSON().getGson().toJsonTree(map);
             if (element != null && element.isJsonObject()) {
                 final JsonObject m = element.getAsJsonObject();   
-                
-                if (isGlobalNS) {
-                    // Store the map in the local cache.
-                    kappnavNSMapCache.put(configMapName, m);
-                }
+                    
+                // Store the map in the local cache.
+                kappnavNSMapCache.put(configMapName, m);    
                 return m;
             }
         }
         catch (ApiException e) {}
-        if (isGlobalNS) {
-            // No map. Store null in the local cache.
-            kappnavNSMapCache.put(configMapName, null);
-        }
+        
+        // No map. Store null in the local cache.
+        kappnavNSMapCache.put(configMapName, null);
         return null;
     }
 
@@ -132,7 +127,7 @@ public class SectionConfigMapProcessor {
         final JsonObject map = getConfigMap(client, component);                         
         final JsonElement sections = map.get(SECTIONS_PROPERTY_NAME);
         final JsonElement sectionDS = map.get(SECTION_DATASOURCES_PROPERTY_NAME);
-
+        
         final JsonArray sectionDataResult = new JsonArray();
         
         if (sections != null && sections.isJsonArray()) {                   
@@ -214,7 +209,7 @@ public class SectionConfigMapProcessor {
         }
         return false;                                                          
     }
-   
+  
 
     // get matching resources and matches with prefixes and annotations or labels array
     private JsonArray getMatchingResources (JsonObject sectionObject, JsonObject sectionDSObject, JsonObject resObj, String metadataType) {        

@@ -94,7 +94,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final Object o = getNamespacedApplicationObject(client, namespace, name);
+            final Object o = getNamespacedApplicationObject(client, namespace, name);  
             return processApplications(client, getItemAsList(client, o));
         }
         catch (IOException | ApiException e) {
@@ -140,4 +140,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             return o.toString();
         }
     }
+
+   
+
 }

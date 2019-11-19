@@ -42,7 +42,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
 import application.rest.v1.configmaps.ConfigMapProcessor;
@@ -130,7 +129,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             // Add 'kind' property to components that are missing it.
             if (v.get(KIND_PROPERTY_NAME) == null) {
                 v.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
-            }                
+            }   
             response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
         });
     }
@@ -172,7 +171,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
         }
         return newNamespaces;
     }
-
+   
    
     static final class ComponentResponse {
         private final JsonObject o;
