@@ -62,8 +62,7 @@ if [ $? -ne 0 ]; then
     echo "You are not login to any okd cluster, please do oc login first"
     exit $?
 else
-    echo "Uninstalling developer tool for action development from:"
-    echo "          $nodes"
+    echo "Uninstalling developer tool for action development..."
     # check if actdev installed
     exist=$(kubectl get Deployment -n actdev 2>/dev/null)
     if [ "$exist" == "" ]; then

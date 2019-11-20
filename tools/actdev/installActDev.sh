@@ -93,11 +93,7 @@ else
     else 
         echo "Install failed, cleaning up now"
         # cleaning up
-        kubectl delete -f actdev.yaml -n actdev
-        if [ x$kubeEnv != 'xminikube' ]; then
-            kubectl delete -f actdev-route.yaml -n actdev
-        fi
-        kubectl delete namespace actdev
+        ./uninstallActDev.sh
     fi
 fi 
 
