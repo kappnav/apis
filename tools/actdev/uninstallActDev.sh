@@ -26,11 +26,10 @@ exit 1
 fi
 
 # make sure user login to the kubernetes cluster already
-nodes=""
 if [ x$kubeEnv = x"minikube" ]; then
-    nodes=$(kubectl get nodes)
+    $(kubectl get nodes)
 else
-    nodes=$(oc get nodes)
+    $(oc get nodes)
 fi
 if [ $? -ne 0 ]; then
     echo "Error: you are not configured to access any kubernetes cluster."
@@ -66,7 +65,7 @@ else
     echo "Uninstalling developer tool for action development from:"
     echo "          $nodes"
     # check if actdev installed
-    exist=$(kubectl get Deployment -n actdev)
+    exist=$(kubectl get Deployment -n actdev 2>/dev/null)
     if [ "$exist" == "" ]; then
         echo "Action Development tool does not appear to be installed on the cluster, existing."
         exit 0
@@ -77,6 +76,7 @@ else
             kubectl delete -f actdev-route.yaml -n actdev
         fi
         kubectl delete namespace actdev
+        rm -fr ~/.actdev
     fi
 fi 
 

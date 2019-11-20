@@ -24,6 +24,7 @@
 # Second parameter will be the namespace where you installed kappnav/appnav 
 
 # check if user asked for help
+arg=$1
 if [ x$arg = 'x--?' ]; then
     echo "Syntax: installActDev.sh"
     echo ""
@@ -54,11 +55,10 @@ exit 1
 fi
 
 # make sure user login to the kubernetes cluster already
-nodes=""
 if [ x$kubeEnv = x"minikube" ]; then
-    nodes=$(kubectl get nodes)
+    $(kubectl get nodes)
 else
-    nodes=$(oc get nodes)
+    $(oc get nodes)
 fi
 if [ $? -ne 0 ]; then
     echo "Error: you are not configured to access any kubernetes cluster."
@@ -73,10 +73,9 @@ kappNavNS=$2
 mkdir $HOME/.actdev
 echo $kubeEnv > $HOME/.actdev/kubeenv
 echo $kappNavNS > $HOME/.actdev/namespace
-echo "Installing developer tool for action development on: "
-echo $nodes
+echo "Installing developer tool for action development..."
 # check if actdev already installed
-exist=$(kubectl get Deployment actdev -n actdev)
+exist=$(kubectl get Deployment actdev -n actdev 2>/dev/null)
 if [ "$exist" != "" ]; then
     echo "Action Development tool already installed, existing."
     exit 0

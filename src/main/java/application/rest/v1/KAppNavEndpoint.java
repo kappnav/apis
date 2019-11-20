@@ -70,6 +70,7 @@ public abstract class KAppNavEndpoint {
             });
             b = (val != null) && (!"false".equals(val));
         } catch (SecurityException se) {
+            System.out.println("JUNIKE.. caught SecurityException " + se.toString());
             b = false;
         }
         DISABLE_TRUST_ALL_CERTS = b;
@@ -96,12 +97,14 @@ public abstract class KAppNavEndpoint {
     private static final String DEFAULT_NAMESPACE = "default";
     
     protected Object listApplicationObject(ApiClient client) throws ApiException {
+        System.out.println("JUNIKE.. listApplicationObject");
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
     }
     
     protected Object listNamespacedApplicationObject(ApiClient client, String namespace) throws ApiException {
+        System.out.println("JUNIKE.. listNamespacedApplicationObject for namespace=" + namespace);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION,
@@ -109,7 +112,7 @@ public abstract class KAppNavEndpoint {
     }
 
     public static List<JsonObject> getItemsAsList(ApiClient client, Object resources) {
-
+        System.out.println("JUNIKE.. getItemsAsList for resources=" + resources.toString());
         final List<JsonObject> result = new ArrayList<>();
         final JsonElement element = client.getJSON().getGson().toJsonTree(resources);
 
@@ -125,13 +128,14 @@ public abstract class KAppNavEndpoint {
                 });
             }
         }
+        System.out.println("JUNIKE.. getItemsAsList return " + result.toString());
         return result;
     }
 
     public static List<JsonObject> getItemAsList(ApiClient client, Object resource) {
-
+        System.out.println("JUNIKE.. getItemAsList for resource=" + resource);
         final JsonElement element = client.getJSON().getGson().toJsonTree(resource);
-
+        System.out.println("JUNIKE.. element=" + element.toString());
         if (element != null && element.isJsonObject()) {
             return Collections.singletonList(element.getAsJsonObject());
         }
@@ -139,9 +143,9 @@ public abstract class KAppNavEndpoint {
     }
     
     public static JsonObject getItemAsObject(ApiClient client, Object resource) {
-        
+        System.out.println("JUNIKE.. getItemAsObject for resource=" + resource);
         final JsonElement element = client.getJSON().getGson().toJsonTree(resource);
-        
+        System.out.println("JUNIKE.. element=" + element.toString());
         if (element != null && element.isJsonObject()) {
             return element.getAsJsonObject();
         }
@@ -149,6 +153,7 @@ public abstract class KAppNavEndpoint {
     }
     
     public static String getComponentSubKind(JsonObject component) {
+        System.out.println("JUNIKE.. getComponentSubKind for component=" + component.toString());
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
@@ -163,10 +168,12 @@ public abstract class KAppNavEndpoint {
                 }
             }
         }
+        System.out.println("JUNIKE.. metadata is null");
         return null;
     }
     
     public static String getComponentName(JsonObject component) {
+        System.out.println("JUNIKE.. getComponentName for component=" + component.toString());
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAME_PROPERTY_NAME);
@@ -174,10 +181,12 @@ public abstract class KAppNavEndpoint {
                 return e.getAsString();
             }
         }
+        System.out.println("JUNIKE.. metadata is null");
         return null;
     }
 
     public static String getComponentNamespace(JsonObject component) {
+        System.out.println("JUNIKE.. getComponentNamespace for component=" + component.toString());
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAMESPACE_PROPERTY_NAME);
@@ -185,11 +194,13 @@ public abstract class KAppNavEndpoint {
                 return e.getAsString();
             }
         }
+        System.out.println("JUNIKE.. return default namespace");
         return DEFAULT_NAMESPACE;
     }
 
 
     public static List<String> getAnnotationNamespaces(ApiClient client, Object application) {
+        System.out.println("JUNIKE.. getAnnotationNamespaces for application=" + application.toString());
         List<String> result = new ArrayList<>();
 
         JsonElement element = client.getJSON().getGson().toJsonTree(application);
@@ -219,6 +230,7 @@ public abstract class KAppNavEndpoint {
                 }                                      
             }
         }
+        System.out.println("getAnnotationNamespaces return="+ result.toString());
         return result;
     }
     
@@ -232,8 +244,10 @@ public abstract class KAppNavEndpoint {
     
     // Write status object to metadata.annotations[kappnav.status].
     protected static void writeStatusToComponent(JsonObject component, JsonObject status) {
+        System.out.println("JUNIKE.. writeStatusToComponent for component=" + component.toString() + " status=" + status.toString());
         JsonElement metadata = component.get(METADATA_PROPERTY_NAME);
         if (metadata == null) {
+            System.out.println("JUNIKE.. writeStatusToComponent metadata is null");
             metadata = new JsonObject();
             component.add(METADATA_PROPERTY_NAME, metadata);
         }
@@ -252,18 +266,22 @@ public abstract class KAppNavEndpoint {
     }
     
     protected static JsonObject createUnknownStatusObject(KAppNavConfig config) {
+        System.out.println("JUNIKE..createUnknownStatusObject for config=" + config.toString());
         final String statusUnknown = config.getStatusUnknown();
         return createStatusObject(statusUnknown, statusUnknown);
     }
     
     private static JsonObject createStatusObject(String value, String flyover) {
+        System.out.println("JUNIKE..createStatusObject for value=" + value + " flyover=" + flyover);
         final JsonObject status = new JsonObject();
         status.addProperty(VALUE_PROPERTY_NAME, value);
         status.addProperty(FLYOVER_PROPERTY_NAME, flyover);
+        System.out.println("JUNIKE..createStatusObject status=" + status.toString());
         return status;
     }
     
     private static JsonObject createStatusObject(JsonObject statusObj, String value, JsonElement flyover, JsonElement flyoverNLS) {
+        System.out.println("JUNIKE..createStatusObject for statusObj=" + statusObj.toString() + " value=" + value + " flyover=" + flyover.toString() + " flyoverNLS=" + flyoverNLS);
         final JsonObject status = new JsonObject();
         status.addProperty(VALUE_PROPERTY_NAME, value);
         if (flyover != null) {
@@ -279,11 +297,13 @@ public abstract class KAppNavEndpoint {
             !FLYOVER_NLS_PROPERTY_NAME.equals(e.getKey())).forEach(e -> {
                 status.add(e.getKey(), e.getValue());
             });
+            System.out.println("JUNIKE..createStatusObject status=" + status.toString());
         return status;
     }
     
     // Resolves the ${status} operator, replacing it with the given simple status value.
     protected static JsonObject resolveStatusOperator(JsonObject statusObj, String simpleStatus) {
+        System.out.println("JUNIKE.. resolveStatusOperator for statusObj=" + statusObj.toString() + " simpleStatus=" + simpleStatus);
         final JsonElement valueObj = statusObj.get(VALUE_PROPERTY_NAME);
         if (valueObj != null && valueObj.isJsonPrimitive()) {
             String value = valueObj.getAsString();
@@ -335,12 +355,14 @@ public abstract class KAppNavEndpoint {
                 return createStatusObject(statusObj, value, flyoverObj, flyoverNLSObj);
             }
         }
+        System.out.println("JUNIKE.. resolveStatusOperator return statusObj=" + statusObj.toString());
         return statusObj;
     }
     
     // Returns true if the status object contains one of
     // the known values from the config, false otherwise.
     protected static boolean hasKnownStatus(JsonObject statusObj, KAppNavConfig config) {
+        System.out.println("JUNIKE..hasKnownStatus for statusObj=" + statusObj.toString() + " config=" + config.toString());
         final JsonElement valueObj = statusObj.get(VALUE_PROPERTY_NAME);
         if (valueObj != null && valueObj.isJsonPrimitive()) {
             final String value = valueObj.getAsString();
@@ -380,44 +402,56 @@ public abstract class KAppNavEndpoint {
     }
 
     protected static int getResponseCode(Exception e) {
+        System.out.println("JUNIKE.. getResponseCode " + e.toString());
         if (e instanceof ApiException) {
             final int code = ((ApiException) e).getCode();
             // If the return code is 0, the call to the Kubernetes API
             // failed on the client side (internal error).
             if (code != 0) {
+                System.out.println("JUNIKE.. instance of ApiException, code=" + code);
                 // Multi-status. The actual return code from this exception
                 // will be included in the JSON message.
                 return 207;
             }
+            System.out.println("JUNIKE.. code is 0");
         }
         else if (e instanceof ValidationException) {
+            System.out.println("JUNIKE.. instance of ValidationException, code is 422");
             // Unprocessable Entity
             return 422;
         }
         else if (e instanceof JsonSyntaxException) {
+            System.out.println("JUNIKE.. instance of JsonSyntaxException, code is 400");
             // Bad request.
             return 400;
         }
         // Internal Server Error
+        System.out.println("JUNIKE.. instance of InternalServerError, code is 500");
         return 500;
     }
 
     protected static String getStatusMessageAsJSON(Exception e) {
+        System.out.println("JUNIKE.. getStatusMessageAsJSON " + e.toString());
         if (e instanceof ApiException) {
             final int code = ((ApiException) e).getCode();
+            System.out.println("JUNIKE.. instance of ApiException, code=" + code);
             return getStatusMessageAsJSON(code, e.getMessage());
         }
         else if (e instanceof ValidationException) {
+            System.out.println("JUNIKE.. instance of ValidationException");
             return getValidationErrorMessageAsJSON(e.getMessage(), ((ValidationException) e).getFieldName());
         }
+        System.out.println("JUNIKE.. getStatusMessageAsJSON return " + e.toString());
         return getErrorMessageAsJSON(e.getMessage());
     }
     
     protected static String getStatusMessageAsJSON(String msg) {
+        System.out.println("JUNIKE.. getStatusMessageAsJSON " + msg);
         return getStatusMessageAsJSON(0, msg);
     }
     
     private static String getStatusMessageAsJSON(int code, String msg) {
+        System.out.println("JUNIKE.. getStatusMessageAsJSON code=" + code + " msg=" + msg);
         final JsonObject o = new JsonObject();
         if (code != 0) {
             o.addProperty("status", code);
@@ -426,21 +460,26 @@ public abstract class KAppNavEndpoint {
         else {
             o.addProperty("status", msg);
         }
+        System.out.println("JUNIKE.. getStatusMessageAsJSON return " + o.toString());
         return o.toString();
     }
     
     private static String getValidationErrorMessageAsJSON(String msg, String fieldName) {
+        System.out.println("JUNIKE.. getValidationErrorMessageAsJSON msg=" + msg + " fieldName=" + fieldName);
         final JsonObject o = new JsonObject();
         o.addProperty("error", msg);
         if (fieldName != null) {
             o.addProperty("field", fieldName);
         }
+        System.out.println("JUNIKE.. getValidationErrorMessageAsJSON return " + o.toString());
         return o.toString();
     }
     
     private static String getErrorMessageAsJSON(String msg) {
+        System.out.println("JUNIKE.. getErrorMessageAsJSON " + msg);
         final JsonObject o = new JsonObject();
         o.addProperty("error", msg);
+        System.out.println("JUNIKE.. getErrorMessageAsJSON return " + o.toString());
         return o.toString();
     }
 
