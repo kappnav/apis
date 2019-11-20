@@ -18,7 +18,6 @@ package application.rest.v1.actions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.System;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 
@@ -32,15 +31,13 @@ public class SnippetResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) throws ValidationException {
-        System.out.println("JUNISR... resolve context=" + context + " suffix=" + suffix);
+    public String resolve(ResolutionContext context, String suffix) {
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String snippetName = tokenizer.getName();
         if (snippetName != null) {
             // Resolve snippet.
             final String snippet = context.getSnippet(snippetName);
             if (snippet == null) {
-                System.out.println("JUNISR... snippet is null");
                 // No snippet was found in the action config map.
                 return null;
             }
@@ -56,20 +53,13 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    System.out.println("JUNISR... error case, one of param can't be resolve");
                     return null;
                 }
             }
             
             // Invoke the snippet.
-            try {
-                return context.invokeSnippet(snippet, parameters);
-            } catch (ValidationException e) {
-                System.out.println("JUNISR... catch ValidationException " + e.toString());
-                throw e;
-            }
+            return context.invokeSnippet(snippet, parameters);
         }
-        System.out.println("JUNISR... snippetName="+snippetName);
         return null;
     }
 }

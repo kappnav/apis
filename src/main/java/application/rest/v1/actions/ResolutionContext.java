@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.System;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -81,7 +80,6 @@ public final class ResolutionContext {
     }
     
     private static void addResolver(Resolver resolver) {
-        System.out.println("JUNIRC.. addResolver "+ resolver.toString());
         final String name = resolver.getName();
         if (!resolvers.containsKey(name)) {
             resolvers.put(name, resolver);
@@ -118,18 +116,15 @@ public final class ResolutionContext {
     }
     
     public JsonObject getResource() {
-        System.out.println("JUNIRC.. getResource " + resource.toString());
         return resource;
     }
     
     public String getResourceKind() {
-        System.out.println("JUNIRC.. getResource " + resourceKind.toString());
         return resourceKind;
     }
     
     // This method validates the user's input before setting it on the ResolutionContext.
     public void setUserInput(JsonObject userInputMap, JsonObject fields) throws ValidationException {
-        System.out.println("JUNIRC.. setUserInput userInputMap=" + userInputMap.toString() + " fields=" + fields.toString());
         JsonObject map = (userInputMap != null) ? userInputMap : new JsonObject();
         // Validate each of the fields specified by the user.
         map.entrySet().forEach(entry -> {
@@ -178,7 +173,6 @@ public final class ResolutionContext {
     
     // This method validates the value of a user supplied input against a JavaScript snippet.
     private void validateField(String name, JsonObject field, String value, String snippet) throws ValidationException {
-        System.out.println("JUNIRC.. validateField name=" + name + " fields=" +field.toString() + " value=" + value + " snippet=" +snippet);
         // snippet input: json containing input field value in form: { "value": "<field-value>" }
         final JsonObject input = new JsonObject();
         input.addProperty(VALUE_PROPERTY_NAME, value);
@@ -211,34 +205,28 @@ public final class ResolutionContext {
             throw new ValidationException("The validation result for the field could not be processed because it was in the wrong format.", name);
         }
         catch (JsonSyntaxException e) {
-            System.out.println("JUNI.. caught JsonSyntaxException " + e.toString());
             // REVISIT: Message translation required.
             throw new ValidationException("The validation result for the field could not be processed. Reason: " + e.getMessage(), name);
         }
     }
     
     public String getUserInputValue(String fieldName) {
-        System.out.println("JUNIRC.. getUserInputValue fieldName=" + fieldName);
         return getPrimitivePropertyValue(userInputMap, fieldName);
     }
     
     public JsonObject getURLAction(String name) {
-        System.out.println("JUNIRC.. getURLAction name=" + name);
         return getAction(name, URL_ACTIONS_PROPERTY_NAME);
     }
     
     public JsonObject getCommandAction(String name) {
-        System.out.println("JUNIRC.. getCommandAction name="+ name);
         return getAction(name, CMD_ACTIONS_PROPERTY_NAME);
     }
     
     public JsonObject getFunctionAction(String name) {
-        System.out.println("JUNIRC.. getFunctionAction name="+ name);
         return getAction(name, FUNCTION_ACTIONS_PROPERTY_NAME);
     }
     
     private JsonObject getAction(String name, String type) {
-        System.out.println("JUNIRC.. getAction name="+ name + " type="+type);
         initializeResourceMap();
         final JsonElement e = resourceMap.get(type);
         if (e != null && e.isJsonArray()) {
@@ -260,7 +248,6 @@ public final class ResolutionContext {
     }
     
     public JsonObject getInputFields(String inputName) {
-        System.out.println("JUNIRC.. getInputFields inputName=" + inputName);
         initializeResourceMap();
         JsonElement e = resourceMap.get(INPUTS_PROPERTY_NAME);
         if (e != null && e.isJsonObject()) {
@@ -278,12 +265,10 @@ public final class ResolutionContext {
     }
     
     public JsonObject getInputField(String inputName, String fieldName) {
-        System.out.println("JUNIRC.. getInputField inputName=" + inputName + " fieldName=" + fieldName);
         return getInputField(getInputFields(inputName), fieldName);
     }
     
     public JsonObject getInputField(JsonObject fields, String fieldName) {
-        System.out.println("JUNIRC.. getInputField fields=" + fields.toString() + " fieldName=" + fieldName);
         if (fields != null) {
             JsonElement e = fields.get(fieldName);
             if (e != null && e.isJsonObject()) {
@@ -294,17 +279,14 @@ public final class ResolutionContext {
     }
     
     public String getFieldDefaultValue(JsonObject field) {
-        System.out.println("JUNIRC.. getFieldDefaultValue " + field.toString());
         return getPrimitivePropertyValue(field, DEFAULT_PROPERTY_NAME);
     }
     
     public boolean isFieldOptional(JsonObject field) {
-        System.out.println("JUNIRC.. isFieldOptional " + field.toString());
         return Boolean.parseBoolean(getPrimitivePropertyValue(field, OPTIONAL_PROPERTY_NAME));
     }
     
     public String getFieldValidatorSnippet(JsonObject field) {
-        System.out.println("JUNIRC.. getFieldValidatorSnippet " + field.toString());
         final String snippetName = getPrimitivePropertyValue(field, VALIDATOR_PROPERTY_NAME);
         if (snippetName != null) {
             return getSnippet(snippetName);
@@ -313,7 +295,6 @@ public final class ResolutionContext {
     }
     
     private static String getPrimitivePropertyValue(JsonObject map, String propName) {
-        System.out.println("JUNIRC.. getPrimitivePropertyValue map=" + map.toString() + " propName=" + propName);
         if (map != null) {
             JsonElement e = map.get(propName);
             if (e != null && e.isJsonPrimitive()) {
@@ -324,17 +305,14 @@ public final class ResolutionContext {
     }
     
     public String getVariablePattern(String name) {
-        System.out.println("JUNIRC.. getVariablePattern " + name);
         return getMapValue(name, VARIABLES_PROPERTY_NAME);
     }
     
     public String getSnippet(String name) {
-        System.out.println("JUNIRC.. getSnippet " + name);
         return getMapValue(name, SNIPPETS_PROPERTY_NAME);
     }
     
     private String getMapValue(String name, String type) {
-        System.out.println("JUNIRC.. getMapValue name=" + name + " type=" + type);
         initializeResourceMap();
         JsonElement e = resourceMap.get(type);
         if (e != null && e.isJsonObject()) {
@@ -348,34 +326,28 @@ public final class ResolutionContext {
     }
     
     public String getResolvedVariable(String name) {
-        System.out.println("JUNIRC.. getResolvedVariable " + name);
         return resolvedVariables.get(name);
     }
     
     public void setResolvedVariable(String name, String value) {
-        System.out.println("JUNIRC.. setResolvedVariable name=" + name + " value=" + value);
         resolvedVariables.put(name, value);
     }
     
     public void visitVariableStart(String name) {
-        System.out.println("JUNIRC.. visitVariableStart " + name);
         visitedVariables.push(name);
     }
     
     public void visitVariableEnd() {
-        System.out.println("JUNIRC.. visitVariableEnd");
         if (visitedVariables.size() > 0) {
             visitedVariables.pop();
         }
     }
     
     public boolean isVisitingVariable(String name) {
-        System.out.println("JUNIRC.. isVisitingVariable " + name);
         return visitedVariables.contains(name);
     }
     
     private void initializeResourceMap() {
-        System.out.println("JUNIRC.. initializeResourceMap");
         if (resourceMap == null) {
             ConfigMapProcessor processor = new ConfigMapProcessor(resourceKind);
             resourceMap = processor.getConfigMap(client, resource, ConfigMapProcessor.ConfigMapType.ACTION);
@@ -383,7 +355,6 @@ public final class ResolutionContext {
     }
     
     public String getConfigMapDataField(String mapName, String mapField) {
-        System.out.println("JUNIRC.. getConfigMapDataField mapName=" + mapName + " mapField=" + mapField);
         if (kappnavNSMapCache.containsKey(mapName)) {
             // Return value from the local cache.
             final V1ConfigMap map = kappnavNSMapCache.get(mapName);
@@ -403,9 +374,7 @@ public final class ResolutionContext {
                 return data.get(mapField);
             }
         }
-        catch (ApiException e) {
-            System.out.println("JUNI.. caught ApiException" + e.toString());
-        }
+        catch (ApiException e) {}
         // No map or no data section. Store null in the local cache.
         kappnavNSMapCache.put(mapName, null);
         return null;
@@ -420,8 +389,8 @@ public final class ResolutionContext {
     }
     
     // snippet :: "function xyz(a,b,c) {...}"
-    public String invokeSnippet(String snippet, List<String> parameters) throws ValidationException {
-        System.out.println("JUNIRC.. invokeSnippet snippet=" + snippet + " parameters=" + parameters.toString());
+    public String invokeSnippet(String snippet, List<String> parameters) {
+        
         // Determine the function name by inspecting the snippet.
         String functionName = null;
         int start = snippet.indexOf(JAVA_SCRIPT_FUNCTION_PREFIX);
@@ -447,20 +416,15 @@ public final class ResolutionContext {
                 return o.toString();
             }
         }
-        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
-            System.out.println("JUNIRC.. caught many exception retrow now" + e.toString());
-            throw new ValidationException("Problem invoking snippet, Reason=" + e.toString());
-        }
+        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {}
         return null;
     }
     
-    public ResolvedValue resolve(String pattern) throws ValidationException {
-        System.out.println("JUNIRC.. resolve " + pattern);
+    public ResolvedValue resolve(String pattern) {
         final StringBuilder result = new StringBuilder();
         final PatternTokenizer tokenizer = new PatternTokenizer(pattern);
         final AtomicBoolean isFullyResolved = new AtomicBoolean(true);
-        try {
-            tokenizer.forEach(t -> {
+        tokenizer.forEach(t -> {
             // Add string literals directly to the result.
             if (!t.isPattern()) {
                 result.append(t.getDecodedValue());
@@ -496,10 +460,6 @@ public final class ResolutionContext {
                 }
             }
         });
-    } catch (ValidationException e) {
-        System.out.println("JUNIRC.. caught ValidationException " + e.toString());
-        throw e;
-    }
         return new ResolvedValue(result.toString(), isFullyResolved.get());
     }
     
@@ -507,16 +467,13 @@ public final class ResolutionContext {
         private final String value;
         private final boolean isFullyResolved;
         public ResolvedValue(String value, boolean isFullyResolved) {
-            System.out.println("JUNIRC.. ResolvedValue value=" + value + " isFullyResolved=" + isFullyResolved);
             this.value = value;
             this.isFullyResolved = isFullyResolved;
         }
         public String getValue() {
-            System.out.println("JUNIRC.. getValue");
             return value;
         }
         public boolean isFullyResolved() {
-            System.out.println("JUNIRC.. isFullyResolved");
             return isFullyResolved;
         }
     }

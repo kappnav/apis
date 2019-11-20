@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.lang.System;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -133,14 +132,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace,
             @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") String pattern) {
-        System.out.println("JUNIAE.. executing resolve no. 1");
         try {
             final ApiClient client = getApiClient();
             ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, namespace, pattern)).getJSON());          
             return builder.build();
         }
         catch (IOException | ApiException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         } 
     }
@@ -203,7 +200,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response getCommands(@DefaultValue("") @QueryParam("user") @Parameter(description = "The user that submitted the command action") String user) {
-        System.out.println("JUNIAE.. executing getCommands");
         try {
             final ApiClient client = getApiClient();
             
@@ -229,7 +225,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(response.getJSON()).build();
         }
         catch (IOException | ApiException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         } 
     }
@@ -245,7 +240,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response deleteCommand(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("job-name") @Parameter(description = "The name of the command action job") String jobName) {
-        System.out.println("JUNIAE.. executing deleteCommand");
         try {
             final ApiClient client = getApiClient();
             
@@ -265,7 +259,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (JsonSyntaxException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             final Throwable cause = e.getCause();
             if (cause instanceof IllegalStateException) {
                 final IllegalStateException _cause = (IllegalStateException) e.getCause();
@@ -281,7 +274,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
         catch (IOException | ApiException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         } 
     }
@@ -300,7 +292,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response getActionMap(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
-        System.out.println("JUNIAE.. executing getActionMap");
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, namespace);
@@ -315,7 +306,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(map.toString()).build();
         }
         catch (IOException | ApiException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -323,21 +313,14 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private String resolve(ApiClient client, String name, String kind, String namespace, String pattern) throws ApiException {
         final JsonObject resource = getResource(client, name, kind, namespace);
         // Add a 'kind' property to the resource if it is missing.
-        System.out.println("JUNIAE.. executing resolve no. 2");
         if (resource.get(KIND_PROPERTY_NAME) == null) {
             resource.addProperty(KIND_PROPERTY_NAME, kind);
         }
         final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
-        try {
-            return context.resolve(pattern).getValue();
-        } catch (ValidationException e){
-            System.out.println("JUNIAE.. caught ValidationException " + e.toString());
-            throw new ApiException (207, e.toString());
-        }
+        return context.resolve(pattern).getValue();
     }
     
     private Response executeCommand(String jsonstr, String name, String kind, String namespace, String commandName, String appName, String appNamespace, String user) {
-        System.out.println("JUNIAE.. executing executeCommand no.2");
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, namespace);
@@ -432,14 +415,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(response.toString()).build();
         }
         catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException e) {
-            System.out.println("JUNIAE.. catching exception " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         } 
     }
     
     private void processUserInput(String jsonstr, JsonObject action, ResolutionContext context) throws JsonSyntaxException, 
         ValidationException, KAppNavException {
-        System.out.println("JUNIAE.. executing processUserInput");
         final JsonElement requiresInputProp = action.get(REQUIRES_INPUT_PROPERTY_NAME);
         if (requiresInputProp != null && requiresInputProp.isJsonPrimitive()) {
             final String requiresInput = requiresInputProp.getAsString();
@@ -471,7 +452,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
       
     // REVISIT: Should re-think how we set this for user provided command actions.
     private void setSecurityContextAndServiceAccountName(ApiClient client, V1PodSpec spec) {
-        System.out.println("JUNIAE.. executing setSecurityContextAndServiceAccountName");
         final V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
         podSecurityContext.setRunAsNonRoot(true);
         podSecurityContext.setRunAsUser(1001L);
@@ -484,7 +464,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     }
     
     private Map<String,String> createJobAnnotations(String text) {
-        System.out.println("JUNIAE.. executing createJobAnnotations");
         if (text != null && !text.isEmpty()) {
             return Collections.singletonMap(KAPPNAV_JOB_ACTION_TEXT, text);
         }
@@ -493,7 +472,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     private Map<String,String> createJobLabels(ApiClient client, JsonObject resource, String name, String kind, 
             String namespace, String appName, String appNamespace, String actionName, String userId) {
-        System.out.println("JUNIAE.. executing createJobLabels");
         final Map<String,String> labels = new HashMap<>();
         labels.put(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
         labels.put(KAPPNAV_JOB_ACTION_NAME, actionName);
@@ -524,7 +502,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     }
     
     private JsonObject getResource(ApiClient client, String name, String kind, String namespace) throws ApiException {
-        System.out.println("JUNIAE.. executing getResource");
         if (registry == null) {
             // Initialize the registry here if CDI failed to do it.
             registry = new ComponentInfoRegistry(client);
@@ -536,7 +513,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     static final class ActionSubstitutionResolverResponse {
         private final JsonObject o;
         public ActionSubstitutionResolverResponse(String resolvedAction) {
-            System.out.println("JUNIAE.. executing ActionSubstitutionResolverResponse is " + resolvedAction);
             o = new JsonObject();
             o.addProperty(ACTION_PROPERTY_NAME, resolvedAction);
         }
@@ -553,16 +529,13 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         //   commands: [ {...}, {...}, ... ]
         // }
         public CommandsResponse() {
-            System.out.println("JUNIAE.. executing CommandsResponse");
             o = new JsonObject();
             o.add(COMMANDS_PROPERTY_NAME, commands = new JsonArray());
         }
         public void add(final JsonObject command) {
-            System.out.println("JUNIAE.. executing add");
             commands.add(command);
         }
         public String getJSON() {
-            System.out.println("JUNIAE.. executing getJSON");
             return o.toString();
         }
     }
