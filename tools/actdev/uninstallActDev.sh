@@ -27,9 +27,9 @@ fi
 
 # make sure user login to the kubernetes cluster already
 if [ x$kubeEnv = x"minikube" ]; then
-    $(kubectl get nodes)
+    nodes=$(kubectl get nodes)
 else
-    $(oc get nodes)
+    nodes=$(oc get nodes)
 fi
 if [ $? -ne 0 ]; then
     echo "Error: you are not configured to access any kubernetes cluster."
