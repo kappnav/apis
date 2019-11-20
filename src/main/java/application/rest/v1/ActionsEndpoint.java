@@ -27,10 +27,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.CookieParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -160,7 +160,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response executeApplicationCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @HeaderParam("x-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {        
         return executeCommand(jsonstr, name, APPLICATION_KIND, namespace, commandName, null, null, user);
     }
     
@@ -185,7 +185,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @PathParam("component-kind") @Parameter(description = "The Kubernetes resource kind for the component") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the component") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @HeaderParam("x-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
         return executeCommand(jsonstr, name, kind, namespace, commandName, appName, appNamespace, user);
     }
     
