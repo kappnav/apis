@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -40,8 +42,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import application.rest.v1.configmaps.ConfigMapProcessor;
+import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
@@ -52,7 +56,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
     private static final String COMPONENTS_PROPERTY_NAME = "components";
     private static final String COMPONENT_PROPERTY_NAME = "component";
     private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
-    
+    private static final String SECTION_MAP_PROPERTY_NAME = "section-map";
     private static final String KIND_PROPERTY_NAME = "kind";
     
     @Inject
@@ -62,8 +66,8 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}")
     @Operation(
-            summary = "Retrieve component objects and action maps for an application.",
-            description = "Returns a JSON structure of all component objects and their action maps for the specified application."
+            summary = "Retrieve component objects and action and section maps for an application.",
+            description = "Returns a JSON structure of all component objects and their action and section maps for the specified application."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
@@ -120,17 +124,19 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
     
     private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, List<JsonObject> components) {
         final ConfigMapProcessor processor = new ConfigMapProcessor(componentKind.kind);
+        final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(componentKind.kind);
         components.forEach(v -> {
             // Add 'kind' property to components that are missing it.
             if (v.get(KIND_PROPERTY_NAME) == null) {
                 v.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
-            }      
-            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION));
+            }   
+            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
         });
     }
 
     private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, List<JsonObject> components, String appNamespace, String appName) {
         final ConfigMapProcessor processor = new ConfigMapProcessor(componentKind.kind);
+        final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(componentKind.kind);
         components.forEach(v -> {
             // Add 'kind' property to components that are missing it.
             if (v.get(KIND_PROPERTY_NAME) == null) {
@@ -140,8 +146,8 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             // filter out recursive app from component list
             if (!(componentKind.kind.equals("Application") &&
                    getComponentName(v).equals(appName) &&
-                   getComponentNamespace(v).equals(appNamespace))) {                   
-                response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION));
+                   getComponentNamespace(v).equals(appNamespace))) {                                       
+                response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
             }
         });
     }    
@@ -165,26 +171,30 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
         }
         return newNamespaces;
     }
-    
+   
+   
     static final class ComponentResponse {
         private final JsonObject o;
         private final JsonArray components;
         // Constructs:
         // {
-        //   components: [ { component: {...}, action-map: {...} }, ... ]
-        // } 
+        //   components: [ { component: {...}, action-map: {...}, section-map: {...} } ]
+        // }
         public ComponentResponse() {
             o = new JsonObject();
             o.add(COMPONENTS_PROPERTY_NAME, components = new JsonArray());
         }
-        public void add(final JsonObject component, final JsonObject actionMap) {
+        public void add(final JsonObject component, final JsonObject actionMap, final JsonObject sectionMap) {
             final JsonObject tuple = new JsonObject();
             tuple.add(COMPONENT_PROPERTY_NAME, component != null ? component : new JsonObject());
             tuple.add(ACTION_MAP_PROPERTY_NAME, actionMap != null ? actionMap : new JsonObject());
+            tuple.add(SECTION_MAP_PROPERTY_NAME, sectionMap != null ? sectionMap : new JsonObject()); 
             components.add(tuple);
         }
         public String getJSON() {
             return o.toString();
         }
     }
+   
+        
 }

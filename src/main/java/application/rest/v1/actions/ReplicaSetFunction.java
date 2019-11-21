@@ -29,7 +29,7 @@ import io.kubernetes.client.ApiException;
 
 // replicaset() or replicaset(<deployment-namespace>,<deployment-name>)
 // Returns the replica set name for the specified deployment.
-// Return value structure is: { "ReplicaSet" : "name"}
+// Return value structure is: {"name"}
 public class ReplicaSetFunction implements Function {
       
     private static final String DEPLOYMENT_KIND = "Deployment";
@@ -84,45 +84,19 @@ public class ReplicaSetFunction implements Function {
             try {
                 Object o = registry.listClusterObject(client, REPLICA_SET_KIND, null, labelSelector, null, null);
                 List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, o);                
-                ReplicaSetResult result = new ReplicaSetResult();
-                //loop over each replica set
-                items.forEach(v -> {
-                    JsonElement element = v.get(METADATA_PROPERTY_NAME);
-                    if (element != null && element.isJsonObject()) {
-                        JsonObject metadata = element.getAsJsonObject();   
-                        //get replicaset name  
-                        JsonElement rsName  = metadata.get("name");
-                        if (rsName!= null && rsName.isJsonPrimitive()) {
-                            result.add(rsName.getAsString());
-                        }                                
-                    }
-                });                  
-                return result.getJSON();
+                // only one replicaSet per deployment
+                JsonElement element = items.get(0).get(METADATA_PROPERTY_NAME);
+                if (element != null && element.isJsonObject()) {
+                    JsonObject metadata = element.getAsJsonObject();   
+                    //get replicaset name  
+                    JsonElement rsName  = metadata.get("name");
+                    if (rsName!= null && rsName.isJsonPrimitive()) {
+                        return rsName.getAsString();
+                    }                               
+                }               
             }
             catch (ApiException e) {}
         }
         return null;
     }
-
-    
-
-
-    static final class ReplicaSetResult {
-        private final JsonObject o;    
-        // Constructs:
-        // {
-        //   ReplicaSet: name 
-        // } 
-        public ReplicaSetResult() {
-            o = new JsonObject();          
-        }
-        
-        public void add(final String name) {             
-            o.addProperty(REPLICA_SET_PROPERTY_NAME, name);            
-        }
-
-        public String getJSON() {
-            return o.toString();
-        }
-    }    
 }

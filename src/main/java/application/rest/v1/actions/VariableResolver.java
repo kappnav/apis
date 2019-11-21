@@ -50,6 +50,10 @@ public class VariableResolver implements Resolver {
                 // Cache the resolved value.
                 context.setResolvedVariable(suffix, value);
                 return value;
+            } else {
+                value="undefined";
+                context.setResolvedVariable(suffix, value);
+                return value;
             }
         }
         return null;
