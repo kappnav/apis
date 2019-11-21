@@ -85,7 +85,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private static final String KIND_PROPERTY_NAME = "kind";
     
     private static final String COMMANDS_PROPERTY_NAME = "commands";
-    private static final String URL_ACTIONS_PROPERTY_NAME = "url-actions";
+    private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
     
     private static final String IMAGE_PROPERTY_NAME = "image";
     private static final String CMD_PATTERN_PROPERTY_NAME = "cmd-pattern";
@@ -546,7 +546,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             commands.add(command);
         }
         public void addActions(final JsonObject actions) { 
-            o.add(URL_ACTIONS_PROPERTY_NAME, actions.get(URL_ACTIONS_PROPERTY_NAME)); 
+            o.add(ACTION_MAP_PROPERTY_NAME, actions); 
         }
         public String getJSON() {
             return o.toString();
