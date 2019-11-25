@@ -109,7 +109,6 @@ public abstract class KAppNavEndpoint {
     }
 
     public static List<JsonObject> getItemsAsList(ApiClient client, Object resources) {
-
         final List<JsonObject> result = new ArrayList<>();
         final JsonElement element = client.getJSON().getGson().toJsonTree(resources);
 
@@ -129,9 +128,7 @@ public abstract class KAppNavEndpoint {
     }
 
     public static List<JsonObject> getItemAsList(ApiClient client, Object resource) {
-
         final JsonElement element = client.getJSON().getGson().toJsonTree(resource);
-
         if (element != null && element.isJsonObject()) {
             return Collections.singletonList(element.getAsJsonObject());
         }
@@ -139,9 +136,7 @@ public abstract class KAppNavEndpoint {
     }
     
     public static JsonObject getItemAsObject(ApiClient client, Object resource) {
-        
         final JsonElement element = client.getJSON().getGson().toJsonTree(resource);
-        
         if (element != null && element.isJsonObject()) {
             return element.getAsJsonObject();
         }
