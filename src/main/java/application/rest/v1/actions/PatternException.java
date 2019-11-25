@@ -16,18 +16,11 @@
 
 package application.rest.v1.actions;
 
-// ${builtin.<builtin-spec>}
-public class BuiltinResolver implements Resolver {
+public class PatternException extends RuntimeException {
     
-    private static final String MAP_NAME = "builtin";
+    private static final long serialVersionUID = 5174251170488575234L;
     
-    @Override
-    public String getName() {
-        return MAP_NAME;
-    }
-    
-    @Override
-    public String resolve(ResolutionContext context, String suffix) throws PatternException {
-        return context.getConfigMapDataField(MAP_NAME, suffix);
+    public PatternException(String message) {
+        super(message);
     }
 }

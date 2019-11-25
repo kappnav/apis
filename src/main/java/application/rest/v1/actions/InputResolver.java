@@ -26,7 +26,7 @@ public class InputResolver implements Resolver {
     }
 
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         return context.getUserInputValue(suffix);
     }
 }

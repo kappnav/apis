@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.System;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -321,6 +322,9 @@ public final class ResolutionContext {
             if (e != null && e.isJsonPrimitive()) {
                 return e.getAsString();
             }
+            else {
+                throw new PatternException(type + " " + name + " is not found.");
+            }
         }
         return null;
     }
@@ -375,6 +379,7 @@ public final class ResolutionContext {
             }
         }
         catch (ApiException e) {}
+
         // No map or no data section. Store null in the local cache.
         kappnavNSMapCache.put(mapName, null);
         return null;
@@ -389,8 +394,7 @@ public final class ResolutionContext {
     }
     
     // snippet :: "function xyz(a,b,c) {...}"
-    public String invokeSnippet(String snippet, List<String> parameters) {
-        
+    public String invokeSnippet(String snippet, List<String> parameters) throws ValidationException {
         // Determine the function name by inspecting the snippet.
         String functionName = null;
         int start = snippet.indexOf(JAVA_SCRIPT_FUNCTION_PREFIX);
@@ -402,7 +406,8 @@ public final class ResolutionContext {
         }
         // No function found in the snippet.
         if (functionName == null) {
-            return null;
+            // ISSUE7
+            throw new PatternException("No function found in the snippet");
         }
         
         // Invoke the snippet using the built-in JavaScript engine.
@@ -414,13 +419,18 @@ public final class ResolutionContext {
             Object o = inv.invokeFunction(functionName, (Object[]) parameters.toArray());
             if (o != null) {
                 return o.toString();
-            }
+            } 
         }
-        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {}
+        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
+            // ISSUE7
+            // can't add the snippet as it will show the whole snippet functions which is so big 
+            // so only show the function name to show which function that has issue
+            throw new PatternException("Problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
+        }
         return null;
     }
     
-    public ResolvedValue resolve(String pattern) {
+    public ResolvedValue resolve(String pattern) throws PatternException {
         final StringBuilder result = new StringBuilder();
         final PatternTokenizer tokenizer = new PatternTokenizer(pattern);
         final AtomicBoolean isFullyResolved = new AtomicBoolean(true);
@@ -445,13 +455,18 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
-                            isFullyResolved.set(false);
-                            result.append(t.toString());
+                            // work around so the view kibana/grafana log won't break and still will showed the 
+                            // git hub documentation until the host is defined then this can be removed
+                            if (suffix.indexOf("jsonpath=${snippet.host()}") > 0) {
+                                isFullyResolved.set(false);
+                                result.append(t.toString());
+                            } else {
+                                throw new PatternException("Pattern " + t.toString() + " can not be resolved.");
+                            }
                         }
                     }
                     else {
-                        isFullyResolved.set(false);
-                        result.append(t.toString());
+                        throw new PatternException("Can not find the resolver for " + pattern);
                     }
                 }
                 else {

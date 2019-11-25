@@ -18,6 +18,7 @@ package application.rest.v1.actions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.System;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 
@@ -31,7 +32,7 @@ public class SnippetResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String snippetName = tokenizer.getName();
         if (snippetName != null) {
@@ -39,7 +40,7 @@ public class SnippetResolver implements Resolver {
             final String snippet = context.getSnippet(snippetName);
             if (snippet == null) {
                 // No snippet was found in the action config map.
-                return null;
+                throw new PatternException("Snippet " + snippetName + " is not found in the action config map");
             }
             
             // Resolve parameters.
@@ -53,13 +54,11 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    return null;
+                    throw new PatternException("One or more of the script parameters can not be resolved");
                 }
-            }
-            
-            // Invoke the snippet.
-            return context.invokeSnippet(snippet, parameters);
+            }           
+            context.invokeSnippet(snippet, parameters);
         }
-        return null;
+        throw new PatternException("Can not resolve " + suffix + " because snippet name is null");
     }
 }

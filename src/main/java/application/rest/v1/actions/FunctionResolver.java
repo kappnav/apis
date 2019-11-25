@@ -49,7 +49,7 @@ public final class FunctionResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String functionName = tokenizer.getName();
         if (functionName != null) {
@@ -57,7 +57,7 @@ public final class FunctionResolver implements Resolver {
             final Function function = functions.get(functionName);
             if (function == null || !function.allowedParameterCount(tokenizer.getParameterCount())) {
                 // No matching function was found in the map.
-                return null;
+                throw new PatternException("Can not resolve " + suffix + " because no matching function found in the map");
             }
             
             // Resolve parameters.
@@ -69,13 +69,13 @@ public final class FunctionResolver implements Resolver {
                 }
                 // One of the function parameters couldn't be resolved.
                 else {
-                    return null;
+                    throw new PatternException("Can not resolve " + suffix + " because one of the function parameter can not be resolved");
                 }
             }
             
             // Invoke the function.
             return function.invoke(context, parameters);
         }
-        return null;
+        throw new PatternException("Can not resolve " + suffix + " because function name is null");
     }
 }
