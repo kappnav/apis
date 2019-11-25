@@ -59,6 +59,7 @@ public class SnippetResolver implements Resolver {
             }           
             context.invokeSnippet(snippet, parameters);
         }
-        throw new PatternException("Can not resolve " + suffix + " because snippet name is null");
+        // Can't throw exception here as it will break UI actions drop down menu link
+        return null;
     }
 }
