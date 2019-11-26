@@ -455,6 +455,10 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
+                            isFullyResolved.set(false);
+                            result.append(t.toString());
+                            // JUNI
+                            /* Doing this will break UI so comment it out for now
                             // work around so the view kibana/grafana log won't break and still will showed the 
                             // git hub documentation until the host is defined then this can be removed
                             if (suffix.indexOf("jsonpath=${snippet.host()}") > 0) {
@@ -463,6 +467,7 @@ public final class ResolutionContext {
                             } else {
                                 throw new PatternException("Pattern " + t.toString() + " can not be resolved.");
                             }
+                            */
                         }
                     }
                     else {

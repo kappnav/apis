@@ -54,11 +54,15 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    throw new PatternException("One or more of the script parameters can not be resolved");
+                    return null;
+                    // JUNI
+                    // Can't throw here as it will break UI on view kibana log
+                    //throw new PatternException("One or more of the script parameters can not be resolved");
                 }
             }           
             context.invokeSnippet(snippet, parameters);
         }
+        // JUNI
         // Can't throw exception here as it will break UI actions drop down menu link
         return null;
     }

@@ -69,7 +69,8 @@ public final class FunctionResolver implements Resolver {
                 }
                 // One of the function parameters couldn't be resolved.
                 else {
-                    throw new PatternException("Can not resolve " + suffix + " because one of the function parameter can not be resolved");
+                    // if throw exception here breaking UI action menu view kibana log link
+                    return null;
                 }
             }
             
