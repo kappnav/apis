@@ -33,7 +33,8 @@ public final class ResourceResolver implements Resolver {
         final JSONPath path = parser.parse(suffix);
         if (path != null) {
             return path.resolveLeaf(context.getResource());
+        } else {
+            throw new PatternException("Cannot resolve resource " + suffix);
         }
-        throw new PatternException("Can not resolve " + suffix + " because path is null.");
     }
 }

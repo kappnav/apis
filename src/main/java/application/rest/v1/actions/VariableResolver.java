@@ -29,12 +29,11 @@ public class VariableResolver implements Resolver {
 
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
-        try {
         // Immediately return the value if the variable has been previously resolved.
         String value = context.getResolvedVariable(suffix);
         if (value != null) {
             return value;
-        }
+        } 
 
         // Guard against cycles in variable definitions.
         // (e.g. var x = "${var.y}", var y = "${var.z}", var z = "${var.x}").
@@ -59,9 +58,6 @@ public class VariableResolver implements Resolver {
                 return value;
             }
         }
-    } catch (PatternException e) {
-        throw e;
-    }
     throw new PatternException("Can not resolve " + suffix + " because pattern is null");
     }
 }

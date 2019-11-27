@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.System;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -367,6 +366,7 @@ public final class ResolutionContext {
             }
             return null;
         }
+
         try {
             CoreV1Api api = new CoreV1Api();
             api.setApiClient(client);
@@ -375,7 +375,12 @@ public final class ResolutionContext {
             if (data != null) {
                 // Store the map in the local cache.
                 kappnavNSMapCache.put(mapName, map);
-                return data.get(mapField);
+                String result = data.get(mapField);
+                if (result == null) {
+                    throw new PatternException("Cannot get ConfigMap data for " + mapField);
+                } else {
+                    return result;
+                }
             }
         }
         catch (ApiException e) {}
@@ -406,10 +411,8 @@ public final class ResolutionContext {
         }
         // No function found in the snippet.
         if (functionName == null) {
-            // ISSUE7
             throw new PatternException("No function found in the snippet");
         }
-        
         // Invoke the snippet using the built-in JavaScript engine.
         ScriptEngineManager sce = new ScriptEngineManager();
         ScriptEngine se = sce.getEngineByName("JavaScript");
@@ -419,15 +422,15 @@ public final class ResolutionContext {
             Object o = inv.invokeFunction(functionName, (Object[]) parameters.toArray());
             if (o != null) {
                 return o.toString();
-            } 
+            } else {
+                throw new PatternException("Cannot invoke snippet " + snippet);
+            }
         }
         catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
-            // ISSUE7
             // can't add the snippet as it will show the whole snippet functions which is so big 
             // so only show the function name to show which function that has issue
             throw new PatternException("Problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
         }
-        return null;
     }
     
     public ResolvedValue resolve(String pattern) throws PatternException {
@@ -455,19 +458,13 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
-                            isFullyResolved.set(false);
-                            result.append(t.toString());
-                            // JUNI
-                            /* Doing this will break UI so comment it out for now
-                            // work around so the view kibana/grafana log won't break and still will showed the 
-                            // git hub documentation until the host is defined then this can be removed
-                            if (suffix.indexOf("jsonpath=${snippet.host()}") > 0) {
+                            // need to do this otherwise it will break ${var.kibanahost}
+                            if (t.toString().indexOf("snippet.host") < 0) {
+                                throw new PatternException("Cannot resolve " + suffix);
+                            } else {
                                 isFullyResolved.set(false);
                                 result.append(t.toString());
-                            } else {
-                                throw new PatternException("Pattern " + t.toString() + " can not be resolved.");
                             }
-                            */
                         }
                     }
                     else {
