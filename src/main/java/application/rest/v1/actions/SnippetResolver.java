@@ -18,7 +18,6 @@ package application.rest.v1.actions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.System;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 
@@ -35,6 +34,7 @@ public class SnippetResolver implements Resolver {
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String snippetName = tokenizer.getName();
+        String result = null;
         if (snippetName != null) {
             // Resolve snippet.
             final String snippet = context.getSnippet(snippetName);
@@ -54,16 +54,13 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    return null;
-                    // JUNI
-                    // Can't throw here as it will break UI on view kibana log
-                    //throw new PatternException("One or more of the script parameters can not be resolved");
+                    throw new PatternException("One or more of the script parameters can not be resolved");
                 }
             }           
-            context.invokeSnippet(snippet, parameters);
+            result = context.invokeSnippet(snippet, parameters);
+        } else {
+            throw new PatternException("Cannot resolve snippet because snippet name is null.");
         }
-        // JUNI
-        // Can't throw exception here as it will break UI actions drop down menu link
-        return null;
+        return result;
     }
 }
