@@ -69,7 +69,6 @@ public final class FunctionResolver implements Resolver {
                 }
                 // One of the function parameters couldn't be resolved.
                 else {
-                    // if throw exception here breaking UI action menu view kibana log link
                     return null;
                 }
             }
