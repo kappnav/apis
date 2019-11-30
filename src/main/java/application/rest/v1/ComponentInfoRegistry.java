@@ -17,6 +17,7 @@
 package application.rest.v1;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,36 +51,64 @@ public class ComponentInfoRegistry {
     private static final Map<String,ComponentInfo> BUILT_IN_COMPONENT_KIND_MAP;
     static {
         BUILT_IN_COMPONENT_KIND_MAP = new HashMap<>();
-        BUILT_IN_COMPONENT_KIND_MAP.put("ConfigMap", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/ConfigMap", 
                 new ComponentInfo("ConfigMap", "", "v1", "configmaps", true, new ConfigMapResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Endpoints", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Endpoints", 
                 new ComponentInfo("Endpoints", "", "v1", "endpoints", true, new EndpointsResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Event", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Event", 
                 new ComponentInfo("Event", "", "v1", "events", true, new EventResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("LimitRange", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/LimitRange", 
                 new ComponentInfo("LimitRange", "", "v1", "limitranges", true, new LimitRangeResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Namespace", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Namespace", 
                 new ComponentInfo("Namespace", "", "v1", "namespaces", false, new NamespaceResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Node", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Node", 
                 new ComponentInfo("Node", "", "v1", "nodes", false, new NodeResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("PersistentVolume", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/PersistentVolume", 
                 new ComponentInfo("PersistentVolume", "", "v1", "persistentvolumes", false, new PersistentVolumeResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("PersistentVolumeClaim", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/PersistentVolumeClaim", 
                 new ComponentInfo("PersistentVolumeClaim", "", "v1", "persistentvolumeclaims", true, new PersistentVolumeClaimResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Pod", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Pod", 
                 new ComponentInfo("Pod", "", "v1", "pods", true, new PodResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("PodTemplate", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/PodTemplate", 
                 new ComponentInfo("PodTemplate", "", "v1", "podtemplates", true, new PodTemplateResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("ReplicationController", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/ReplicationController", 
                 new ComponentInfo("ReplicationController", "", "v1", "replicationcontrollers", true, new ReplicationControllerResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("ResourceQuota", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/ResourceQuota", 
                 new ComponentInfo("ResourceQuota", "", "v1", "resourcequotas", true, new ResourceQuotaResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Secret", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Secret", 
                 new ComponentInfo("Secret", "", "v1", "secrets", true, new SecretResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("Service", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/Service", 
                 new ComponentInfo("Service", "", "v1", "services", true, new ServiceResolver()));
-        BUILT_IN_COMPONENT_KIND_MAP.put("ServiceAccount", 
+        BUILT_IN_COMPONENT_KIND_MAP.put("/v1/ServiceAccount", 
                 new ComponentInfo("ServiceAccount", "", "v1", "serviceaccounts", true, new ServiceAccountResolver()));
+    }
+
+    public static final Map<String, String> CORE_KIND_TO_API_VERSION_MAP;
+    static {
+        CORE_KIND_TO_API_VERSION_MAP = new ConcurrentHashMap<String, String>();
+        CORE_KIND_TO_API_VERSION_MAP.put("Service", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Deployment", "apps/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Route", "route.openshift.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("ConfigMap", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Secret", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Volume", "core/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("PersistentVolumeClaim", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("CustomResourceDefinition", "apiextensions.k8s.io/v1beta1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Application", "app.k8s.io/v1beta1");
+        CORE_KIND_TO_API_VERSION_MAP.put("StatefulSet", "apps/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("ReplicaSet", "apps/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Ingress", "networking.k8s.io/v1beta1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Job", "batch/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("ServiceAccount", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("ClusterRole", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("ClusterRoleBinding", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Role", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("RoleBinding", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("StorageClass", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Endpoint", "rbac.authorization.k8s.io/v1");
+        
+        // Initialize extensions to KAppNav
+        KAppNavExtension.init();
     }
 
     private final AtomicReference<Map<String,ComponentInfo>> componentKindMap;
@@ -93,34 +122,34 @@ public class ComponentInfoRegistry {
         componentKindMap = new AtomicReference<>(map);
     }
     
-    public boolean isNamespaced(ApiClient client, String componentKind) throws ApiException {
-        ComponentInfo info = getComponentInfo(client, componentKind);
+    public boolean isNamespaced(ApiClient client, String componentKind, String apiVersion) throws ApiException {
+        ComponentInfo info = getComponentInfo(client, componentKind, apiVersion);
         if (info != null) {
             return info.namespaced;
         }
         throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
-    public Object listClusterObject(ApiClient client, String componentKind, 
+    public Object listClusterObject(ApiClient client, String componentKind, String apiVersion, 
             String pretty, String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-        ComponentInfo info = getComponentInfo(client, componentKind);
+        ComponentInfo info = getComponentInfo(client, componentKind, apiVersion);
         if (info != null) {
             return info.resolver.listClusterObject(client, info, pretty, labelSelector, resourceVersion, watch);
         }
         throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
-    public Object listNamespacedObject(ApiClient client, String componentKind, String namespace,
+    public Object listNamespacedObject(ApiClient client, String componentKind, String apiVersion, String namespace,
             String pretty, String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-        ComponentInfo info = getComponentInfo(client, componentKind);
+        ComponentInfo info = getComponentInfo(client, componentKind, apiVersion);
         if (info != null) {
             return info.resolver.listNamespacedObject(client, info, namespace, pretty, labelSelector, resourceVersion, watch);
         }
         throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
-    public Object getNamespacedObject(ApiClient client, String componentKind, String namespace, String name) throws ApiException {
-        ComponentInfo info = getComponentInfo(client, componentKind);
+    public Object getNamespacedObject(ApiClient client, String componentKind, String apiVersion, String namespace, String name) throws ApiException {
+        ComponentInfo info = getComponentInfo(client, componentKind, apiVersion);
         if (info != null) {
             try {
                 Object result = info.resolver.getNamespacedObject(client, info, namespace, name);
@@ -132,10 +161,22 @@ public class ComponentInfoRegistry {
         throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
     
-    private ComponentInfo getComponentInfo(ApiClient client, String componentKind) {
+    private ComponentInfo getComponentInfo(ApiClient client, String componentKind, String apiVersionParm) {
         Map<String,ComponentInfo> map = componentKindMap.get();
+        String apiVersion = apiVersionParm;
+        if (apiVersion == null || apiVersion.length() == 0) {
+            apiVersion = CORE_KIND_TO_API_VERSION_MAP.get(componentKind);
+            if (apiVersion == null) {
+                System.out.println("getComponentInfo no apiVersion and not core kind: " + componentKind);
+                return null;
+            }
+
+        }
+        String key = apiVersion + "/" + componentKind;
+        System.out.println("getComponentInfo using key: " + key);
         ComponentInfo info = map.get(componentKind);
         if (info != null) {
+            System.out.println("getComponentInfo using key: " + key + " returning ComponentInfo 1: " + info);
             return info;
         }
         // Cache miss. A new CRD may have been loaded recently so
@@ -146,9 +187,14 @@ public class ComponentInfoRegistry {
         try {
             map = processGroupList(client);
             componentKindMap.set(map);
-            return map.get(componentKind);
+            info = map.get(key);
+            System.out.println("getComponentInfo using key: " + key + " returning ComponentInfo 2: " + info);
+            return info;
         }
-        catch (ApiException e) {}
+        catch (ApiException e) {
+            System.out.println("getComponentInfo exception using key: " + key + "\nException: " + e);
+        }
+        System.out.println("getComponentInfo no resource info found using key: " + key);
         return null;
     }
     
@@ -206,11 +252,16 @@ public class ComponentInfoRegistry {
                         if (v != null && v.isJsonObject()) {
                             JsonObject resource = v.getAsJsonObject();
                             String kind = resource.get("kind").getAsString();
-                            if (!map.containsKey(kind)) {
+                            String key = (group != null ? group : "") + "/" + version + "/" + kind;
+                            System.out.println("processGroupVersion ComponentInfo map key: " + key);
+                            if (!map.containsKey(key)) {
+                                System.out.println("processGroupVersion ComponentInfo key not found in map: " + key);
                                 String plural = resource.get("name").getAsString();
                                 if (!plural.contains("/")) {
                                     boolean namespaced = resource.get("namespaced").getAsBoolean();
-                                    map.put(kind, new ComponentInfo(kind, group, version, plural, namespaced));
+                                    ComponentInfo info = new ComponentInfo(kind, group, version, plural, namespaced);
+                                    System.out.println("processGroupVersion key: " + key + "  adding ComponentInfo to map: " + info);
+                                    map.put(key, new ComponentInfo(kind, group, version, plural, namespaced));
                                 }
                             }
                         }

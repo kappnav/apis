@@ -72,7 +72,7 @@ public class AppPodlistFunction implements Function {
             final String appName = parameters.get(1);
             try {
                 //get application namespaced object
-                Object o = registry.getNamespacedObject(client, APPLICATION_KIND, appNamespace, appName);
+                Object o = registry.getNamespacedObject(client, APPLICATION_KIND, "", appNamespace, appName);
                 resource = KAppNavEndpoint.getItemAsObject(client, o);                                   
             }
             catch (ApiException e) {
@@ -97,7 +97,7 @@ public class AppPodlistFunction implements Function {
                     final String alabelSelector = aSelector.toString();           
                     try {  
                         //retrieve deployment object from app with the labels matching 
-                        Object deplO = registry.listClusterObject(client, DEPLOYMENT_KIND, null, alabelSelector, null, null);
+                        Object deplO = registry.listClusterObject(client, DEPLOYMENT_KIND, "", null, alabelSelector, null, null);
                         List<JsonObject> deployments = KAppNavEndpoint.getItemsAsList(client, deplO); 
                         deployments.forEach(d -> {                   
                             Selector dSelector = Selector.getSelector(d);  
@@ -105,7 +105,7 @@ public class AppPodlistFunction implements Function {
                                 final String dlabelSelector = dSelector.toString();                              
                                 try {
                                     //retrieve pod object from deployment with the label matching
-                                    Object podO = registry.listClusterObject(client, POD_KIND, null, dlabelSelector, null, null);
+                                    Object podO = registry.listClusterObject(client, POD_KIND, "", null, dlabelSelector, null, null);
                                     List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, podO);
                                     items.forEach(p -> {
                                         JsonElement element = p.get(METADATA_PROPERTY_NAME);

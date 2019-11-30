@@ -101,15 +101,20 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             final String labelSelector = selector.toString();
             componentKinds.forEach(v -> {
                 try {
-                    if (!registry.isNamespaced(client, v.kind)) {
-                        Object o = registry.listClusterObject(client, v.kind, null, labelSelector, null, null);
+                    String apiVersion = "";
+                    if (v.group.indexOf("/") > -1) {
+                        apiVersion = v.group;
+                    }
+                    if (!registry.isNamespaced(client, v.kind, apiVersion)) {
+                        Object o = registry.listClusterObject(client, v.kind, apiVersion, null, labelSelector, null, null);
                         processComponents(client, response, v, getItemsAsList(client, o));
                     }
                     else {
                         // If the component kind is namespaced, query components for each of the specified namespaces.
+                        final String apiVersion1 = apiVersion;    // to avoid compiler error
                         namespaces.forEach(n -> {
                             try {
-                                Object o = registry.listNamespacedObject(client, v.kind, n, null, labelSelector, null, null);                          
+                                Object o = registry.listNamespacedObject(client, v.kind, apiVersion1, n, null, labelSelector, null, null);                          
                                 processComponents(client, response, v, getItemsAsList(client, o), appNamespace, appName);
                             }
                             catch (ApiException e) {}

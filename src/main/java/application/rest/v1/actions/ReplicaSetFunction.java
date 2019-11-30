@@ -69,7 +69,7 @@ public class ReplicaSetFunction implements Function {
             final String namespace = parameters.get(0);
             final String name = parameters.get(1);
             try {
-                Object o = registry.getNamespacedObject(client, DEPLOYMENT_KIND, namespace, name);
+                Object o = registry.getNamespacedObject(client, DEPLOYMENT_KIND, namespace, name, "");
                 resource = KAppNavEndpoint.getItemAsObject(client, o);
             }
             catch (ApiException e) {
@@ -82,7 +82,7 @@ public class ReplicaSetFunction implements Function {
         if (!selector.isEmpty()) {
             final String labelSelector = selector.toString();
             try {
-                Object o = registry.listClusterObject(client, REPLICA_SET_KIND, null, labelSelector, null, null);
+                Object o = registry.listClusterObject(client, REPLICA_SET_KIND, "", null, labelSelector, null, null);
                 List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, o);                
                 // only one replicaSet per deployment
                 JsonElement element = items.get(0).get(METADATA_PROPERTY_NAME);
