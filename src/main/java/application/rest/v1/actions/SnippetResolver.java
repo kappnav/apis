@@ -40,7 +40,7 @@ public class SnippetResolver implements Resolver {
             final String snippet = context.getSnippet(snippetName);
             if (snippet == null) {
                 // No snippet was found in the action config map.
-                throw new PatternException("Snippet " + snippetName + " is not found in the action config map");
+                throw new PatternException("snippet " + snippetName + " is not found in the action config map");
             }
             
             // Resolve parameters.
@@ -54,12 +54,12 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    throw new PatternException("One or more of the script parameters can not be resolved");
+                    throw new PatternException("one or more of the script parameters can not be resolved");
                 }
             }           
             result = context.invokeSnippet(snippet, parameters);
         } else {
-            throw new PatternException("Cannot resolve snippet because snippet name is null.");
+            throw new PatternException("can not resolve snippet because snippet name is null.");
         }
         return result;
     }

@@ -32,6 +32,6 @@ public final class GlobalResolver implements Resolver {
             final String mapField = suffix.substring(i + 1);
             return context.getConfigMapDataField(mapName, mapField);
         }
-        throw new PatternException("Cannot resolve " + suffix + " because syntax is incorrect: expected '#' not found.");
+        throw new PatternException("cannot resolve " + suffix + " because syntax is incorrect: expected '#' not found.");
     }
 }

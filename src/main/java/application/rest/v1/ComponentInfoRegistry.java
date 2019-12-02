@@ -98,7 +98,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.namespaced;
         }
-        throw new ApiException(207, "Resource kind " + componentKind + " is " + NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object listClusterObject(ApiClient client, String componentKind, 
@@ -107,7 +107,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.resolver.listClusterObject(client, info, pretty, labelSelector, resourceVersion, watch);
         }
-        throw new ApiException(207, "Resource kind " + componentKind + " is " + NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object listNamespacedObject(ApiClient client, String componentKind, String namespace,
@@ -116,7 +116,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.resolver.listNamespacedObject(client, info, namespace, pretty, labelSelector, resourceVersion, watch);
         }
-        throw new ApiException(207, "Resource kind " + componentKind + " is " + NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object getNamespacedObject(ApiClient client, String componentKind, String namespace, String name) throws ApiException {
@@ -129,7 +129,7 @@ public class ComponentInfoRegistry {
                 throw new ApiException(207, e.toString());
             }
         }
-        throw new ApiException(207, "Resource kind " + componentKind + " is " + NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
     
     private ComponentInfo getComponentInfo(ApiClient client, String componentKind) {
@@ -289,7 +289,7 @@ public class ComponentInfoRegistry {
                 return result;
             } catch (ApiException e) {
                 // kubernetes only give message "NOT_FOUND", so give more info to user what can be wrong either namespace or resource name
-                throw new ApiException(207, "Either namespace " + namespace + " or resource name " + name + " is " + NOT_FOUND);
+                throw new ApiException(207, "either namespace " + namespace + " or resource name " + name + " is " + NOT_FOUND);
             }
         }
     }

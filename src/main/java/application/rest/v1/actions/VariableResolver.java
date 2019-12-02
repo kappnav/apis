@@ -58,6 +58,6 @@ public class VariableResolver implements Resolver {
                 return value;
             }
         }
-    throw new PatternException("Can not resolve " + suffix + " because pattern is null");
+    throw new PatternException("can not resolve " + suffix + " because pattern is null");
     }
 }

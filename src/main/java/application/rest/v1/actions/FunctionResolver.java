@@ -57,7 +57,7 @@ public final class FunctionResolver implements Resolver {
             final Function function = functions.get(functionName);
             if (function == null || !function.allowedParameterCount(tokenizer.getParameterCount())) {
                 // No matching function was found in the map.
-                throw new PatternException("Can not resolve " + suffix + " because no matching function found in the map");
+                throw new PatternException("can not resolve " + suffix + " because no matching function found in the map");
             }
             
             // Resolve parameters.
@@ -76,6 +76,6 @@ public final class FunctionResolver implements Resolver {
             // Invoke the function.
             return function.invoke(context, parameters);
         }
-        throw new PatternException("Can not resolve " + suffix + " because function name is null");
+        throw new PatternException("can not resolve " + suffix + " because function name is null");
     }
 }
