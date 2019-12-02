@@ -57,6 +57,7 @@ import application.rest.v1.actions.CommandLineTokenizer;
 import application.rest.v1.actions.ResolutionContext;
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.actions.ValidationException;
+import application.rest.v1.actions.PatternException;
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -139,8 +140,15 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, namespace, pattern)).getJSON());          
             return builder.build();
         }
-        catch (IOException | ApiException e) {
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
+        catch (IOException | ApiException | PatternException e) {
+            String msg = null;
+            if (e instanceof PatternException) 
+                msg = "pattern-error: " + e.getMessage();
+            else if (e instanceof ApiException)    
+                msg = "input-error: " + e.getMessage(); 
+            else
+                msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: " + e.getMessage();
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
     
@@ -234,7 +242,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(response.getJSON()).build();
         }
         catch (IOException | ApiException e) {
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
+            String msg = null;          
+            if (e instanceof ApiException)    
+                msg = "input-error: " + e.getMessage(); 
+            else
+                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
     
@@ -250,8 +263,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response deleteCommand(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("job-name") @Parameter(description = "The name of the command action job") String jobName) {
         try {
-            final ApiClient client = getApiClient();
-            
+            final ApiClient client = getApiClient();            
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
             
@@ -259,7 +271,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
             JsonObject job = getItemAsObject(client, batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
             if (!s.matches(job)) {
-                throw new ApiException(404, CMD_NOT_FOUND);
+                String msg = "input-error: Job " + jobName + " is not found in command action.";
+                throw new ApiException(404, msg);
             }
             
             // Delete the specified job.
@@ -280,10 +293,16 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                     return Response.ok(getStatusMessageAsJSON("OK")).build();
                 }
             }
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
+            String msg = "syntax-error: " + e.getMessage();
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
         catch (IOException | ApiException e) {
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
+            String msg = null;           
+            if (e instanceof ApiException)    
+                msg = "input-error: " + e.getMessage(); 
+            else
+                msg = "internal-error: " + "An internal error occurred in deleting a command action job. error:" + e.getMessage(); 
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
     
@@ -301,10 +320,11 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response getActionMap(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
-        try {
+        try { 
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, namespace);
             final JsonObject map;
+                
             if (resource != null) {
                 ConfigMapProcessor processor = new ConfigMapProcessor(kind);
                 map = processor.getConfigMap(client, resource, ConfigMapProcessor.ConfigMapType.ACTION);
@@ -315,51 +335,77 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             return Response.ok(map.toString()).build();
         }
         catch (IOException | ApiException e) {
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
-        }
+            String msg = null;           
+            if (e instanceof ApiException)    
+                msg = "input-error: " + e.getMessage(); 
+            else    
+                msg = "internal-error: An internal error occurred in retrieving an action config map. error: " + e.getMessage();
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
+        }                  
     }
     
     private String resolve(ApiClient client, String name, String kind, String namespace, String pattern) throws ApiException {
-        final JsonObject resource = getResource(client, name, kind, namespace);
-        // Add a 'kind' property to the resource if it is missing.
-        if (resource.get(KIND_PROPERTY_NAME) == null) {
-            resource.addProperty(KIND_PROPERTY_NAME, kind);
-        }
-        final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
-        return context.resolve(pattern).getValue();
+        final JsonObject resource; 
+        final ResolvedValue resolvedValue;
+        try { 
+            resource = getResource(client, name, kind, namespace);      
+            // Add a 'kind' property to the resource if it is missing.
+            if (resource.get(KIND_PROPERTY_NAME) == null) {
+                resource.addProperty(KIND_PROPERTY_NAME, kind);
+            }           
+        
+            final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
+            resolvedValue = context.resolve(pattern);
+        } catch (ApiException e) {
+            String msg = e.getMessage();
+            throw new ApiException(404, msg);           
+        } catch (PatternException e) {
+            String msg = e.getMessage();
+            throw new ApiException(207, msg);
+        } 
+        return resolvedValue.getValue();     
     }
     
     private Response executeCommand(String jsonstr, String name, String kind, String namespace, String commandName, String appName, String appNamespace, String user) {
         try {
             final ApiClient client = getApiClient();
-            final JsonObject resource = getResource(client, name, kind, namespace);
+            final JsonObject resource;
+            try { 
+                resource = getResource(client, name, kind, namespace);
+            } catch (ApiException e) {
+                String msg = e.getMessage();
+                throw new ApiException (404, msg);
+            }
+            
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
             }
             final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
             
-            // Retrieve the command action from the config map.
-    
-            final JsonObject cmdAction = context.getCommandAction(commandName);     
+            // Retrieve the command action from the config map.   
+            final JsonObject cmdAction = context.getCommandAction(commandName);  
             if (cmdAction == null) {
-                throw new ApiException(404, CMD_NOT_FOUND);
+                String msg = "Command action " + commandName + " is not found in config map.";
+                throw new ApiException(404, msg);
             }
-            
+                        
             // Process user input if required.
             processUserInput(jsonstr, cmdAction, context);
             
             // Retrieve the image name.
             final JsonElement imageProp = cmdAction.get(IMAGE_PROPERTY_NAME);
             if (imageProp == null || !imageProp.isJsonPrimitive()) {
-                throw new ApiException(404, CMD_NOT_FOUND);
+                String msg = "Image was not specified in the command action.";
+                throw new ApiException(404, msg);
             }
             final String imageName = imageProp.getAsString();
             
             // Retrieve the command pattern.
             final JsonElement cmdPatternProp = cmdAction.get(CMD_PATTERN_PROPERTY_NAME);
             if (cmdPatternProp == null || !cmdPatternProp.isJsonPrimitive()) {
-                throw new ApiException(404, CMD_NOT_FOUND);
+                String msg = "cmd-pattern was not specified in the command action.";
+                throw new ApiException(404, msg);
             }
             final String cmdPattern = cmdPatternProp.getAsString();
             
@@ -372,7 +418,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             if (!resolvedValue.isFullyResolved()) {
                 // If the resolution failed we should stop here instead of generating a bad job.
                 // REVISIT: Message translation required.
-                throw new KAppNavException("An internal error occurred in the resolution of the command action pattern.");
+                String msg = "An internal error occurred in the resolution of the command action pattern" + cmdPattern;
+                throw new KAppNavException(msg);
             }
             final String resolvedPattern = resolvedValue.getValue();
             final CommandLineTokenizer tokenizer = new CommandLineTokenizer(resolvedPattern);
@@ -410,7 +457,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final Map<String,String> annotations = createJobAnnotations(text);
             if (annotations != null) {
                 meta.setAnnotations(annotations);
-            }
+            } 
             
             job.setMetadata(meta);
             final V1JobSpec jobSpec = new V1JobSpec();
@@ -424,8 +471,21 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, null));
             return Response.ok(response.toString()).build();
         }
-        catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException e) {
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
+        catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException | PatternException e) {
+            String msg = null;
+            if (e instanceof JsonSyntaxException)
+                msg = "syntax-error: ";
+            if (e instanceof ApiException)               
+                msg = "input-error: ";
+            if (e instanceof IOException || e instanceof KAppNavException)
+                msg = "internal-error: ";
+            if (e instanceof ValidationException) 
+                msg = "validation-error: ";
+            if (e instanceof PatternException) 
+                msg = "pattern-error: ";       
+            msg = msg + e.getMessage();     
+
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
     
@@ -445,7 +505,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                     }
                     else {
                         // REVISIT: Message translation required.
-                        throw new ValidationException("The input specified is in the wrong format. It is expected to be a map.");
+                        String msg = "The inputs " + jsonstr + " specified was in the wrong format. It is expected to be a map.";
+                        throw new ValidationException(msg);
                     }
                 }
                 else {
@@ -455,7 +516,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
             else {
                 // REVISIT: Message translation required.
-                throw new KAppNavException("An internal error occurred in the resolution of the field definitions for input \"" + requiresInput + "\".");
+                String msg = "An error occurred in the resolution of the field definitions for input \"" + requiresInput + "\"." ;
+                throw new KAppNavException(msg);
             }
         }
     }

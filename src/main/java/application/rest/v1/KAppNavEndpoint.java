@@ -41,6 +41,7 @@ import com.google.gson.JsonSyntaxException;
 import com.squareup.okhttp.ConnectionSpec;
 
 import application.rest.v1.actions.ValidationException;
+import application.rest.v1.actions.PatternException;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
@@ -419,28 +420,22 @@ public abstract class KAppNavEndpoint {
     
     private static String getStatusMessageAsJSON(int code, String msg) {
         final JsonObject o = new JsonObject();
-        if (code != 0) {
-            o.addProperty("status", code);
-            o.addProperty("message", msg);
-        }
-        else {
-            o.addProperty("status", msg);
-        }
+        o.addProperty("message", msg);       
         return o.toString();
     }
     
     private static String getValidationErrorMessageAsJSON(String msg, String fieldName) {
         final JsonObject o = new JsonObject();
-        o.addProperty("error", msg);
         if (fieldName != null) {
-            o.addProperty("field", fieldName);
+            msg = msg + " on field name: " + fieldName;
         }
+        o.addProperty("message", msg);     
         return o.toString();
     }
     
     private static String getErrorMessageAsJSON(String msg) {
         final JsonObject o = new JsonObject();
-        o.addProperty("error", msg);
+        o.addProperty("message", msg);
         return o.toString();
     }
 
