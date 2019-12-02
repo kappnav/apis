@@ -377,7 +377,7 @@ public final class ResolutionContext {
                 kappnavNSMapCache.put(mapName, map);
                 String result = data.get(mapField);
                 if (result == null) {
-                    throw new PatternException("Cannot get ConfigMap data for " + mapField);
+                    throw new PatternException("cannot get ConfigMap data for " + mapField);
                 } else {
                     return result;
                 }
@@ -411,7 +411,7 @@ public final class ResolutionContext {
         }
         // No function found in the snippet.
         if (functionName == null) {
-            throw new PatternException("No function found in the snippet");
+            throw new PatternException("no function found in the snippet");
         }
         // Invoke the snippet using the built-in JavaScript engine.
         ScriptEngineManager sce = new ScriptEngineManager();
@@ -423,13 +423,13 @@ public final class ResolutionContext {
             if (o != null) {
                 return o.toString();
             } else {
-                throw new PatternException("Cannot invoke snippet " + snippet);
+                throw new PatternException("cannot invoke snippet " + snippet);
             }
         }
         catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
             // can't add the snippet as it will show the whole snippet functions which is so big 
             // so only show the function name to show which function that has issue
-            throw new PatternException("Problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
+            throw new PatternException("problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
         }
     }
     
@@ -438,6 +438,19 @@ public final class ResolutionContext {
         final PatternTokenizer tokenizer = new PatternTokenizer(pattern);
         final AtomicBoolean isFullyResolved = new AtomicBoolean(true);
         tokenizer.forEach(t -> {
+            // First check if pattern contains all pattern chars ($, {, }) if not then can throw pattern exception
+            if ((t.toString().indexOf("$") != -1) || (t.toString().indexOf("{") != -1) || (t.toString().indexOf("}") != -1)) {
+                if (!((t.toString().indexOf("$") != -1) && (t.toString().indexOf("{") != -1) && (t.toString().indexOf("}") != -1))){
+                    throw new PatternException(pattern + " is not a pattern");
+                } else {
+                    // check if contains space
+                    if(t.toString().indexOf(" ") != -1) {
+                        throw new PatternException(pattern + " is not a pattern");
+                    }
+                }
+            
+            }
+
             // Add string literals directly to the result.
             if (!t.isPattern()) {
                 result.append(t.getDecodedValue());
@@ -460,7 +473,7 @@ public final class ResolutionContext {
                         else {
                             // need to do this otherwise it will break ${var.kibanahost}
                             if (t.toString().indexOf("snippet.host") < 0) {
-                                throw new PatternException("Cannot resolve " + suffix);
+                                throw new PatternException("cannot resolve " + suffix);
                             } else {
                                 isFullyResolved.set(false);
                                 result.append(t.toString());
@@ -468,7 +481,7 @@ public final class ResolutionContext {
                         }
                     }
                     else {
-                        throw new PatternException("Can not find the resolver for " + pattern);
+                        throw new PatternException("can not find the resolver for " + pattern);
                     }
                 }
                 else {
