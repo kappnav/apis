@@ -471,13 +471,7 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
-                            // need to do this otherwise it will break ${var.kibanahost}
-                            if (t.toString().indexOf("snippet.host") < 0) {
-                                throw new PatternException("cannot resolve " + suffix);
-                            } else {
-                                isFullyResolved.set(false);
-                                result.append(t.toString());
-                            }
+                            throw new PatternException("cannot resolve " + suffix);
                         }
                     }
                     else {

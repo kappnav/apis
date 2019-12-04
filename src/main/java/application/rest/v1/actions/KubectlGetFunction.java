@@ -37,7 +37,6 @@ public class KubectlGetFunction extends CommandFunction {
 
     @Override
     public String invoke(ResolutionContext context, List<String> parameters) {
-        
         final int length = parameters.size();
         final String[] params = parameters.toArray(new String[length]);
         
@@ -45,7 +44,14 @@ public class KubectlGetFunction extends CommandFunction {
         commandArgs[0] = KUBECTL;
         commandArgs[1] = GET;
         System.arraycopy(params, 0, commandArgs, 2, length);
-        
-        return invoke(context, commandArgs);
+        try {
+            String result = invoke(context, commandArgs);
+            if (result == null) {
+                throw new PatternException("Kubectl get " + parameters + " can not be resolved");
+            }
+            return result;
+        } catch (Exception e) {
+            throw new PatternException("Kubectl get " + parameters + " can not be resolved");
+        }
     }
 }

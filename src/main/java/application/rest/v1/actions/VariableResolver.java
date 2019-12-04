@@ -52,12 +52,8 @@ public class VariableResolver implements Resolver {
                 // Cache the resolved value.
                 context.setResolvedVariable(suffix, value);
                 return value;
-            } else {
-                value="undefined";
-                context.setResolvedVariable(suffix, value);
-                return value;
-            }
+            } 
         }
-    throw new PatternException("can not resolve " + suffix + " because pattern is null");
+    throw new PatternException("can not resolve " + suffix);
     }
 }
