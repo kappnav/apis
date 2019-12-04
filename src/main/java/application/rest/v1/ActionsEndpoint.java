@@ -85,6 +85,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private static final String KIND_PROPERTY_NAME = "kind";
     
     private static final String COMMANDS_PROPERTY_NAME = "commands";
+    private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
     
     private static final String IMAGE_PROPERTY_NAME = "image";
     private static final String CMD_PATTERN_PROPERTY_NAME = "cmd-pattern";
@@ -109,6 +110,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     // App nav job label values
     private static final String KAPPNAV_JOB_COMMAND_TYPE = "command";
+    private static final String KAPPNAV_JOB_RESOURCE_KIND = "Job";
     
     @Inject
     private ComponentInfoRegistry registry;
@@ -194,7 +196,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     @Path("/commands")
     @Operation(
             summary = "Retrieve the list of Kubernetes jobs for command actions, optionally filtered by user.",
-            description = "Returns the list of Kubernetes jobs for command actions."
+            description = "Returns two lists: the list of Kubernetes jobs for command actions; the list of job actions for the jobs."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
@@ -222,6 +224,13 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 }
                 response.add(v);
             });
+            // If there are jobs, get actions available for jobs and add to response 
+            if ( ! commands.isEmpty() ) { 
+                JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
+                final ConfigMapProcessor processor = new ConfigMapProcessor(KAPPNAV_JOB_RESOURCE_KIND);
+                JsonObject actionsMap= processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
+                response.addActions(actionsMap); 
+            }
             return Response.ok(response.getJSON()).build();
         }
         catch (IOException | ApiException e) {
@@ -331,7 +340,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
             
             // Retrieve the command action from the config map.
-            final JsonObject cmdAction = context.getCommandAction(commandName);
+    
+            final JsonObject cmdAction = context.getCommandAction(commandName);     
             if (cmdAction == null) {
                 throw new ApiException(404, CMD_NOT_FOUND);
             }
@@ -534,6 +544,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         public void add(final JsonObject command) {
             commands.add(command);
+        }
+        public void addActions(final JsonObject actions) { 
+            o.add(ACTION_MAP_PROPERTY_NAME, actions); 
         }
         public String getJSON() {
             return o.toString();
