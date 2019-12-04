@@ -18,5 +18,5 @@ package application.rest.v1.actions;
 
 public interface Resolver {
     public String getName();
-    public String resolve(ResolutionContext context, String suffix);
+    public String resolve(ResolutionContext context, String suffix) throws PatternException;
 }

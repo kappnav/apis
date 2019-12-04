@@ -98,7 +98,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.namespaced;
         }
-        throw new ApiException(404, NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object listClusterObject(ApiClient client, String componentKind, 
@@ -107,7 +107,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.resolver.listClusterObject(client, info, pretty, labelSelector, resourceVersion, watch);
         }
-        throw new ApiException(404, NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object listNamespacedObject(ApiClient client, String componentKind, String namespace,
@@ -116,15 +116,20 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.resolver.listNamespacedObject(client, info, namespace, pretty, labelSelector, resourceVersion, watch);
         }
-        throw new ApiException(404, NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
 
     public Object getNamespacedObject(ApiClient client, String componentKind, String namespace, String name) throws ApiException {
         ComponentInfo info = getComponentInfo(client, componentKind);
         if (info != null) {
-            return info.resolver.getNamespacedObject(client, info, namespace, name);
+            try {
+                Object result = info.resolver.getNamespacedObject(client, info, namespace, name);
+                return result;
+            } catch (ApiException e) {
+                throw new ApiException(207, e.toString());
+            }
         }
-        throw new ApiException(404, NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
     }
     
     private ComponentInfo getComponentInfo(ApiClient client, String componentKind) {
@@ -279,7 +284,13 @@ public class ComponentInfoRegistry {
                 throws ApiException {
             CustomObjectsApi coa = new CustomObjectsApi();
             coa.setApiClient(client);
-            return coa.getNamespacedCustomObject(info.group, info.version, namespace, info.plural, name);
+            try {
+                Object result = coa.getNamespacedCustomObject(info.group, info.version, namespace, info.plural, name);
+                return result;
+            } catch (ApiException e) {
+                // kubernetes only give message "NOT_FOUND", so give more info to user what can be wrong either namespace or resource name
+                throw new ApiException(207, "either namespace " + namespace + " or resource name " + name + " is " + NOT_FOUND);
+            }
         }
     }
     

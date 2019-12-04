@@ -321,6 +321,9 @@ public final class ResolutionContext {
             if (e != null && e.isJsonPrimitive()) {
                 return e.getAsString();
             }
+            else {
+                throw new PatternException(type + " " + name + " is not found.");
+            }
         }
         return null;
     }
@@ -363,6 +366,7 @@ public final class ResolutionContext {
             }
             return null;
         }
+
         try {
             CoreV1Api api = new CoreV1Api();
             api.setApiClient(client);
@@ -371,10 +375,16 @@ public final class ResolutionContext {
             if (data != null) {
                 // Store the map in the local cache.
                 kappnavNSMapCache.put(mapName, map);
-                return data.get(mapField);
+                String result = data.get(mapField);
+                if (result == null) {
+                    throw new PatternException("cannot get ConfigMap data for " + mapField);
+                } else {
+                    return result;
+                }
             }
         }
         catch (ApiException e) {}
+
         // No map or no data section. Store null in the local cache.
         kappnavNSMapCache.put(mapName, null);
         return null;
@@ -389,8 +399,7 @@ public final class ResolutionContext {
     }
     
     // snippet :: "function xyz(a,b,c) {...}"
-    public String invokeSnippet(String snippet, List<String> parameters) {
-        
+    public String invokeSnippet(String snippet, List<String> parameters) throws ValidationException {
         // Determine the function name by inspecting the snippet.
         String functionName = null;
         int start = snippet.indexOf(JAVA_SCRIPT_FUNCTION_PREFIX);
@@ -402,9 +411,8 @@ public final class ResolutionContext {
         }
         // No function found in the snippet.
         if (functionName == null) {
-            return null;
+            throw new PatternException("no function found in the snippet");
         }
-        
         // Invoke the snippet using the built-in JavaScript engine.
         ScriptEngineManager sce = new ScriptEngineManager();
         ScriptEngine se = sce.getEngineByName("JavaScript");
@@ -414,17 +422,35 @@ public final class ResolutionContext {
             Object o = inv.invokeFunction(functionName, (Object[]) parameters.toArray());
             if (o != null) {
                 return o.toString();
+            } else {
+                throw new PatternException("cannot invoke snippet " + snippet);
             }
         }
-        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {}
-        return null;
+        catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
+            // can't add the snippet as it will show the whole snippet functions which is so big 
+            // so only show the function name to show which function that has issue
+            throw new PatternException("problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
+        }
     }
     
-    public ResolvedValue resolve(String pattern) {
+    public ResolvedValue resolve(String pattern) throws PatternException {
         final StringBuilder result = new StringBuilder();
         final PatternTokenizer tokenizer = new PatternTokenizer(pattern);
         final AtomicBoolean isFullyResolved = new AtomicBoolean(true);
         tokenizer.forEach(t -> {
+            // First check if pattern contains all pattern chars ($, {, }) if not then can throw pattern exception
+            if ((t.toString().indexOf("$") != -1) || (t.toString().indexOf("{") != -1) || (t.toString().indexOf("}") != -1)) {
+                if (!((t.toString().indexOf("$") != -1) && (t.toString().indexOf("{") != -1) && (t.toString().indexOf("}") != -1))){
+                    throw new PatternException(pattern + " is not a pattern");
+                } else {
+                    // check if contains space
+                    if(t.toString().indexOf(" ") != -1) {
+                        throw new PatternException(pattern + " is not a pattern");
+                    }
+                }
+            
+            }
+
             // Add string literals directly to the result.
             if (!t.isPattern()) {
                 result.append(t.getDecodedValue());
@@ -445,13 +471,11 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
-                            isFullyResolved.set(false);
-                            result.append(t.toString());
+                            throw new PatternException("cannot resolve " + suffix);
                         }
                     }
                     else {
-                        isFullyResolved.set(false);
-                        result.append(t.toString());
+                        throw new PatternException("can not find the resolver for " + pattern);
                     }
                 }
                 else {

@@ -28,17 +28,19 @@ public class VariableResolver implements Resolver {
     }
 
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         // Immediately return the value if the variable has been previously resolved.
         String value = context.getResolvedVariable(suffix);
         if (value != null) {
             return value;
-        }
+        } 
+
         // Guard against cycles in variable definitions.
         // (e.g. var x = "${var.y}", var y = "${var.z}", var z = "${var.x}").
         if (context.isVisitingVariable(suffix)) {
-            return null;
+            throw new PatternException(suffix + " contains cycles in variable definitions");
         }
+
         // Retrieve the pattern from the config map and resolve the variable.
         final String varPattern = context.getVariablePattern(suffix);
         if (varPattern != null) {
@@ -50,12 +52,8 @@ public class VariableResolver implements Resolver {
                 // Cache the resolved value.
                 context.setResolvedVariable(suffix, value);
                 return value;
-            } else {
-                value="undefined";
-                context.setResolvedVariable(suffix, value);
-                return value;
-            }
+            } 
         }
-        return null;
+    throw new PatternException("can not resolve " + suffix);
     }
 }

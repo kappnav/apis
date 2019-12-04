@@ -25,13 +25,13 @@ public final class GlobalResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         int i = suffix.indexOf('#');
         if (i >= 0) {
             final String mapName = suffix.substring(0, i);
             final String mapField = suffix.substring(i + 1);
             return context.getConfigMapDataField(mapName, mapField);
         }
-        return null;
+        throw new PatternException("cannot resolve " + suffix + " because syntax is incorrect: expected '#' not found.");
     }
 }

@@ -28,12 +28,13 @@ public final class ResourceResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         final JSONPathParser parser = new JSONPathParser();
         final JSONPath path = parser.parse(suffix);
         if (path != null) {
             return path.resolveLeaf(context.getResource());
+        } else {
+            throw new PatternException("Cannot resolve resource " + suffix);
         }
-        return null;
     }
 }

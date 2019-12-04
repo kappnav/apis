@@ -31,15 +31,16 @@ public class SnippetResolver implements Resolver {
     }
     
     @Override
-    public String resolve(ResolutionContext context, String suffix) {
+    public String resolve(ResolutionContext context, String suffix) throws PatternException {
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String snippetName = tokenizer.getName();
+        String result = null;
         if (snippetName != null) {
             // Resolve snippet.
             final String snippet = context.getSnippet(snippetName);
             if (snippet == null) {
                 // No snippet was found in the action config map.
-                return null;
+                throw new PatternException("snippet " + snippetName + " is not found in the action config map");
             }
             
             // Resolve parameters.
@@ -53,13 +54,13 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    return null;
+                    throw new PatternException("one or more of the script parameters can not be resolved");
                 }
-            }
-            
-            // Invoke the snippet.
-            return context.invokeSnippet(snippet, parameters);
+            }           
+            result = context.invokeSnippet(snippet, parameters);
+        } else {
+            throw new PatternException("can not resolve snippet because snippet name is null.");
         }
-        return null;
+        return result;
     }
 }
