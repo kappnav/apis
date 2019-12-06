@@ -24,6 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import java.util.Date;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
@@ -112,7 +117,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     // App nav job label values
     private static final String KAPPNAV_JOB_COMMAND_TYPE = "command";
     private static final String KAPPNAV_JOB_RESOURCE_KIND = "Job";
-    
+
+    private static final String STATUS_PROPERTY_NAME = "status";
+    private static final String COMPLETION_TIME_PROPERTY_NAME = "completionTime";
     @Inject
     private ComponentInfoRegistry registry;
     
@@ -203,13 +210,14 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/commands")
     @Operation(
-            summary = "Retrieve the list of Kubernetes jobs for command actions, optionally filtered by user.",
+            summary = "Retrieve the list of Kubernetes jobs for command actions, optionally filtered by user and time and only jobs with completion timestamp newer than specified timestamp are returned",
             description = "Returns two lists: the list of Kubernetes jobs for command actions; the list of job actions for the jobs."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response getCommands(@DefaultValue("") @QueryParam("user") @Parameter(description = "The user that submitted the command action") String user) {
+    public Response getCommands(@DefaultValue("") @QueryParam("user") @Parameter(description = "The user that submitted the command action") String user,
+                                @DefaultValue("") @QueryParam("time") @Parameter(description = "The job completion time stamp in yyyy-MM-dd'T'HH:mm:sss format") String time) {
         try {
             final ApiClient client = getApiClient();
             
@@ -217,36 +225,63 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
             if (user != null && !user.isEmpty()) {
                 s.addMatchLabel(KAPPNAV_JOB_USER_ID, user);
-            }
-            final String labelSelector = s.toString();
+            }           
             
+            // convert time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
+            Timestamp timelaterTimestamp = convertTimeStringToTimestamp(time);
+            
+            final String labelSelector = s.toString();           
             // Query the list of jobs from Kubernetes and return the list to the caller.
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
-            List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, null, null, null, labelSelector, null, null, null, null));
+            List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, null, null, null, labelSelector, null, null, null, null));           
+            final CommandsResponse response = new CommandsResponse();           
             
-            final CommandsResponse response = new CommandsResponse();
-            commands.forEach(v -> {
+            commands.forEach(v -> {                               
                 if (v.get(KIND_PROPERTY_NAME) == null) {
                     v.addProperty(KIND_PROPERTY_NAME, JOB_KIND);
+                } 
+
+                if (time == null || time.isEmpty()) {   
+                    //no time specified, return all jobs
+                    response.add(v);
+                }  else {  
+                    JsonObject status = v.getAsJsonObject(STATUS_PROPERTY_NAME);
+                    if (status != null) {
+                        JsonElement e = status.get(COMPLETION_TIME_PROPERTY_NAME);
+                        if (e != null && e.isJsonPrimitive()) {
+                            String completionTime = e.getAsString();
+                            if (completionTime != null) {
+                                // convert job completion time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
+                                try {
+                                    Timestamp completionTimestamp = convertTimeStringToTimestamp(completionTime);
+                                    // Only jobs with completion time stamp newer than specified time stamp are returned or no timestamp specified. 
+                                    if (completionTimestamp.after(timelaterTimestamp)) {                                    
+                                        response.add(v);
+                                    }       
+                                } catch (Exception ex)  {
+                                }                                        
+                            }
+                        }
+                    }
                 }
-                response.add(v);
             });
             // If there are jobs, get actions available for jobs and add to response 
-            if ( ! commands.isEmpty() ) { 
+            if ( ! commands.isEmpty() && response.size() > 0) { 
                 JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
                 final ConfigMapProcessor processor = new ConfigMapProcessor(KAPPNAV_JOB_RESOURCE_KIND);
-                JsonObject actionsMap= processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
+                JsonObject actionsMap = processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
                 response.addActions(actionsMap); 
             }
-            return Response.ok(response.getJSON()).build();
+            return Response.ok(response.getJSON()).build(); 
         }
-        catch (IOException | ApiException e) {
+        catch (IOException | ApiException e ) {
             String msg = null;          
-            if (e instanceof ApiException)    
+            if (e instanceof ApiException)  {              
                 msg = "input-error: " + e.getMessage(); 
-            else
-                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();
+            } else {
+                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();               
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
@@ -609,9 +644,28 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         public void addActions(final JsonObject actions) { 
             o.add(ACTION_MAP_PROPERTY_NAME, actions); 
+        }  
+        public int size() {
+            return commands.size();
         }
         public String getJSON() {
             return o.toString();
         }
     }
+
+    private Timestamp convertTimeStringToTimestamp(String time) throws ApiException {
+        Timestamp timestamp = null;
+        try {
+            if (time != null && !time.isEmpty()) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:sss");
+                Date parsedDate = dateFormat.parse(time);
+                timestamp = new java.sql.Timestamp(parsedDate.getTime());
+            }
+        } catch (Exception e) { 
+            String msg = e.getMessage() + ". The correct format is yyyy-MM-dd'T'HH:mm:sss";
+            throw new ApiException(msg);
+        } 
+        return timestamp;
+    }
+   
 }
