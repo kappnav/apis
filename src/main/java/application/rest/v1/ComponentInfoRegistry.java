@@ -83,6 +83,26 @@ public class ComponentInfoRegistry {
                 new ComponentInfo("ServiceAccount", "", "v1", "serviceaccounts", true, new ServiceAccountResolver()));
     }
 
+    private static final Map<String,String> BUILT_IN_KIND_TO_API_VERSION_MAP;
+    static {
+        BUILT_IN_KIND_TO_API_VERSION_MAP = new HashMap<>();
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("ConfigMap", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Endpoints", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Event", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("LimitRange", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Namespace", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Node", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("PersistentVolume", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("PersistentVolumeClaim", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Pod", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("PodTemplate", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("ReplicationController", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("ResourceQuota", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Secret", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("Service", "/v1");
+        BUILT_IN_KIND_TO_API_VERSION_MAP.put("ServiceAccount", "/v1");
+    }
+
     public static final Map<String, String> CORE_KIND_TO_API_VERSION_MAP;
     static {
         CORE_KIND_TO_API_VERSION_MAP = new ConcurrentHashMap<String, String>();
@@ -112,12 +132,15 @@ public class ComponentInfoRegistry {
     }
 
     private final AtomicReference<Map<String,ComponentInfo>> componentKindMap;
-    
+
+    final AtomicReference<Map<String,String>> groupKindToApiVersionMap;
+
     public ComponentInfoRegistry() throws ApiException, IOException {
         this(KAppNavEndpoint.getApiClient());
     }
 
     public ComponentInfoRegistry(ApiClient client) throws ApiException {
+        groupKindToApiVersionMap = new AtomicReference<>();
         final Map<String,ComponentInfo> map = processGroupList(client);
         componentKindMap = new AtomicReference<>(map);
     }
@@ -174,7 +197,7 @@ public class ComponentInfoRegistry {
         }
         String key = apiVersion + "/" + componentKind;
         System.out.println("getComponentInfo using key: " + key);
-        ComponentInfo info = map.get(componentKind);
+        ComponentInfo info = map.get(key);
         if (info != null) {
             System.out.println("getComponentInfo using key: " + key + " returning ComponentInfo 1: " + info);
             return info;
@@ -201,6 +224,9 @@ public class ComponentInfoRegistry {
     private Map<String,ComponentInfo> processGroupList(ApiClient client) throws ApiException {
         ApisApi api = new ApisApi();
         api.setApiClient(client);
+
+        final Map<String,String> groupKindMap = new HashMap<String,String>();
+        groupKindMap.putAll(BUILT_IN_KIND_TO_API_VERSION_MAP);
         
         final Map<String,ComponentInfo> map = new HashMap<>();
         map.putAll(BUILT_IN_COMPONENT_KIND_MAP);
@@ -218,13 +244,16 @@ public class ComponentInfoRegistry {
         V1APIGroupList list = api.getAPIVersions();
         List<V1APIGroup> groups = list.getGroups();
         groups.forEach(v -> {
-            processGroupVersion(client, map, v.getName(), v.getPreferredVersion().getVersion());
+            processGroupVersion(client, map, groupKindMap, v.getName(), v.getPreferredVersion().getVersion());
         });
+        System.out.println("processGroupList setting groupKind map: " + groupKindMap);
+        groupKindToApiVersionMap.set(groupKindMap);
         return map;
     }
 
-    private void processGroupVersion(ApiClient client, Map<String,ComponentInfo> map, String group, String version) {
+    private void processGroupVersion(ApiClient client, Map<String,ComponentInfo> map, Map<String,String> groupKindMap, String group, String version) {
         try {
+            System.out.println("processGroupVersion entry - group: " + group + " version: " + version);
             CustomObjectsApi coa = new CustomObjectsApi();
             coa.setApiClient(client);
 
@@ -253,15 +282,18 @@ public class ComponentInfoRegistry {
                             JsonObject resource = v.getAsJsonObject();
                             String kind = resource.get("kind").getAsString();
                             String key = (group != null ? group : "") + "/" + version + "/" + kind;
+                            String groupKindKey = (group != null ? group : "") + "/" + kind;
                             System.out.println("processGroupVersion ComponentInfo map key: " + key);
                             if (!map.containsKey(key)) {
                                 System.out.println("processGroupVersion ComponentInfo key not found in map: " + key);
                                 String plural = resource.get("name").getAsString();
                                 if (!plural.contains("/")) {
                                     boolean namespaced = resource.get("namespaced").getAsBoolean();
-                                    ComponentInfo info = new ComponentInfo(kind, group, version, plural, namespaced);
-                                    System.out.println("processGroupVersion key: " + key + "  adding ComponentInfo to map: " + info);
+                                    System.out.println("processGroupVersion adding ComponentInfo key: " + key);
                                     map.put(key, new ComponentInfo(kind, group, version, plural, namespaced));
+                                    String value = (group != null ? group : "") + "/" + version;
+                                    System.out.println("processGroupVersion adding groupKind key: " + groupKindKey + " value: " + value);
+                                    groupKindMap.put(groupKindKey, value);
                                 }
                             }
                         }

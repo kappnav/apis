@@ -151,7 +151,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                                "\n name: " + name + 
                                "\n kind: " + kind + 
                                "\n namespace: " + namespace + 
-                               "\n apiVersion: " + apiVersion + 
+                               "\n apiVersion: " + urlDecode(apiVersion) + 
                                "\n pattern: " + pattern + 
                                "");
             final ApiClient client = getApiClient();
@@ -217,6 +217,15 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
             @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
+        System.out.println("executeComponentCommand entry" + 
+        "\n name: " + name + 
+        "\n kind: " + kind + 
+        "\n namespace: " + namespace + 
+        "\n apiVersion: " + urlDecode(apiVersion) + 
+        "\n appName: " + appName + 
+        "\n appNamespace: " + appNamespace + 
+        "\n commandName: " + commandName + 
+        "");
         return executeCommand(jsonstr, name, kind, urlDecode(apiVersion), namespace, commandName, appName, appNamespace, user);
     }
     
@@ -371,6 +380,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace,
             @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion) {
         try {
+            System.out.println("getActionMap entry" + 
+            "\n name: " + name + 
+            "\n kind: " + kind + 
+            "\n namespace: " + namespace + 
+            "\n apiVersion: " + urlDecode(apiVersion) + 
+             "");
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, urlDecode(apiVersion), namespace);
             final JsonObject map;
