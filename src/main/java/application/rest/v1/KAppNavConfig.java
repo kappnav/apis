@@ -49,13 +49,17 @@ public class KAppNavConfig {
     private static final String KAPPNAV_KUBE_ENV;
     private static final String KUBE_ENV = "KUBE_ENV";
     private static final String DEFAULT_KUBE_ENV = "okd";
+    private static final String CONFIGMAP_CACHING_VALUE;
+    private static final String CONFIGMAP_CACHING = "CONFIGMAP_CACHING";
+    private static final String DEFAULT_CONFIGMAP_CACHING = "enabled";
     
     static {
-        KAPPNAV_NAMESPACE = getEnvrionmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
-        KAPPNAV_KUBE_ENV = getEnvrionmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
+        KAPPNAV_NAMESPACE = getEnvironmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
+        KAPPNAV_KUBE_ENV = getEnvironmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
+        CONFIGMAP_CACHING_VALUE = getEnvironmentVariable(CONFIGMAP_CACHING, DEFAULT_CONFIGMAP_CACHING);
     }
     
-    private static String getEnvrionmentVariable(String name, String defaultValue) {
+    private static String getEnvironmentVariable(String name, String defaultValue) {
         try {
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {
@@ -162,6 +166,10 @@ public class KAppNavConfig {
     
     public static String getkAppNavKubeEnvironment() {
         return KAPPNAV_KUBE_ENV;
+    }
+
+    public static String getConfigMapCachingValue() {
+        return CONFIGMAP_CACHING_VALUE;
     }
     
     // Returns value of 'kappnav-sa-name'.

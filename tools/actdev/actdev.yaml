@@ -23,7 +23,9 @@ spec:
           - name: KUBE_ENV
             value: okd 
           - name: mp.openapi.scan.classes
-            value: application.rest.v1.ActionsEndpoint              
+            value: application.rest.v1.ActionsEndpoint
+          - name: CONFIGMAP_CACHING
+            value: disabled                     
 ---
 
 apiVersion: v1
