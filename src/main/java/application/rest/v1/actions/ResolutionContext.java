@@ -359,7 +359,7 @@ public final class ResolutionContext {
     }
     
     public String getConfigMapDataField(String mapName, String mapField) {
-        // if CONFIGMAP_CACHING set to disable then do not look from cache already read it
+        // read from cache only if enabled - use case for disabling is for pattern testing
         if (CONFIGMAP_CACHING_VALUE == "enabled") {
             if (kappnavNSMapCache.containsKey(mapName)) {
                 // Return value from the local cache.
