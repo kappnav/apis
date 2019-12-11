@@ -1,6 +1,6 @@
 FROM kappnav/base-runtime:8-jre-ubi-min-alt2 as liberty
-ARG LIBERTY_VERSION=19.0.0.9
-ARG LIBERTY_SHA=f05e1f6f738d33a8fd93e356de12413fc0e271a5
+ARG LIBERTY_VERSION=19.0.0.12
+ARG LIBERTY_SHA=b3a613cbad764a10ae57719ff9818c3bcfefdf8e
 ARG LIBERTY_DOWNLOAD_URL=https://repo1.maven.org/maven2/io/openliberty/openliberty-runtime/$LIBERTY_VERSION/openliberty-runtime-$LIBERTY_VERSION.zip
 
 LABEL maintainer="Arthur De Magalhaes" vendor="Open Liberty" url="https://openliberty.io/" github="https://github.com/OpenLiberty/ci.docker"
