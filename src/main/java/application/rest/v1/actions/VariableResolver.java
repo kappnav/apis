@@ -27,8 +27,19 @@ public class VariableResolver implements Resolver {
         return "var";
     }
 
+    // parameter 'suffix' is either variable-name or variable-name, default.string-constant 
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
+        // Check if default.string-constant specified. If so, separate variable name from default value.
+        String defaultValue= null; 
+        int pos= suffix.indexOf(','); 
+        if ( pos >= 0 ) { 
+            defaultValue= suffix.substring(pos+1,suffix.length()); // grab default value expression 
+            defaultValue= defaultValue.substring(defaultValue.indexOf('.')+1,
+                          defaultValue.length()); // strip off 'default.' prefix
+            suffix= suffix.substring(0,pos); // grab variable name 
+        }
+
         // Immediately return the value if the variable has been previously resolved.
         String value = context.getResolvedVariable(suffix);
         if (value != null) {
@@ -45,15 +56,36 @@ public class VariableResolver implements Resolver {
         final String varPattern = context.getVariablePattern(suffix);
         if (varPattern != null) {
             context.visitVariableStart(suffix); // Housekeeping for cycle check
-            final ResolvedValue rv = context.resolve(varPattern);
-            context.visitVariableEnd(); // Housekeeping for cycle check
-            if (rv.isFullyResolved()) {
-                value = rv.getValue();
-                // Cache the resolved value.
-                context.setResolvedVariable(suffix, value);
-                return value;
+            
+            try { 
+                final ResolvedValue rv= context.resolve(varPattern);
+
+                context.visitVariableEnd(); // Housekeeping for cycle check
+                if (rv.isFullyResolved()) {
+                    value = rv.getValue();
+                    // Cache the resolved value.
+                    context.setResolvedVariable(suffix, value);
+                    return value;
+                }
+            } 
+            /* If can't resolve, check if there is a default value
+               to return. If not, re-throw exception. */
+            catch(PatternException e) { 
+                if ( defaultValue == null ) { 
+                    throw e; 
+                } 
+                else { 
+                    return defaultValue; 
+                }
             } 
         }
-    throw new PatternException("can not resolve " + suffix);
+        /* If can't resolve, check if there is a default value
+               to return. If not, throw exception. */        
+        if ( defaultValue == null ) { 
+            throw new PatternException("can not resolve " + suffix);
+        } 
+        else { 
+            return defaultValue; 
+        }
     }
 }
