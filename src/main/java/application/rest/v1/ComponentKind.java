@@ -58,9 +58,8 @@ public final class ComponentKind {
                             JsonObject componentKind = v.getAsJsonObject();
                             JsonElement group = componentKind.get("group");
                             JsonElement kind = componentKind.get("kind");
-                            if (kind != null) {
-                                String groupString = group != null ? group.getAsString() : "";
-                                result.add(new ComponentKind(groupString, kind.getAsString()));
+                            if (group != null && kind != null) {
+                                result.add(new ComponentKind(group.getAsString(), kind.getAsString()));
                             }
                         }
                     });
