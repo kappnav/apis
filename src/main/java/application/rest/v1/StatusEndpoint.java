@@ -17,9 +17,6 @@
 package application.rest.v1;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -69,11 +66,10 @@ public class StatusEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response computeStatus(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
-            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final JsonObject resource = getResource(client, name, kind, urlDecode(apiVersion), namespace);
+            final JsonObject resource = getResource(client, name, kind, namespace);
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
@@ -93,21 +89,12 @@ public class StatusEndpoint extends KAppNavEndpoint {
         } 
     }
     
-    private JsonObject getResource(ApiClient client, String name, String kind, String apiVersion, String namespace) throws ApiException {
+    private JsonObject getResource(ApiClient client, String name, String kind, String namespace) throws ApiException {
         if (registry == null) {
             // Initialize the registry here if CDI failed to do it.
             registry = new ComponentInfoRegistry(client);
         }
-        final Object o = registry.getNamespacedObject(client, kind, apiVersion, namespace, name);
+        final Object o = registry.getNamespacedObject(client, kind, namespace, name);
         return getItemAsObject(client, o);
-    }
-
-    // Decodes a URL encoded string using `UTF-8`
-    private static String urlDecode(String value) {
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex.getCause());
-        }
     }
 }

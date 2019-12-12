@@ -23,9 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
 import java.sql.Timestamp;
@@ -147,8 +144,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") String pattern) {
         try {
             final ApiClient client = getApiClient();
-            ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, "", namespace, pattern)).getJSON());
-            System.out.println("resolve returning OK");
+            ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, namespace, pattern)).getJSON());          
             return builder.build();
         }
         catch (IOException | ApiException | PatternException e) {
@@ -159,7 +155,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 msg = "input-error: " + e.getMessage(); 
             else
                 msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: " + e.getMessage();
-            System.out.println("resolve got IOException returning status: " + getResponseCode(e) + " " + msg);
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
@@ -182,8 +177,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response executeApplicationCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
-        return executeCommand(jsonstr, name, APPLICATION_KIND, "", namespace, commandName, null, null, user);
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {        
+        return executeCommand(jsonstr, name, APPLICATION_KIND, namespace, commandName, null, null, user);
     }
     
     @POST
@@ -208,7 +203,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the component") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
             @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
-        return executeCommand(jsonstr, name, kind, "", namespace, commandName, appName, appNamespace, user);
+        return executeCommand(jsonstr, name, kind, namespace, commandName, appName, appNamespace, user);
     }
     
     @GET
@@ -360,9 +355,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response getActionMap(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
-        try {
+        try { 
             final ApiClient client = getApiClient();
-            final JsonObject resource = getResource(client, name, kind, "", namespace);
+            final JsonObject resource = getResource(client, name, kind, namespace);
             final JsonObject map;
                 
             if (resource != null) {
@@ -384,15 +379,16 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }                  
     }
     
-    private String resolve(ApiClient client, String name, String kind, String apiVersion, String namespace, String pattern) throws ApiException {
+    private String resolve(ApiClient client, String name, String kind, String namespace, String pattern) throws ApiException {
         final JsonObject resource; 
         final ResolvedValue resolvedValue;
         try { 
-            resource = getResource(client, name, kind, apiVersion, namespace);      
+            resource = getResource(client, name, kind, namespace);      
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
             }           
+        
             final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
             resolvedValue = context.resolve(pattern);
         } catch (ApiException e) {
@@ -405,12 +401,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         return resolvedValue.getValue();     
     }
     
-    private Response executeCommand(String jsonstr, String name, String kind, String apiVersion, String namespace, String commandName, String appName, String appNamespace, String user) {
+    private Response executeCommand(String jsonstr, String name, String kind, String namespace, String commandName, String appName, String appNamespace, String user) {
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource;
             try { 
-                resource = getResource(client, name, kind, apiVersion, namespace);
+                resource = getResource(client, name, kind, namespace);
             } catch (ApiException e) {
                 String msg = e.getMessage();
                 throw new ApiException (404, msg);
@@ -612,20 +608,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         return labels;
     }
     
-    private JsonObject getResource(ApiClient client, String name, String kind, String apiVersionParm, String namespace) throws ApiException {
+    private JsonObject getResource(ApiClient client, String name, String kind, String namespace) throws ApiException {
         if (registry == null) {
             // Initialize the registry here if CDI failed to do it.
             registry = new ComponentInfoRegistry(client);
         }
-        String apiVersion = apiVersionParm;
-        if (apiVersion == null || apiVersion.trim().length() == 0) {
-            apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
-            if (apiVersion == null) {
-                System.out.println("getResource Unknown kind: " + kind);
-                throw new ApiException(400, "getResource Unknown kind: " + kind);
-            }
-        }
-        final Object o = registry.getNamespacedObject(client, kind, apiVersion, namespace, name);
+        final Object o = registry.getNamespacedObject(client, kind, namespace, name);
         return getItemAsObject(client, o);
     }
     
@@ -680,12 +668,4 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         return timestamp;
     }
    
-    // Decodes a URL encoded string using `UTF-8`
-    private static String urlDecode(String value) {
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex.getCause());
-        }
-    }
 }
