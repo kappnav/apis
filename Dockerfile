@@ -105,3 +105,9 @@ RUN  ARCH=$(uname -p) \
    && mv ./kubectl /usr/local/bin/kubectl
 
 USER 1001
+
+USER 0
+RUN microdnf install -y yum \
+    && yum update -y \
+    && microdnf remove yum
+USER 1001
