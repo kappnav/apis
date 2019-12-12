@@ -144,18 +144,10 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response resolve(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace,
-            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") String pattern) {
         try {
-            System.out.println("resolve entry" + 
-                               "\n name: " + name + 
-                               "\n kind: " + kind + 
-                               "\n namespace: " + namespace + 
-                               "\n apiVersion: " + urlDecode(apiVersion) + 
-                               "\n pattern: " + pattern + 
-                               "");
             final ApiClient client = getApiClient();
-            ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, urlDecode(apiVersion), namespace, pattern)).getJSON());
+            ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, "", namespace, pattern)).getJSON());
             System.out.println("resolve returning OK");
             return builder.build();
         }
@@ -214,19 +206,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("component-name") @Parameter(description = "The name of the component") String name,
             @PathParam("component-kind") @Parameter(description = "The Kubernetes resource kind for the component") String kind,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the component") String namespace,
-            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
             @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
-        System.out.println("executeComponentCommand entry" + 
-        "\n name: " + name + 
-        "\n kind: " + kind + 
-        "\n namespace: " + namespace + 
-        "\n apiVersion: " + urlDecode(apiVersion) + 
-        "\n appName: " + appName + 
-        "\n appNamespace: " + appNamespace + 
-        "\n commandName: " + commandName + 
-        "");
-        return executeCommand(jsonstr, name, kind, urlDecode(apiVersion), namespace, commandName, appName, appNamespace, user);
+        return executeCommand(jsonstr, name, kind, "", namespace, commandName, appName, appNamespace, user);
     }
     
     @GET
@@ -377,17 +359,10 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response getActionMap(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace,
-            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion) {
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
         try {
-            System.out.println("getActionMap entry" + 
-            "\n name: " + name + 
-            "\n kind: " + kind + 
-            "\n namespace: " + namespace + 
-            "\n apiVersion: " + urlDecode(apiVersion) + 
-             "");
             final ApiClient client = getApiClient();
-            final JsonObject resource = getResource(client, name, kind, urlDecode(apiVersion), namespace);
+            final JsonObject resource = getResource(client, name, kind, "", namespace);
             final JsonObject map;
                 
             if (resource != null) {

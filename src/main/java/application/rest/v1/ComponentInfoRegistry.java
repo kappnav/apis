@@ -208,6 +208,7 @@ public class ComponentInfoRegistry {
         // better of way doing this that would be less costly in
         // performance.
         try {
+            System.out.println("getComponentInfo cache miss for key: " + key + ", recreating cache from api resources");
             map = processGroupList(client);
             componentKindMap.set(map);
             info = map.get(key);
@@ -302,6 +303,26 @@ public class ComponentInfoRegistry {
             }
         }
         catch (ApiException e) {}
+    }
+
+    /**
+     * Get the apiVersion for a componentKind
+     */
+    public String getComponentGroupApiVersion(ComponentKind componentKind) {
+        String group = componentKind.group;
+        // Group "core" in the componeneKind external is "" internal group
+        if (group.equals("core")) {
+            group = "";
+        }
+        Map<String, String> groupKindMap = groupKindToApiVersionMap.get();
+        String apiVersion = groupKindMap.get(group + "/" + componentKind.kind);
+        if (apiVersion == null) {
+            System.out.println("processComponentKinds WARNING: No CRD found for componentKind group: " + componentKind.group + " kind: " + componentKind.kind);
+            // no CRDs installed with the specified group/kind
+            // See if it's one of the core kinds for compatibility
+            apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(componentKind.kind);
+        }
+        return apiVersion;
     }
 
     public String toString() {

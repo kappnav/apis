@@ -101,19 +101,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             final String labelSelector = selector.toString();
             componentKinds.forEach(v -> {
                 try {
-                    // map group/kind to apiVersion
-                    String group = null;
-                    if (v.group.equals("core")) {
-                        group = "";
-                    }
-                    Map<String, String> groupKindMap = registry.groupKindToApiVersionMap.get();
-                    String apiVersion = groupKindMap.get(group + "/" + v.kind);
-                    if (apiVersion == null) {
-                        System.out.println("processComponentKinds WARNING: No CRD found for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
-                        // no CRDs installed with the specified group/kind
-                        // See if it's one of the core kinds for compatibility
-                        apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(v.kind);
-                    }
+                    String apiVersion = registry.getComponentGroupApiVersion(v);
                     if (apiVersion != null) {
                         System.out.println("processComponentKinds using apiVersion: " + apiVersion + " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
                         if (!registry.isNamespaced(client, v.kind, apiVersion)) {
