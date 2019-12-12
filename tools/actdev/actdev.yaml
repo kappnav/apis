@@ -15,8 +15,8 @@ spec:
       serviceAccountName: actdev
       containers:
         - name: actdev
-          image: kappnav/apis:0.1.2
-          imagePullPolicy: IfNotPresent
+          image: IMAGE:TAG
+          imagePullPolicy: POLICY
           env:
           - name: KAPPNAV_CONFIG_NAMESPACE
             value: kappnav
@@ -78,4 +78,3 @@ spec:
     name: http
   selector:
     app.kubernetes.io/component: actdev
-
