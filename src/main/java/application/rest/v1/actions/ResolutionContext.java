@@ -49,7 +49,6 @@ public final class ResolutionContext {
     private static final String JAVA_SCRIPT_FUNCTION_PREFIX = "function ";
     
     private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
-    private static final String CONFIGMAP_CACHING_VALUE = KAppNavConfig.getConfigMapCachingValue();
     
     private static final String URL_ACTIONS_PROPERTY_NAME = "url-actions";
     private static final String CMD_ACTIONS_PROPERTY_NAME = "cmd-actions";
@@ -359,16 +358,13 @@ public final class ResolutionContext {
     }
     
     public String getConfigMapDataField(String mapName, String mapField) {
-        // read from cache only if enabled - use case for disabling is for pattern testing
-        if (CONFIGMAP_CACHING_VALUE == "enabled") {
-            if (kappnavNSMapCache.containsKey(mapName)) {
-                // Return value from the local cache.
-                final V1ConfigMap map = kappnavNSMapCache.get(mapName);
-                if (map != null) {
-                    return map.getData().get(mapField);
-                }
-                return null;
+        if (kappnavNSMapCache.containsKey(mapName)) {
+            // Return value from the local cache.
+            final V1ConfigMap map = kappnavNSMapCache.get(mapName);
+            if (map != null) {
+                return map.getData().get(mapField);
             }
+            return null;
         }
 
         try {
