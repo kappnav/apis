@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kappnav.actions.application.testcmd
+  labels: 
+     app: testcmd 
+data:
+  cmd-actions: |
+    [
+      {
+        "name": "testcmdapp",
+        "text": "Run Test",
+        "description": "Run test command.",
+        "image": "busybox",
+        "cmd-pattern": "sh -c This is an application command from app navigator!"
+      }
+    ]
