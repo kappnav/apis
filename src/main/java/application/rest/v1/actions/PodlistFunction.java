@@ -37,6 +37,7 @@ public class PodlistFunction implements Function {
     
     private static final String DEPLOYMENT_KIND = "Deployment";
     private static final String POD_KIND = "Pod";
+    private static final String POD_APIVERSION = "/v1"; // means group="", version=v1
     private static final String METADATA_PROPERTY_NAME = "metadata";
 
     @Override
@@ -91,7 +92,7 @@ public class PodlistFunction implements Function {
         if (!selector.isEmpty()) {
             final String labelSelector = selector.toString();
             try {
-                Object o = registry.listClusterObject(client, POD_KIND, "", null, labelSelector, null, null);
+                Object o = registry.listClusterObject(client, POD_KIND, POD_APIVERSION, null, labelSelector, null, null);
                 List<JsonObject> items = KAppNavEndpoint.getItemsAsList(client, o);
                 
                 items.forEach(v -> {
