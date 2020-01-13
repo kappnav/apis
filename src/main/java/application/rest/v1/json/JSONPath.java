@@ -22,6 +22,8 @@ import java.util.List;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import com.ibm.kappnav.logging.Logger;
+
 // Subset of JSON Path (only supports child-axis; dot and bracket notation).
 public class JSONPath {
     
@@ -40,6 +42,7 @@ public class JSONPath {
                 JsonElement e = o.get(children.get(i));
                 if (e != null && e.isJsonObject()) {
                     o = e.getAsJsonObject();
+                    Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "JsonObject=" +  o.toString());
                 }
                 else {
                     return null;

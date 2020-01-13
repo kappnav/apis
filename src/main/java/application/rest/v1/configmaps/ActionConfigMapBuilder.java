@@ -26,6 +26,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import com.ibm.kappnav.logging.Logger;
+
 public final class ActionConfigMapBuilder extends ConfigMapBuilder {
 
     private static final String URL_ACTIONS_PROPERTY_NAME = "url-actions";
@@ -85,7 +87,9 @@ public final class ActionConfigMapBuilder extends ConfigMapBuilder {
                     ag = parser.parse(ag.getAsString());
                     otherData.add(actionGroup, ag);
                 }
-                catch (JsonSyntaxException e) {}
+                catch (JsonSyntaxException e) {
+                    Logger.log(ActionConfigMapBuilder.class.getName(), "mergeActions", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                }
             }
             if (ag.isJsonArray()) {
                 final JsonArray agObject = ag.getAsJsonArray();
@@ -124,7 +128,9 @@ public final class ActionConfigMapBuilder extends ConfigMapBuilder {
                     otherMap = parser.parse(otherMap.getAsString());
                     otherData.add(mapName, otherMap);
                 }
-                catch (JsonSyntaxException e) {}
+                catch (JsonSyntaxException e) {
+                    Logger.log(ActionConfigMapBuilder.class.getName(), "mergeMaps", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                }
             }
             if (otherMap.isJsonObject()) {
                 final JsonObject otherMapObj = otherMap.getAsJsonObject();

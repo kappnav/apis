@@ -30,12 +30,16 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 
+import com.ibm.kappnav.logging.Logger;
+
 public class ConfigMapProcessor {
 
     public enum ConfigMapType {
         ACTION,
         STATUS_MAPPING
     }
+
+    private static final String className = ConfigMapProcessor.class.getName();
 
     private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
 
@@ -62,6 +66,8 @@ public class ConfigMapProcessor {
         final ConfigMapBuilder builder = type == ConfigMapType.ACTION ? new ActionConfigMapBuilder() : new StatusMappingConfigMapBuilder();
         final String subkind = KAppNavEndpoint.getComponentSubKind(component);
         final String name = KAppNavEndpoint.getComponentName(component);
+        
+        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For component subkind=" + subkind + ", component name=" + name);
 
         // Map: kappnav.actions.{kind}[-{subkind}].{name}
         if (name != null && !name.isEmpty()) {
@@ -74,6 +80,8 @@ public class ConfigMapProcessor {
                 if (getConflictAction(map) == ConflictAction.REPLACE) {
                     return builder.getConfigMap();
                 }
+            } else {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-1 is null.");
             }
         }
 
@@ -86,6 +94,8 @@ public class ConfigMapProcessor {
                 if (getConflictAction(map) == ConflictAction.REPLACE) {
                     return builder.getConfigMap();
                 }
+            } else {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-2 is null.");
             }
         }
 
@@ -93,6 +103,8 @@ public class ConfigMapProcessor {
         JsonObject map = getConfigMap(client, GLOBAL_NAMESPACE, getConfigMapName(type, ""));
         if (map != null) {
             builder.merge(map);
+        } else {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-3 is null.");
         }
 
         if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
@@ -100,6 +112,8 @@ public class ConfigMapProcessor {
             map = getConfigMap(client, GLOBAL_NAMESPACE, getUnregisteredConfigMapName());
             if (map != null) {
                 builder.merge(map);
+            } else {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-4 is null.");
             }
         }
 
@@ -116,6 +130,8 @@ public class ConfigMapProcessor {
 
     private JsonObject getConfigMap(ApiClient client, String namespace, String configMapName) {
         // Return the map from the local cache if it's been previously loaded.
+        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For namespace=" + namespace + ", configMapName=" + configMapName);
+
         final boolean isGlobalNS = GLOBAL_NAMESPACE.equals(namespace);
         if (isGlobalNS && kappnavNSMapCache.containsKey(configMapName)) {
             return kappnavNSMapCache.get(configMapName);
@@ -135,8 +151,11 @@ public class ConfigMapProcessor {
                 return m;
             }
         }
-        catch (ApiException e) {}
+        catch (ApiException e) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+        }
         if (isGlobalNS) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Global namespace, store null in the local cache");
             // No map. Store null in the local cache.
             kappnavNSMapCache.put(configMapName, null);
         }
