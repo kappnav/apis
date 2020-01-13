@@ -21,6 +21,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import com.ibm.kappnav.logging.Logger;
+
 public final class StatusMappingConfigMapBuilder extends ConfigMapBuilder {
 
     public static final String EXISTS_PROPERTY_NAME = "exists";
@@ -65,7 +67,7 @@ public final class StatusMappingConfigMapBuilder extends ConfigMapBuilder {
                     map.add(group, value);
                 }
                 catch (JsonSyntaxException e) {
-                    System.out.println(e);
+                    Logger.log(StatusMappingConfigMapBuilder.class.getName(), "merge", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
                 }
             } 
             else if(value.isJsonObject()) {

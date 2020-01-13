@@ -26,7 +26,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import com.ibm.kappnav.logging.Logger;
+
 public final class SectionConfigMapBuilder extends ConfigMapBuilder {
+
+    private static final String className = SectionConfigMapBuilder.class.getName();
 
     private static final String SECTIONS_PROPERTY_NAME = "sections";
     private static final String SECTION_DATASOURCES_PROPERTY_NAME = "section-datasources";
@@ -72,7 +76,9 @@ public final class SectionConfigMapBuilder extends ConfigMapBuilder {
                     ag = parser.parse(ag.getAsString());
                     otherData.add(sectionGroup, ag);
                 }
-                catch (JsonSyntaxException e) {}
+                catch (JsonSyntaxException e) {
+                    Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                }
             }
             if (ag.isJsonArray()) {
                 final JsonArray agObject = ag.getAsJsonArray();
@@ -98,6 +104,8 @@ public final class SectionConfigMapBuilder extends ConfigMapBuilder {
                     });
                 }
             }
+        } else {
+            Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Section group is null.");
         }
     }    
 }

@@ -31,8 +31,11 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 
+import com.ibm.kappnav.logging.Logger;
+
 public class SectionConfigMapProcessor {
-    
+    private static final String className = SectionConfigMapProcessor.class.getName();
+
     private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
 
     private static final String SECTION_CONFIG_MAP_NAME = "kappnav.sections.";
@@ -70,6 +73,7 @@ public class SectionConfigMapProcessor {
     public JsonObject getConfigMap(ApiClient client, JsonObject component) {
         final SectionConfigMapBuilder builder = new SectionConfigMapBuilder();
         final String name = KAppNavEndpoint.getComponentName(component);
+        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For component=" + name);
 
         if (name != null && !name.isEmpty()) {       
             if (builder.getConfigMap().entrySet().size() == 0) {
@@ -77,6 +81,8 @@ public class SectionConfigMapProcessor {
                 
                 if (map != null) {
                     builder.merge(map);      
+                } else {
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map is null.");
                 }
             }
         }
@@ -104,9 +110,12 @@ public class SectionConfigMapProcessor {
                 return m;
             }
         }
-        catch (ApiException e) {}
+        catch (ApiException e) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+        }
         
         // No map. Store null in the local cache.
+        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "No map so storing null to local cache.");
         kappnavNSMapCache.put(configMapName, null);
         return null;
     }
@@ -137,7 +146,7 @@ public class SectionConfigMapProcessor {
                     if (v != null && v.isJsonObject()) {
                         JsonObject sectionObject = v.getAsJsonObject();
                         String sectionName = sectionObject.getAsJsonPrimitive(NAME_PROPERTY_NAME).getAsString();
-                       
+                        Logger.log(className, "processSectionMap", Logger.LogType.DEBUG, "Processing sectionName=" + sectionName);
                         //get resource component metadata
                         JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);                            
                         //get metadata annotations and labels objects                          
@@ -156,7 +165,8 @@ public class SectionConfigMapProcessor {
                                             String dsName = sectionObject.getAsJsonPrimitive(DATASOURCE_PROPERTY_NAME).getAsString(); 
                                             JsonObject sectionDSObject = s.getAsJsonObject();
                                             String sectionDSName = sectionDSObject.getAsJsonPrimitive(NAME_PROPERTY_NAME).getAsString();
-                                                                                                                                       
+                                            Logger.log(className, "processSectionMap", Logger.LogType.DEBUG, "Processing dsName=" + dsName + ", sectionDSName="+ sectionDSName);
+
                                             if (dsName.equals(sectionDSName)) {   
                                                 //get matching labels                                                       
                                                 JsonArray matchLabels = getMatchingResources(sectionObject, sectionDSObject, labelObj, LABELS_PROPERTY_NAME);  
@@ -199,13 +209,18 @@ public class SectionConfigMapProcessor {
                 if (e != null && e.isJsonPrimitive()) {
                     return true;                   
                 }
-            } 
+            } else {
+                Logger.log(className, "processSectionMap", Logger.LogType.DEBUG, "Annotation object is null.");
+            }
+
             if (labelObj != null) {
                 JsonElement l = labelObj.get(enablementlabelStr);
                 if (l!= null && l.isJsonPrimitive()) {
                     return true;
                 }
-            }             
+            } else {
+                Logger.log(className, "processSectionMap", Logger.LogType.DEBUG, "Label object is null.");
+            }            
         }
         return false;                                                          
     }
@@ -213,6 +228,7 @@ public class SectionConfigMapProcessor {
 
     // get matching resources and matches with prefixes and annotations or labels array
     private JsonArray getMatchingResources (JsonObject sectionObject, JsonObject sectionDSObject, JsonObject resObj, String metadataType) {        
+        Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "For metadataType=" + metadataType);
         final JsonArray matchResources = new JsonArray();
                                     
         JsonArray dsResourceArray = new JsonArray();
@@ -222,10 +238,12 @@ public class SectionConfigMapProcessor {
         JsonElement type = sectionDSObject.get(TYPE_PROPERTY_NAME);
         if (type != null && type.isJsonPrimitive()) {
             String typeStr = type.getAsString();
+            Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing typeStr=" + typeStr);
             //get type-specific fields such as "labels-annotations"
             if (typeStr.indexOf("-") > 0) { 
                 String[] types = typeStr.split("-");
                 for (String t : types) {
+                    Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing t=" + t);
                     JsonElement resourceE;
                     if (metadataType.equals(ANNOTATIONS_PROPERTY_NAME)) {
                         if (t.trim().equals(ANNOTATIONS_PROPERTY_NAME)) {
@@ -244,7 +262,8 @@ public class SectionConfigMapProcessor {
                         }
                     }                   
                 }                   
-            } else { //single type               
+            } else { //single type 
+                Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing single type");              
                 if (metadataType.equals(ANNOTATIONS_PROPERTY_NAME)) {
                     if (typeStr.equals(ANNOTATIONS_PROPERTY_NAME)) {
                         JsonElement annoE = sectionDSObject.get(ANNOTATIONS_PROPERTY_NAME);                   
@@ -264,11 +283,13 @@ public class SectionConfigMapProcessor {
             }
                 
             // find annotations or labels from resource metadata
+            Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Find annotations or labels from resource metadata");
             if (dsResourceArray.size() > 0) {                                    
                 JsonObject resPair = new JsonObject();
                 for (JsonElement elem : dsResourceArray) {
                     if (elem != null && elem.isJsonPrimitive()) { 
                         String elemStr = elem.getAsString();
+                        Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing elemStr=" + elemStr);
                         // find annotation or label from resource
                         JsonElement elemE = resObj.get(elemStr);
                         if (elemE != null && elemE.isJsonPrimitive()) { 
@@ -297,12 +318,15 @@ public class SectionConfigMapProcessor {
                 for (JsonElement resprefix : dsResourcePrefixes) {
                     if (resprefix != null && resprefix.isJsonPrimitive()) { 
                         String resprefixStr = resprefix.getAsString();
+                        Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing resprefixStr=" + resprefixStr);
 
                         // find matching annotations or labels from resource
                         resObj.entrySet().forEach(n -> {  
                             String key = n.getKey();
                             JsonElement value = n.getValue();
                             JsonObject res_key = new JsonObject();
+                            Logger.log(className, "getMatchingResources", Logger.LogType.DEBUG, "Processing key=" + key);
+
                             if (key != null) {
                                 if (key.startsWith(resprefixStr)) {
                                     if (value != null && value.isJsonPrimitive()) {  
@@ -315,7 +339,8 @@ public class SectionConfigMapProcessor {
                                         res_key.addProperty(VALUE_PROPERTY_NAME, value.getAsString());                                                                                                                                                                                                                                                                                                                                                                                                                                     
                                     }
                                 } 
-                            }
+                            } 
+                            
                             // filter out duplicate or empty array
                             if (res_key.entrySet().size() > 0 && ! matchResources.contains(res_key))
                                 matchResources.add(res_key);     
