@@ -96,6 +96,11 @@ COPY --chown=1001:0 licenses/ /licenses/
 
 USER root
 
+# Make the home dir writeable so that kubectl can use it for its cache.
+RUN mkdir /home/default \
+    && chown -R 1001:0 /home/default \
+    && chmod -R g+rw /home/default
+
 RUN  ARCH=$(uname -p) \
    && if [ "$ARCH" != "ppc64le" ] && [ "$ARCH" != "s390x" ]; then \
      ARCH="amd64" ; \
