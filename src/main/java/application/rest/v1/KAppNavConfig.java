@@ -36,12 +36,15 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 
+import com.ibm.kappnav.logging.Logger;
+
 /**
  * This class contains relevant configuration from the 'kappnav-config' map.
  */
 @ApplicationScoped
 public class KAppNavConfig {
-    
+    private static final String className = ActionsEndpoint.class.getName();
+
     private static final String KAPPNAV_NAMESPACE;
     private static final String KAPPNAV_CONFIG_NAMESPACE = "KAPPNAV_CONFIG_NAMESPACE";
     private static final String KAPPNAV_DEFAULT_NAMESPACE = "kappnav";
@@ -51,23 +54,27 @@ public class KAppNavConfig {
     private static final String DEFAULT_KUBE_ENV = "okd";
     
     static {
-        KAPPNAV_NAMESPACE = getEnvrionmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
-        KAPPNAV_KUBE_ENV = getEnvrionmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
+        KAPPNAV_NAMESPACE = getEnvironmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
+        KAPPNAV_KUBE_ENV = getEnvironmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
     }
     
-    private static String getEnvrionmentVariable(String name, String defaultValue) {
+    private static String getEnvironmentVariable(String name, String defaultValue) {
+        Logger.log(className, "getEnvironmentVariable", Logger.LogType.ENTRY, "For name=" + name + ", defaultValue=" + defaultValue);
         try {
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {
                     // Check environment variable.
                     final String var = System.getenv(name);
                     if (var != null && !var.trim().isEmpty()) {
+                        Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, var);
                         return var;
                     }
+                    Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, defaultValue);
                     return defaultValue;
                 }
             });
         } catch (SecurityException se) {
+            Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, "Caught SecurityException returning defaultValue="+defaultValue);
             return defaultValue;
         }
     }
@@ -142,7 +149,9 @@ public class KAppNavConfig {
                                 }
                             }
                         }
-                        catch (JsonSyntaxException e) {}
+                        catch (JsonSyntaxException e) {
+                            Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                        }
                     }
                 }
                 if (!setAppStatusPrecedence && !STATUS_UNKNOWN_DEFAULT.equals(statusUnknown)) {
@@ -150,7 +159,9 @@ public class KAppNavConfig {
                 }
             }
         }
-        catch (ApiException e) {}
+        catch (ApiException e) {
+            Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+        }
         this.serviceAccountName = serviceAccountName;
         this.statusUnknown = statusUnknown;
         this.appStatusPrecedence = appStatusPrecedence;     

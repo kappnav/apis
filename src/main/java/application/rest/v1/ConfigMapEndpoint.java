@@ -47,10 +47,13 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/configmap")
 @Tag(name = "configmap", description="kAppNav ConfigMap CRUD API")
 public class ConfigMapEndpoint extends KAppNavEndpoint {
-    
+    private static final String className = ConfigMapEndpoint.class.getName();
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{configmap-name}")
@@ -79,6 +82,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             }   
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -105,6 +109,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
+            Logger.log(className, "createConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -132,6 +137,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
+            Logger.log(className, "replaceConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -158,6 +164,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "deleteConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

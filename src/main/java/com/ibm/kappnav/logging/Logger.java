@@ -66,33 +66,38 @@ public class Logger {
             level= level.toLowerCase(); 
             setLogTypes(false); 
             switch(level) { 
-               case "none": 
-                  break;               
-               case "error":
-                  enabled[LogType.ERROR.ordinal()]= true;  
-                  break;
-               case "warning": 
-                  enabled[LogType.ERROR.ordinal()]= true;  
-                  enabled[LogType.WARNING.ordinal()]= true;  
-                  break;
-               case "info": 
-                  enabled[LogType.ERROR.ordinal()]= true;  
-                  enabled[LogType.WARNING.ordinal()]= true;  
-                  enabled[LogType.INFO.ordinal()]= true;  
-                  break;
-               case "entry": 
-                  enabled[LogType.ERROR.ordinal()]= true;  
-                  enabled[LogType.WARNING.ordinal()]= true;  
-                  enabled[LogType.INFO.ordinal()]= true;  
-                  enabled[LogType.ENTRY.ordinal()]= true;  
-                  enabled[LogType.EXIT.ordinal()]= true;  
-                  break;
-               case "debug": 
-                  setLogTypes(true); 
-                  break;
-               case "all": 
-                  setLogTypes(true); 
-                  break;
+                case "none": 
+                    break;               
+                case "error":
+                    enabled[LogType.ERROR.ordinal()]= true;  
+                    break;
+                case "warning": 
+                    enabled[LogType.ERROR.ordinal()]= true;  
+                    enabled[LogType.WARNING.ordinal()]= true;  
+                    break;
+                case "info": 
+                    enabled[LogType.ERROR.ordinal()]= true;  
+                    enabled[LogType.WARNING.ordinal()]= true;  
+                    enabled[LogType.INFO.ordinal()]= true;  
+                    break;
+                case "entry": 
+                    enabled[LogType.ERROR.ordinal()]= true;  
+                    enabled[LogType.WARNING.ordinal()]= true;  
+                    enabled[LogType.INFO.ordinal()]= true;  
+                    enabled[LogType.ENTRY.ordinal()]= true;  
+                    enabled[LogType.EXIT.ordinal()]= true;  
+                    break;
+                case "debug": 
+                    setLogTypes(true); 
+                    break;
+                case "all": 
+                    setLogTypes(true); 
+                    break;
+                default : // same as info
+                    enabled[LogType.ERROR.ordinal()]= true;  
+                    enabled[LogType.WARNING.ordinal()]= true;  
+                    enabled[LogType.INFO.ordinal()]= true;  
+                    break;
             }           
    }  
 }

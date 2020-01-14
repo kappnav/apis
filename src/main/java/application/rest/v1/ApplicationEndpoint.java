@@ -46,9 +46,13 @@ import com.google.gson.JsonSyntaxException;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/application")
 @Tag(name = "application", description="kAppNav Application CRUD API")
 public class ApplicationEndpoint extends KAppNavEndpoint {
+
+    private static final String className = ApplicationEndpoint.class.getName();
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -71,6 +75,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(json.toString()).build();
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "getApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -98,6 +103,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonSyntaxException | ApiException e) {
+            Logger.log(className, "createApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -127,6 +133,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonSyntaxException | ApiException e) {
+            Logger.log(className, "replaceApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -150,6 +157,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "deleteApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

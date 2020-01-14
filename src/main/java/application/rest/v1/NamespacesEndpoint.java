@@ -38,6 +38,8 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1NamespaceList;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/namespaces")
 @Tag(name = "namespaces", description="Kubernetes Namespace List")
 public class NamespacesEndpoint extends KAppNavEndpoint {
@@ -60,6 +62,7 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
             return processNamespaces(client, getItemsAsList(client, o));
         }
         catch (IOException | ApiException e) {
+            Logger.log(NamespacesEndpoint.class.getName(), "getNamespaceList", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
