@@ -468,7 +468,7 @@ public abstract class KAppNavEndpoint {
     // Generic CRUD APIs 
 
     protected Object getNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
-        Logger.log(className, "getNamespacedGenericObject", Logger.LogType.INFO, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
+        Logger.log(className, "getNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.getNamespacedCustomObject(group, APP_VERSION,
@@ -476,21 +476,21 @@ public abstract class KAppNavEndpoint {
     }
 
     protected Object createNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, JsonObject body) throws ApiException {
-        Logger.log(className, "createNamespacedGenericObject", Logger.LogType.INFO, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace);
+        Logger.log(className, "createNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.createNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, body, "false");
     }
 
     protected Object replaceNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name, JsonObject body) throws ApiException {
-        Logger.log(className, "replaceNamespacedGenericObject", Logger.LogType.INFO, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
+        Logger.log(className, "replaceNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.replaceNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), body);
     }
 
     protected Object deleteNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
-        Logger.log(className, "deleteNamespacedGenericObject", Logger.LogType.INFO, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
+        Logger.log(className, "deleteNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         V1DeleteOptions options= new V1DeleteOptions();

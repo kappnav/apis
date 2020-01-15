@@ -199,7 +199,7 @@ public class ComponentInfoRegistry {
 
         }
         String key = apiVersion + "/" + componentKind;
-        Logger.log(className, "getComponentInfo", Logger.LogType.INFO,"Using key: " + key);
+        Logger.log(className, "getComponentInfo", Logger.LogType.DEBUG,"Using key: " + key);
         ComponentInfo info = map.get(key);
         if (info != null) {
             Logger.log(className, "getComponentInfo", Logger.LogType.EXIT,"Using key: " + key + " returning ComponentInfo 1: " + info);
@@ -211,7 +211,7 @@ public class ComponentInfoRegistry {
         // better of way doing this that would be less costly in
         // performance.
         try {
-            Logger.log(className, "getComponentInfo", Logger.LogType.INFO,"Cache miss for key: " + key + ", recreating cache from api resources");
+            Logger.log(className, "getComponentInfo", Logger.LogType.DEBUG,"Cache miss for key: " + key + ", recreating cache from api resources");
             map = processGroupList(client);
             componentKindMap.set(map);
             info = map.get(key);
@@ -287,16 +287,16 @@ public class ComponentInfoRegistry {
                             String kind = resource.get("kind").getAsString();
                             String key = (group != null ? group : "") + "/" + version + "/" + kind;
                             String groupKindKey = (group != null ? group : "") + "/" + kind;
-                            Logger.log(className, "processGroupVersion", Logger.LogType.INFO, "ComponentInfo map key: " + key);
+                            Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "ComponentInfo map key: " + key);
                             if (!map.containsKey(key)) {
-                                Logger.log(className, "processGroupVersion", Logger.LogType.INFO, "ComponentInfo key not found in map: " + key);
+                                Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "ComponentInfo key not found in map: " + key);
                                 String plural = resource.get("name").getAsString();
                                 if (!plural.contains("/")) {
                                     boolean namespaced = resource.get("namespaced").getAsBoolean();
-                                    Logger.log(className, "processGroupVersion", Logger.LogType.INFO, "Adding ComponentInfo key: " + key);
+                                    Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "Adding ComponentInfo key: " + key);
                                     map.put(key, new ComponentInfo(kind, group, version, plural, namespaced));
                                     String value = (group != null ? group : "") + "/" + version;
-                                    Logger.log(className, "processGroupVersion", Logger.LogType.INFO, "Adding groupKind key: " + groupKindKey + " value: " + value);
+                                    Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "Adding groupKind key: " + groupKindKey + " value: " + value);
                                     groupKindMap.put(groupKindKey, value);
                                 }
                             }
@@ -453,7 +453,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ConfigMapResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo=" + info 
+            Logger.log(ConfigMapResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo=" + info 
                 + ", pretty=" + pretty + ", labelSelector="+ labelSelector + ", resourceVersion=" + resourceVersion + ", watch="+watch);
             return api.listConfigMapForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -461,7 +461,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ConfigMapResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo=" + info + ", namespace="+namespace
+            Logger.log(ConfigMapResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace
                 + ", pretty=" + pretty + ", labelSelector="+ labelSelector + ", resourceVersion=" + resourceVersion + ", watch="+watch);
             return api.listNamespacedConfigMap(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -469,7 +469,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(ConfigMapResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo=" + info + ", namespace="+namespace + ", name=" + name);
+            Logger.log(ConfigMapResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace + ", name=" + name);
             return api.readNamespacedConfigMap(name, namespace, null, null, null);
         }
     }
@@ -480,7 +480,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(EndpointsResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo=" + info + ", pretty="+pretty 
+            Logger.log(EndpointsResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", pretty="+pretty 
                 + ", labelSelector=" + labelSelector + ", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listEndpointsForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -488,7 +488,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(EndpointsResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo=" + info + ", namespace=" + namespace + ", pretty="+pretty 
+            Logger.log(EndpointsResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", pretty="+pretty 
                 + ", labelSelector=" + labelSelector + ", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedEndpoints(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -496,7 +496,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(EndpointsResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo=" + info + ", namespace=" + namespace + ", name="+name); 
+            Logger.log(EndpointsResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", name="+name); 
             return api.readNamespacedEndpoints(name, namespace, null, null, null);
         }
     }
@@ -507,7 +507,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(EventResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info +", pretty="+pretty + ", labelSelector=" 
+            Logger.log(EventResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info +", pretty="+pretty + ", labelSelector=" 
                 + labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listEventForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -515,7 +515,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(EventResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(EventResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedEvent(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -523,7 +523,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(EventResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(EventResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedEvent(name, namespace, null, null, null);
         }
     }
@@ -534,7 +534,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(LimitRangeResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(LimitRangeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listLimitRangeForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -542,7 +542,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(LimitRangeResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(LimitRangeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedLimitRange(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -550,7 +550,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(LimitRangeResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(LimitRangeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedLimitRange(name, namespace, null, null, null);
         }
     }
@@ -561,7 +561,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(NamespaceResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(NamespaceResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespace(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -569,7 +569,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(NamespaceResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(NamespaceResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespace(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -577,7 +577,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(NamespaceResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(NamespaceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespace(name, null, null, null);
         }
     }
@@ -588,7 +588,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(NodeResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(NodeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNode(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -596,7 +596,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(NodeResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(NodeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNode(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -604,7 +604,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(NodeResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
+            Logger.log(NodeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             return api.readNode(name, null, null, null);
         }
     }
@@ -615,7 +615,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PersistentVolumeResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(PersistentVolumeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listPersistentVolume(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -623,7 +623,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PersistentVolumeResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(PersistentVolumeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listPersistentVolume(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -631,7 +631,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(PersistentVolumeResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(PersistentVolumeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readPersistentVolume(name, null, null, null);
         }
     }
@@ -642,7 +642,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PersistentVolumeClaimResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(PersistentVolumeClaimResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listPersistentVolumeClaimForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -650,7 +650,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PersistentVolumeClaimResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(PersistentVolumeClaimResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedPersistentVolumeClaim(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -658,7 +658,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(PersistentVolumeClaimResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(PersistentVolumeClaimResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedPersistentVolumeClaim(name, namespace, null, null, null);
         }
     }
@@ -669,7 +669,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PodResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(PodResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listPodForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -677,7 +677,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PodResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(PodResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedPod(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -685,7 +685,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(PodResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(PodResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedPod(name, namespace, null, null, null);
         }
     }
@@ -696,7 +696,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PodTemplateResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(PodTemplateResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listPodTemplateForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -704,7 +704,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(PodTemplateResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(PodTemplateResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedPodTemplate(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -712,7 +712,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(PodTemplateResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
+            Logger.log(PodTemplateResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             return api.readNamespacedPodTemplate(name, namespace, null, null, null);
         }
     }
@@ -723,7 +723,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ReplicationControllerResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(ReplicationControllerResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listReplicationControllerForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -731,7 +731,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ReplicationControllerResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(ReplicationControllerResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedReplicationController(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -739,7 +739,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(ReplicationControllerResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(ReplicationControllerResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedReplicationController(name, namespace, null, null, null);
         }
     }
@@ -750,7 +750,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ResourceQuotaResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(ResourceQuotaResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listResourceQuotaForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -758,7 +758,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ResourceQuotaResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(ResourceQuotaResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedResourceQuota(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -766,7 +766,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(ResourceQuotaResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(ResourceQuotaResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedResourceQuota(name, namespace, null, null, null);
         }
     }
@@ -777,7 +777,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(SecretResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(SecretResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listSecretForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -785,7 +785,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(SecretResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(SecretResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedSecret(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -793,7 +793,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(SecretResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(SecretResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedSecret(name, namespace, null, null, null);
         }
     }
@@ -804,7 +804,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ServiceResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(ServiceResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listServiceForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -812,7 +812,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ServiceResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(ServiceResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedService(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -820,7 +820,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(ServiceResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(ServiceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedService(name, namespace, null, null, null);
         }
     }
@@ -831,7 +831,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(CoreV1Api api, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ServiceAccountResolver.class.getName(), "listClusterObject", Logger.LogType.INFO, "For componentInfo="+ info + ", pretty="+pretty  
+            Logger.log(ServiceAccountResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listServiceAccountForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
         }
@@ -839,7 +839,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            Logger.log(ServiceAccountResolver.class.getName(), "listNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
+            Logger.log(ServiceAccountResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                 + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             return api.listNamespacedServiceAccount(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
         }
@@ -847,7 +847,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(CoreV1Api api, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            Logger.log(ServiceAccountResolver.class.getName(), "getNamespacedObject", Logger.LogType.INFO, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
+            Logger.log(ServiceAccountResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             return api.readNamespacedServiceAccount(name, namespace, null, null, null);
         }
     }

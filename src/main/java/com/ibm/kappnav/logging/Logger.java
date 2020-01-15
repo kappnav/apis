@@ -97,6 +97,7 @@ public class Logger {
                     enabled[LogType.ERROR.ordinal()]= true;  
                     enabled[LogType.WARNING.ordinal()]= true;  
                     enabled[LogType.INFO.ordinal()]= true;  
+                    Logger.log(Logger.class.getName(), "setLogLevel", Logger.LogType.DEBUG, "Log level was set to invalid value="+ level);
                     break;
             }           
    }  
