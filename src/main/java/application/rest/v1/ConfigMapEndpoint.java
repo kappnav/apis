@@ -82,7 +82,9 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             }   
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -109,7 +111,9 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
-            Logger.log(className, "createConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "createConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -137,7 +141,9 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
-            Logger.log(className, "replaceConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "replaceConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -164,7 +170,9 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "deleteConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "deleteConfigMap", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

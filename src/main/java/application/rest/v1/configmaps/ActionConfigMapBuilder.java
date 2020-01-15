@@ -87,8 +87,10 @@ public final class ActionConfigMapBuilder extends ConfigMapBuilder {
                     ag = parser.parse(ag.getAsString());
                     otherData.add(actionGroup, ag);
                 }
-                catch (JsonSyntaxException e) {
-                    Logger.log(ActionConfigMapBuilder.class.getName(), "mergeActions", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                catch (JsonSyntaxException e) {                                      
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(ActionConfigMapBuilder.class.getName(), "mergeActions", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    }
                 }
             }
             if (ag.isJsonArray()) {
@@ -129,7 +131,9 @@ public final class ActionConfigMapBuilder extends ConfigMapBuilder {
                     otherData.add(mapName, otherMap);
                 }
                 catch (JsonSyntaxException e) {
-                    Logger.log(ActionConfigMapBuilder.class.getName(), "mergeMaps", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(ActionConfigMapBuilder.class.getName(), "mergeMaps", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    }
                 }
             }
             if (otherMap.isJsonObject()) {

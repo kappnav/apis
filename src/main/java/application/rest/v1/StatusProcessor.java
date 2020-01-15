@@ -128,7 +128,9 @@ public class StatusProcessor {
                         // If the invocation of the snippet failed or the JSON it returned
                         // was malformed, fall through and return "Unknown" as the status.
                         catch (ClassCastException | JsonSyntaxException | NoSuchMethodException | SecurityException | ScriptException e) {
-                            Logger.log(StatusProcessor.class.getName(), "getComponentStatus", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + e.toString());
+                            if (Logger.isErrorEnabled()) {
+                                Logger.log(StatusProcessor.class.getName(), "getComponentStatus", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + e.toString());
+                            }
                         }
                     }
                 }

@@ -150,12 +150,16 @@ public abstract class KAppNavEndpoint {
         if (element != null && element.isJsonObject()) {
             return element.getAsJsonObject();
         }
-        Logger.log(className, "getItemAsObject", Logger.LogType.DEBUG, "Return null.");
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getItemAsObject", Logger.LogType.DEBUG, "Return null.");
+        }
         return null;
     }
     
     public static String getComponentSubKind(JsonObject component) {
-        Logger.log(className, "getComponentSubKind", Logger.LogType.ENTRY,"");
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getComponentSubKind", Logger.LogType.ENTRY,"");
+        }
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
@@ -166,48 +170,70 @@ public abstract class KAppNavEndpoint {
                     if (s != null) {
                         s = s.toLowerCase(Locale.ENGLISH);
                     }
-                    Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, s);
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, s);
+                    }
                     return s;
                 }
             }
         } else {
-            Logger.log(className, "getComponentSubKind", Logger.LogType.DEBUG, "Metadata is null.");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getComponentSubKind", Logger.LogType.DEBUG, "Metadata is null.");
+            }
         }
-        Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, "Return null.");
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, "Return null.");
+        }
         return null;
     }
     
     public static String getComponentName(JsonObject component) {
-        Logger.log(className, "getComponentName", Logger.LogType.ENTRY,"");
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getComponentName", Logger.LogType.ENTRY,"");
+        }
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAME_PROPERTY_NAME);
             if (e != null && e.isJsonPrimitive()) {
                 String componentName = e.getAsString();
-                Logger.log(className, "getComponentName", Logger.LogType.EXIT, componentName);
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, "getComponentName", Logger.LogType.EXIT, componentName);
+                }
                 return componentName;
             }
         } else {
-            Logger.log(className, "getComponentName", Logger.LogType.DEBUG, "Metadata is null.");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getComponentName", Logger.LogType.DEBUG, "Metadata is null.");
+            }
         }
-        Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Return null.");
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Return null.");
+        }
         return null;
     }
 
     public static String getComponentNamespace(JsonObject component) {
-        Logger.log(className, "getComponentNamespace", Logger.LogType.ENTRY,"");
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getComponentNamespace", Logger.LogType.ENTRY,"");
+        }
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAMESPACE_PROPERTY_NAME);
             if (e != null && e.isJsonPrimitive()) {
                 String componentName = e.getAsString();
-                Logger.log(className, "getComponentNamespace", Logger.LogType.EXIT, componentName);
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, "getComponentNamespace", Logger.LogType.EXIT, componentName);
+                }
                 return componentName;
             }
         } else {
-            Logger.log(className, "getComponentNamespace", Logger.LogType.DEBUG, "Metadata is null.");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getComponentNamespace", Logger.LogType.DEBUG, "Metadata is null.");
+            }
         }
-        Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Returning defaultNamespace=" + DEFAULT_NAMESPACE);
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Returning defaultNamespace=" + DEFAULT_NAMESPACE);
+        }
         return DEFAULT_NAMESPACE;
     }
 
@@ -391,7 +417,9 @@ public abstract class KAppNavEndpoint {
             client.getHttpClient().setConnectionSpecs(Collections.singletonList((spec)));
         }
         catch (Exception e) {
-            Logger.log(className, "trustAllCerts", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "trustAllCerts", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
+            }
         }
     }
     
@@ -400,7 +428,9 @@ public abstract class KAppNavEndpoint {
             return URLEncoder.encode(s, "UTF-8");
         }
         catch (UnsupportedEncodingException u) {
-            Logger.log(className, "encodeURLParameter", Logger.LogType.DEBUG, "Caught UnsupportedEncodingException " + u.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "encodeURLParameter", Logger.LogType.DEBUG, "Caught UnsupportedEncodingException " + u.toString());
+            }
         }
         // Should never happen, but return the unencoded string as a fallback.
         return s;

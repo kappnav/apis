@@ -158,13 +158,19 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             String msg = null;
             if (e instanceof PatternException) {
                 msg = "pattern-error: " + e.getMessage();
-                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + msg);
+                }
             } else if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                }
             } else {
                 msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: " + e.getMessage();
-                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
@@ -271,7 +277,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                                         response.add(v);
                                     }       
                                 } catch (Exception ex)  {
-                                    Logger.log(className, "getCommands", Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
+                                    if (Logger.isDebugEnabled()) {
+                                        Logger.log(className, "getCommands", Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
+                                    }
                                 }                                        
                             }
                         }
@@ -291,10 +299,14 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             String msg = null;          
             if (e instanceof ApiException)  {              
                 msg = "input-error: " + e.getMessage(); 
-                Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
+                }
             } else {
                 msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();  
-                Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);             
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);   
+                }          
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
@@ -321,7 +333,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             JsonObject job = getItemAsObject(client, batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
             if (!s.matches(job)) {
                 String msg = "input-error: Job " + jobName + " is not found in command action.";
-                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, msg); 
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, msg); 
+                }
                 throw new ApiException(404, msg);
             }
             
@@ -344,18 +358,24 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 }
             }
             String msg = "syntax-error: " + e.getMessage();
-            Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught JsonSyntaxException returning status: " + getResponseCode(e) + " " + msg);
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught JsonSyntaxException returning status: " + getResponseCode(e) + " " + msg);
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
         catch (IOException | ApiException e) {
             String msg = null;           
             if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             else {
                 msg = "internal-error: " + "An internal error occurred in deleting a command action job. error:" + e.getMessage(); 
-                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
@@ -393,10 +413,14 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             String msg = null;           
             if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-                Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                }
             } else {   
                 msg = "internal-error: An internal error occurred in retrieving an action config map. error: " + e.getMessage();
-                Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }                  
@@ -404,7 +428,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     private String resolve(ApiClient client, String name, String kind, String apiVersion, String namespace, String pattern) throws ApiException {
         String methodName = "resolve";
-        Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", pattern="+pattern);
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", pattern="+pattern);
+        }
 
         final JsonObject resource; 
         final ResolvedValue resolvedValue;
@@ -418,20 +444,28 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             resolvedValue = context.resolve(pattern);
         } catch (ApiException e) {
             String msg = e.getMessage();
-            Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
+            }
             throw new ApiException(404, msg);           
         } catch (PatternException e) {
             String msg = e.getMessage();
-            Logger.log(className, methodName, Logger.LogType.ERROR, "Caught PatternException " + msg);
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.ERROR, "Caught PatternException " + msg);
+            }
             throw new ApiException(207, msg);
         } 
-        Logger.log(className, methodName, Logger.LogType.EXIT, "ResolvedValue="+resolvedValue.getValue());
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "ResolvedValue="+resolvedValue.getValue());
+        }
         return resolvedValue.getValue();     
     }
     
     private Response executeCommand(String jsonstr, String name, String kind, String apiVersion, String namespace, String commandName, String appName, String appNamespace, String user) {
         String methodName = "executeCommand";
-        Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", commandName="+commandName + ", appName="+appName + ", appNamespace=" + appNamespace + ", user=" +user);
+        if (Logger.isErrorEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", commandName="+commandName + ", appName="+appName + ", appNamespace=" + appNamespace + ", user=" +user);
+        }
 
         try {
             final ApiClient client = getApiClient();
@@ -440,7 +474,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 resource = getResource(client, name, kind, apiVersion, namespace);
             } catch (ApiException e) {
                 String msg = e.getMessage();
-                Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
+                }
                 throw new ApiException (404, msg);
             }
             
@@ -454,7 +490,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final JsonObject cmdAction = context.getCommandAction(commandName);  
             if (cmdAction == null) {
                 String msg = "Command action " + commandName + " is not found in config map.";
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                }
                 throw new ApiException(404, msg);
             }
                         
@@ -465,7 +503,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final JsonElement imageProp = cmdAction.get(IMAGE_PROPERTY_NAME);
             if (imageProp == null || !imageProp.isJsonPrimitive()) {
                 String msg = "Image was not specified in the command action.";
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                }
                 throw new ApiException(404, msg);
             }
             final String imageName = imageProp.getAsString();
@@ -474,7 +514,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final JsonElement cmdPatternProp = cmdAction.get(CMD_PATTERN_PROPERTY_NAME);
             if (cmdPatternProp == null || !cmdPatternProp.isJsonPrimitive()) {
                 String msg = "cmd-pattern was not specified in the command action.";
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                }
                 throw new ApiException(404, msg);
             }
             final String cmdPattern = cmdPatternProp.getAsString();
@@ -489,7 +531,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 // If the resolution failed we should stop here instead of generating a bad job.
                 // REVISIT: Message translation required.
                 String msg = "An internal error occurred in the resolution of the command action pattern" + cmdPattern;
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                }
                 throw new KAppNavException(msg);
             }
             final String resolvedPattern = resolvedValue.getValue();
@@ -540,7 +584,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
             final JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, null));
-            Logger.log(className, methodName, Logger.LogType.EXIT, response.toString());
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, response.toString());
+            }
             return Response.ok(response.toString()).build();
         }
         catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException | PatternException e) {
@@ -556,7 +602,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             if (e instanceof PatternException) 
                 msg = "pattern-error: ";       
             msg = msg + e.getMessage();     
-            Logger.log(className, methodName, Logger.LogType.ERROR, "Caught Exception " + msg);
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.ERROR, "Caught Exception " + msg);
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
@@ -564,7 +612,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private void processUserInput(String jsonstr, JsonObject action, ResolutionContext context) throws JsonSyntaxException, 
         ValidationException, KAppNavException {
         String methodName = "processUserInput";
-        Logger.log(className, methodName, Logger.LogType.ENTRY, "JsonStr=" + jsonstr + ", action= " + action.toString() + ", context=" + context.toString());
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "JsonStr=" + jsonstr + ", action= " + action.toString() + ", context=" + context.toString());
+        }
 
         final JsonElement requiresInputProp = action.get(REQUIRES_INPUT_PROPERTY_NAME);
         if (requiresInputProp != null && requiresInputProp.isJsonPrimitive()) {
@@ -581,20 +631,26 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                     else {
                         // REVISIT: Message translation required.
                         String msg = "The inputs " + jsonstr + " specified was in the wrong format. It is expected to be a map.";
-                        Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                        if (Logger.isErrorEnabled()) {
+                            Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                        }
                         throw new ValidationException(msg);
                     }
                 }
                 else {
                     userInput = null;
                 }
-                Logger.log(className, methodName, Logger.LogType.EXIT, "userInput="+userInput);
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.EXIT, "userInput="+userInput);
+                }
                 context.setUserInput(userInput, fields);
             }
             else {
                 // REVISIT: Message translation required.
                 String msg = "An error occurred in the resolution of the field definitions for input \"" + requiresInput + "\"." ;
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.ERROR, msg);
+                }
                 throw new KAppNavException(msg);
             }
         }
@@ -623,7 +679,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private Map<String,String> createJobLabels(ApiClient client, JsonObject resource, String name, String kind, 
             String namespace, String appName, String appNamespace, String actionName, String userId) {
         String methodName = "createJobLabels";
-        Logger.log(className, methodName, Logger.LogType.ENTRY, "Resource=" + resource.toString() + ", name="+ name + ", kind=" + kind + ", namespace="+namespace + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName + ", userId="+userId);
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Resource=" + resource.toString() + ", name="+ name + ", kind=" + kind + ", namespace="+namespace + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName + ", userId="+userId);
+        }
 
         final Map<String,String> labels = new HashMap<>();
         labels.put(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
@@ -651,13 +709,17 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             labels.put(KAPPNAV_JOB_COMPONENT_NAME, name);
             labels.put(KAPPNAV_JOB_COMPONENT_NAMESPACE, namespace);
         }
-        Logger.log(className, methodName, Logger.LogType.EXIT, labels.toString());
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, labels.toString());
+        }
         return labels;
     }
     
     private JsonObject getResource(ApiClient client, String name, String kind, String apiVersion, String namespace) throws ApiException {
         String methodName = "resolve";
-        Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace);
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace);
+        }
 
         if (registry == null) {
             // Initialize the registry here if CDI failed to do it.
@@ -667,12 +729,16 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         if (apiVersion == null || apiVersion.trim().length() == 0) {
             apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
             if (apiVersion == null) {
-                Logger.log(className, "getResource", Logger.LogType.ERROR, "Api version is null.");
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getResource", Logger.LogType.ERROR, "Api version is null.");
+                }
                 throw new ApiException(400, "getResource Unknown kind: " + kind);
             }
         }
         final Object o = registry.getNamespacedObject(client, kind, apiVersion, namespace, name);
-        Logger.log(className, methodName, Logger.LogType.EXIT, "");
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "");
+        }
         return getItemAsObject(client, o);
     }
     
@@ -722,7 +788,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
         } catch (Exception e) { 
             String msg = e.getMessage() + ". The correct format is yyyy-MM-dd'T'HH:mm:sss";
-            Logger.log(className, "convertTimeStringToTimestamp", Logger.LogType.ERROR, "Caught exception " + msg);
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "convertTimeStringToTimestamp", Logger.LogType.ERROR, "Caught exception " + msg);
+            }
             throw new ApiException(msg);
         } 
         return timestamp;
@@ -733,7 +801,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         try {
             return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException ex) {
-            Logger.log(className, "urlDecode", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + ex.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "urlDecode", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + ex.toString());
+            }
             throw new RuntimeException(ex.getCause());
         }
     }

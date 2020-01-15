@@ -30,73 +30,87 @@ public class Logger {
    // code specifies log type it is writing 
    public enum LogType { ENTRY, EXIT, INFO, WARNING, ERROR, DEBUG }; 
 
-   private static boolean[] enabled= new boolean[LogType.values().length];
+   private static boolean[] typeEnabled= new boolean[LogType.values().length];
 
-   static {
-        enabled[LogType.ERROR.ordinal()]= true;
-        enabled[LogType.WARNING.ordinal()]= true;
-        enabled[LogType.INFO.ordinal()]= true;
-
-        // need to removed these 2 lines once issue 104 done
-        // Uncomment these 3 lines to turn on debug when needed for now
-        //enabled[LogType.ENTRY.ordinal()]= true;  
-        //enabled[LogType.EXIT.ordinal()]= true;
-        //enabled[LogType.DEBUG.ordinal()] = true;
-    } // set default
+   static { setLogLevel(LogLevel.INFO); } // set default 
 
     // return log message as string 
-    static String getLogMessage(LogType logType, String logData) {
+    public static String getLogMessage(LogType logType, String logData) {
        return "["+logType+"] "+logData; 
     } 
 
     public static void log(String className, String methodName, LogType logType, String logData) {
-      if ( enabled[logType.ordinal()] ) 
+      if ( typeEnabled[logType.ordinal()] ) 
         System.out.println("[" +new SimpleDateFormat("MM/dd/yy HH:mm:ss:SSS z").format(new Date())  
             + "] " + Thread.currentThread().getId() + " " + className + " " + methodName 
             + " " + getLogMessage(logType, logData)); 
     }
 
+    // guard methods 
+    public static boolean isEntryEnabled() { 
+        return typeEnabled[LogType.ENTRY.ordinal()]; 
+    } 
+        
+    public static boolean isExitEnabled() { 
+        return typeEnabled[LogType.EXIT.ordinal()]; 
+    } 
+    
+    public static boolean isInfoEnabled() { 
+        return typeEnabled[LogType.INFO.ordinal()]; 
+    } 
+    
+    public static boolean isWarningEnabled() { 
+        return typeEnabled[LogType.WARNING.ordinal()]; 
+    } 
+    
+    public static boolean isErrorEnabled() { 
+        return typeEnabled[LogType.ERROR.ordinal()]; 
+    } 
+    
+    public static boolean isDebugEnabled() { 
+        return typeEnabled[LogType.DEBUG.ordinal()]; 
+    }
+
    private static void setLogTypes(boolean value) { 
       for ( LogType type: LogType.values() ) { 
-          enabled[type.ordinal()]= value; 
+          typeEnabled[type.ordinal()]= value; 
       } 
    } 
 
-   public static void setLogLevel(String level) {
-            level= level.toLowerCase(); 
+   public static void setLogLevel(LogLevel level) {
             setLogTypes(false); 
             switch(level) { 
-                case "none": 
+                case NONE: 
                     break;               
-                case "error":
-                    enabled[LogType.ERROR.ordinal()]= true;  
+                case ERROR:
+                    typeEnabled[LogType.ERROR.ordinal()]= true;  
                     break;
-                case "warning": 
-                    enabled[LogType.ERROR.ordinal()]= true;  
-                    enabled[LogType.WARNING.ordinal()]= true;  
+                case WARNING: 
+                    typeEnabled[LogType.ERROR.ordinal()]= true;  
+                    typeEnabled[LogType.WARNING.ordinal()]= true;  
                     break;
-                case "info": 
-                    enabled[LogType.ERROR.ordinal()]= true;  
-                    enabled[LogType.WARNING.ordinal()]= true;  
-                    enabled[LogType.INFO.ordinal()]= true;  
+                case INFO: 
+                    typeEnabled[LogType.ERROR.ordinal()]= true;  
+                    typeEnabled[LogType.WARNING.ordinal()]= true;  
+                    typeEnabled[LogType.INFO.ordinal()]= true;  
                     break;
-                case "entry": 
-                    enabled[LogType.ERROR.ordinal()]= true;  
-                    enabled[LogType.WARNING.ordinal()]= true;  
-                    enabled[LogType.INFO.ordinal()]= true;  
-                    enabled[LogType.ENTRY.ordinal()]= true;  
-                    enabled[LogType.EXIT.ordinal()]= true;  
+                case DEBUG: 
+                    typeEnabled[LogType.ERROR.ordinal()]= true;  
+                    typeEnabled[LogType.WARNING.ordinal()]= true;  
+                    typeEnabled[LogType.INFO.ordinal()]= true;  
+                    typeEnabled[LogType.ENTRY.ordinal()]= true;  
+                    typeEnabled[LogType.EXIT.ordinal()]= true;  
                     break;
-                case "debug": 
+                case ENTRY: 
                     setLogTypes(true); 
                     break;
-                case "all": 
+                case ALL: 
                     setLogTypes(true); 
                     break;
                 default : // same as info
-                    enabled[LogType.ERROR.ordinal()]= true;  
-                    enabled[LogType.WARNING.ordinal()]= true;  
-                    enabled[LogType.INFO.ordinal()]= true;  
+                    typeEnabled[LogType.ERROR.ordinal()]= true;  
+                    typeEnabled[LogType.WARNING.ordinal()]= true;  
+                    typeEnabled[LogType.INFO.ordinal()]= true;  
                     Logger.log(Logger.class.getName(), "setLogLevel", Logger.LogType.DEBUG, "Log level was set to invalid value="+ level);
                     break;
             }           

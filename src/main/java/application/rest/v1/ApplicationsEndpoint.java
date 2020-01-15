@@ -78,7 +78,9 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             return processApplications(client, getItemsAsList(client, o));
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getApplications", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "getApplications", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -102,7 +104,9 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             return processApplications(client, getItemAsList(client, o));
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getApplicationAndMap", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "getApplicationAndMap", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

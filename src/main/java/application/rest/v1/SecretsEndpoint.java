@@ -71,7 +71,9 @@ public class SecretsEndpoint extends KAppNavEndpoint {
             return processSecrets(client, getItemsAsList(client, o));  
         }
         catch (IOException | JsonParseException | ApiException e) {
-            Logger.log(SecretsEndpoint.class.getName(), "getSecrets", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(SecretsEndpoint.class.getName(), "getSecrets", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

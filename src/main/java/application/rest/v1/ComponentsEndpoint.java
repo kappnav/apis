@@ -94,7 +94,9 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             return processComponentKinds(client, componentKinds, namespaces, selector, namespace, name);
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getComponents", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "getComponents", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }   
     }
@@ -123,11 +125,15 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                             });
                         }
                     } else {
-                        Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                        if (Logger.isWarningEnabled()) {
+                            Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                        }
                     }
                 }
                 catch (ApiException e) {
-                    Logger.log(className, "processComponentKinds", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(className, "processComponentKinds", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+                    }
                 }
             });
         }

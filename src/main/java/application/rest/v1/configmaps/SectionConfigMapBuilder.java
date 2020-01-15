@@ -77,7 +77,9 @@ public final class SectionConfigMapBuilder extends ConfigMapBuilder {
                     otherData.add(sectionGroup, ag);
                 }
                 catch (JsonSyntaxException e) {
-                    Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    }
                 }
             }
             if (ag.isJsonArray()) {
@@ -105,7 +107,9 @@ public final class SectionConfigMapBuilder extends ConfigMapBuilder {
                 }
             }
         } else {
-            Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Section group is null.");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "mergeSections", Logger.LogType.DEBUG, "Section group is null.");
+            }
         }
     }    
 }
