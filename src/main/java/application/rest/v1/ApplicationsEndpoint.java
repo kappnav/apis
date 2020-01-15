@@ -43,9 +43,12 @@ import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/applications")
 @Tag(name = "applications", description="kAppNav Applications API")
 public class ApplicationsEndpoint extends KAppNavEndpoint {
+    private static final String className = ApplicationsEndpoint.class.getName();
 
     private static final String APPLICATIONS_PROPERTY_NAME = "applications";
     private static final String APPLICATION_PROPERTY_NAME = "application";
@@ -75,6 +78,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             return processApplications(client, getItemsAsList(client, o));
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "getApplications", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -98,6 +102,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             return processApplications(client, getItemAsList(client, o));
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "getApplicationAndMap", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

@@ -49,10 +49,13 @@ import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/components")
 @Tag(name = "components", description="kAppNav Components API")
 public class ComponentsEndpoint extends KAppNavEndpoint {
-    
+    private static final String className = ComponentsEndpoint.class.getName();
+
     private static final String COMPONENTS_PROPERTY_NAME = "components";
     private static final String COMPONENT_PROPERTY_NAME = "component";
     private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
@@ -91,6 +94,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             return processComponentKinds(client, componentKinds, namespaces, selector, namespace, name);
         }
         catch (IOException | ApiException e) {
+            Logger.log(className, "getComponents", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }   
     }
@@ -119,10 +123,12 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                             });
                         }
                     } else {
-                        System.out.println("processComponentKinds WARNING: Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                        Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
                     }
                 }
-                catch (ApiException e) {}
+                catch (ApiException e) {
+                    Logger.log(className, "processComponentKinds", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+                }
             });
         }
         return Response.ok(response.getJSON()).build();

@@ -41,6 +41,8 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1SecretList;
 
+import com.ibm.kappnav.logging.Logger;
+
 @Path("/secrets")
 @Tag(name = "secrets", description="kAppNav Secrets API")
 public class SecretsEndpoint extends KAppNavEndpoint {
@@ -69,6 +71,7 @@ public class SecretsEndpoint extends KAppNavEndpoint {
             return processSecrets(client, getItemsAsList(client, o));  
         }
         catch (IOException | JsonParseException | ApiException e) {
+            Logger.log(SecretsEndpoint.class.getName(), "getSecrets", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

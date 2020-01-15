@@ -156,13 +156,15 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         catch (IOException | ApiException | PatternException e) {
             String msg = null;
-            if (e instanceof PatternException) 
+            if (e instanceof PatternException) {
                 msg = "pattern-error: " + e.getMessage();
-            else if (e instanceof ApiException)    
+                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + msg);
+            } else if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-            else {
+                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+            } else {
                 msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: " + e.getMessage();
-                Logger.log(className, "resolve", Logger.LogType.ERROR, "resolve got IOException returning status: " + getResponseCode(e) + " " + msg);
+                Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
@@ -269,6 +271,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                                         response.add(v);
                                     }       
                                 } catch (Exception ex)  {
+                                    Logger.log(className, "getCommands", Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
                                 }                                        
                             }
                         }
@@ -288,8 +291,10 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             String msg = null;          
             if (e instanceof ApiException)  {              
                 msg = "input-error: " + e.getMessage(); 
+                Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
             } else {
-                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();               
+                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();  
+                Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);             
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
@@ -316,6 +321,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             JsonObject job = getItemAsObject(client, batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
             if (!s.matches(job)) {
                 String msg = "input-error: Job " + jobName + " is not found in command action.";
+                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, msg); 
                 throw new ApiException(404, msg);
             }
             
@@ -338,14 +344,19 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 }
             }
             String msg = "syntax-error: " + e.getMessage();
+            Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught JsonSyntaxException returning status: " + getResponseCode(e) + " " + msg);
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
         catch (IOException | ApiException e) {
             String msg = null;           
-            if (e instanceof ApiException)    
+            if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-            else
+                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+            }
+            else {
                 msg = "internal-error: " + "An internal error occurred in deleting a command action job. error:" + e.getMessage(); 
+                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
@@ -380,10 +391,13 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         catch (IOException | ApiException e) {
             String msg = null;           
-            if (e instanceof ApiException)    
+            if (e instanceof ApiException) {
                 msg = "input-error: " + e.getMessage(); 
-            else    
+                Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+            } else {   
                 msg = "internal-error: An internal error occurred in retrieving an action config map. error: " + e.getMessage();
+                Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }                  
     }
@@ -653,7 +667,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         if (apiVersion == null || apiVersion.trim().length() == 0) {
             apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
             if (apiVersion == null) {
-                Logger.log(className, "getResource", Logger.LogType.ERROR, "getResource Unknown kind: " + kind);
+                Logger.log(className, "getResource", Logger.LogType.ERROR, "Api version is null.");
                 throw new ApiException(400, "getResource Unknown kind: " + kind);
             }
         }

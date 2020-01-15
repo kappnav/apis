@@ -48,8 +48,11 @@ import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.util.Config; 
 
+import com.ibm.kappnav.logging.Logger;
+
 public abstract class KAppNavEndpoint {
-    
+    private static final String className = KAppNavEndpoint.class.getName();
+
     protected static final String NAME_PATTERN_ONE_OR_MORE = "^[a-z0-9-.:]+$";
     protected static final String NAME_PATTERN_ZERO_OR_MORE = "^[a-z0-9-.:]*$";
     protected static final String API_VERSION_PATTERN_ZERO_OR_MORE = "^[a-z0-9-.:/]*$";
@@ -147,10 +150,12 @@ public abstract class KAppNavEndpoint {
         if (element != null && element.isJsonObject()) {
             return element.getAsJsonObject();
         }
+        Logger.log(className, "getItemAsObject", Logger.LogType.DEBUG, "Return null.");
         return null;
     }
     
     public static String getComponentSubKind(JsonObject component) {
+        Logger.log(className, "getComponentSubKind", Logger.LogType.ENTRY,"");
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
@@ -161,32 +166,48 @@ public abstract class KAppNavEndpoint {
                     if (s != null) {
                         s = s.toLowerCase(Locale.ENGLISH);
                     }
+                    Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, s);
                     return s;
                 }
             }
+        } else {
+            Logger.log(className, "getComponentSubKind", Logger.LogType.DEBUG, "Metadata is null.");
         }
+        Logger.log(className, "getComponentSubKind", Logger.LogType.EXIT, "Return null.");
         return null;
     }
     
     public static String getComponentName(JsonObject component) {
+        Logger.log(className, "getComponentName", Logger.LogType.ENTRY,"");
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAME_PROPERTY_NAME);
             if (e != null && e.isJsonPrimitive()) {
-                return e.getAsString();
+                String componentName = e.getAsString();
+                Logger.log(className, "getComponentName", Logger.LogType.EXIT, componentName);
+                return componentName;
             }
+        } else {
+            Logger.log(className, "getComponentName", Logger.LogType.DEBUG, "Metadata is null.");
         }
+        Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Return null.");
         return null;
     }
 
     public static String getComponentNamespace(JsonObject component) {
+        Logger.log(className, "getComponentNamespace", Logger.LogType.ENTRY,"");
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAMESPACE_PROPERTY_NAME);
             if (e != null && e.isJsonPrimitive()) {
-                return e.getAsString();
+                String componentName = e.getAsString();
+                Logger.log(className, "getComponentNamespace", Logger.LogType.EXIT, componentName);
+                return componentName;
             }
+        } else {
+            Logger.log(className, "getComponentNamespace", Logger.LogType.DEBUG, "Metadata is null.");
         }
+        Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Returning defaultNamespace=" + DEFAULT_NAMESPACE);
         return DEFAULT_NAMESPACE;
     }
 
@@ -369,14 +390,18 @@ public abstract class KAppNavEndpoint {
             ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
             client.getHttpClient().setConnectionSpecs(Collections.singletonList((spec)));
         }
-        catch (Exception e) {}
+        catch (Exception e) {
+            Logger.log(className, "trustAllCerts", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
+        }
     }
     
     protected static String encodeURLParameter(String s) {
         try {
             return URLEncoder.encode(s, "UTF-8");
         }
-        catch (UnsupportedEncodingException u) {}
+        catch (UnsupportedEncodingException u) {
+            Logger.log(className, "encodeURLParameter", Logger.LogType.DEBUG, "Caught UnsupportedEncodingException " + u.toString());
+        }
         // Should never happen, but return the unencoded string as a fallback.
         return s;
     }
@@ -443,6 +468,7 @@ public abstract class KAppNavEndpoint {
     // Generic CRUD APIs 
 
     protected Object getNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
+        Logger.log(className, "getNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.getNamespacedCustomObject(group, APP_VERSION,
@@ -450,18 +476,21 @@ public abstract class KAppNavEndpoint {
     }
 
     protected Object createNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, JsonObject body) throws ApiException {
+        Logger.log(className, "createNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.createNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, body, "false");
     }
 
     protected Object replaceNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name, JsonObject body) throws ApiException {
+        Logger.log(className, "replaceNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         return coa.replaceNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), body);
     }
 
     protected Object deleteNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
+        Logger.log(className, "deleteNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         V1DeleteOptions options= new V1DeleteOptions();
