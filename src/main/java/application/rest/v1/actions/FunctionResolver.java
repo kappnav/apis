@@ -81,10 +81,11 @@ public final class FunctionResolver implements Resolver {
             }
             
             // Invoke the function.
+            final String result = function.invoke(context, parameters);
             if (Logger.isExitEnabled()) {
-                Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.EXIT, "");
+                Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.EXIT, "Result=" + result);
             }
-            return function.invoke(context, parameters);
+            return result;
         }
         if (Logger.isErrorEnabled()) {
             Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Cannot resolve " + suffix + " because function name is null");
