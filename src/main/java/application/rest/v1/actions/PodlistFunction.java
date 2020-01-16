@@ -65,7 +65,7 @@ public class PodlistFunction implements Function {
             if (!DEPLOYMENT_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't a deployment.
                 if (Logger.isDebugEnabled()) {
-                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment. Returning null.");
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment but " + context.getResourceKind() + ". Returning null.");
                 }
                 return null;
             }
@@ -135,6 +135,10 @@ public class PodlistFunction implements Function {
     }
 
     private String getNameSpaceFromResource(JsonObject resource) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.ENTRY, "For resource="+ resource.toString());
+        }
+        
         String deplnamespace = null;
         JsonElement element = resource.get(METADATA_PROPERTY_NAME);
         if (element != null && element.isJsonObject()) {
@@ -144,8 +148,8 @@ public class PodlistFunction implements Function {
                 deplnamespace = namespace.getAsString();
             }
         }
-        if (Logger.isDebugEnabled()) {
-            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.DEBUG, "Result=" + deplnamespace);
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.EXIT, "Result=" + deplnamespace);
         }
         return deplnamespace;
     }

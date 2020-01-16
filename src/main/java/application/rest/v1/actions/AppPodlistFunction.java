@@ -63,7 +63,7 @@ public class AppPodlistFunction implements Function {
             if (!APPLICATION_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't an application.
                 if (Logger.isDebugEnabled()) {
-                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't an application, returning null.");
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't an application but " + context.getResourceKind() + ", returning null.");
                 }
                 return null;
             }
@@ -86,7 +86,7 @@ public class AppPodlistFunction implements Function {
             }
             catch (ApiException e) {
                 if (Logger.isDebugEnabled()) {
-                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "Caught ApiException, returning null.");
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "Returning null because it caught ApiException " + e.toString());
                 }
                 return null;
             }  
@@ -100,6 +100,9 @@ public class AppPodlistFunction implements Function {
         PodlistResult result = new PodlistResult();             
         //retrieve app namespace from the resource 
         String appNamespace = getNameSpaceFromResource(resource);
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getPodListFromApp", Logger.LogType.DEBUG, "For appNamespace=" + appNamespace);
+        }
 
         //check if app contains "Deployment" component kind        
         componentKinds.forEach(v -> {  
@@ -150,7 +153,10 @@ public class AppPodlistFunction implements Function {
                     }
                 }
             } 
-        });           
+        });       
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getPodListFromApp", Logger.LogType.DEBUG, "Result=" + result.getJSON());
+        }    
         return result.getJSON();
     }
 
@@ -165,7 +171,7 @@ public class AppPodlistFunction implements Function {
             }
         }
         if (Logger.isDebugEnabled()) {
-            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.DEBUG, "appNamespace=" + appnamespace);
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.DEBUG, "Return appNamespace=" + appnamespace);
         }
         return appnamespace;
     }

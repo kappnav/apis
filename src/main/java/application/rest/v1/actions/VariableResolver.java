@@ -58,7 +58,7 @@ public class VariableResolver implements Resolver {
         // (e.g. var x = "${var.y}", var y = "${var.z}", var z = "${var.x}").
         if (context.isVisitingVariable(suffix)) {
             if (Logger.isErrorEnabled()) {
-                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.ERROR, suffix + " contains cycles in variable definitions.");
+                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Suffix=" + suffix + " contains cycles in variable definitions.");
             }
             throw new PatternException(suffix + " contains cycles in variable definitions.");
         }

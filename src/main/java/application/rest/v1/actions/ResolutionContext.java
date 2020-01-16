@@ -472,7 +472,7 @@ public final class ResolutionContext {
 
         // No map or no data section. Store null in the local cache.
         if (Logger.isDebugEnabled()) {
-            Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "No map or no data section. Store null in the local cache.");
+            Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "No map or no data section for mapName=" + mapName + ". Store null in the local cache.");
         }
         kappnavNSMapCache.put(mapName, null);
         return null;
@@ -504,9 +504,9 @@ public final class ResolutionContext {
         // No function found in the snippet.
         if (functionName == null) {
             if (Logger.isErrorEnabled()) {
-                Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "No function found in the snippet.");
+                Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "No function found in the snippet="+ snippet);
             }
-            throw new PatternException("no function found in the snippet");
+            throw new PatternException("no function found in the snippet " + snippet);
         }
         // Invoke the snippet using the built-in JavaScript engine.
         ScriptEngineManager sce = new ScriptEngineManager();
@@ -522,7 +522,7 @@ public final class ResolutionContext {
                 return o.toString();
             } else {
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "Invoke the snippet for functionName=" + functionName + " using the build-in JavaScript engine return null.");
+                    Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "Cannot invoke snippet " + snippet);
                 }
                 throw new PatternException("cannot invoke snippet " + snippet);
             }

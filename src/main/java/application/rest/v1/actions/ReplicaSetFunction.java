@@ -61,7 +61,7 @@ public class ReplicaSetFunction implements Function {
             if (!DEPLOYMENT_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't a deployment.
                 if (Logger.isDebugEnabled()) {
-                    Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment. Returning null.");
+                    Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment but " + context.getResourceKind() + ". Returning null.");
                 }
                 return null;
             }
