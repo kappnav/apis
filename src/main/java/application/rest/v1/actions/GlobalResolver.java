@@ -16,6 +16,8 @@
 
 package application.rest.v1.actions;
 
+import com.ibm.kappnav.logging.Logger;
+
 // ${global.<configmap-name>#<configmap-field>}
 public final class GlobalResolver implements Resolver {
 
@@ -31,6 +33,9 @@ public final class GlobalResolver implements Resolver {
             final String mapName = suffix.substring(0, i);
             final String mapField = suffix.substring(i + 1);
             return context.getConfigMapDataField(mapName, mapField);
+        }
+        if (Logger.isErrorEnabled()) {
+            Logger.log(GlobalResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Cannot resolve " + suffix + " because syntax is incorrect: expected '#' not found.");
         }
         throw new PatternException("cannot resolve " + suffix + " because syntax is incorrect: expected '#' not found.");
     }

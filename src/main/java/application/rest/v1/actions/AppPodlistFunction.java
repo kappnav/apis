@@ -29,10 +29,13 @@ import application.rest.v1.ComponentKind;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 // apppodlist() or apppodlist(<application-namespace>,<application-name>)
 // Returns a list of pod names from all deployments belonging to specified application.
 // Return value structure is: { "pods" : "[<name1>,<name2>,etc]" }
 public class AppPodlistFunction implements Function {
+    private static final String className = AppPodlistFunction.class.getName();
     
     private static final String PODS_PROPERTY_NAME = "pods";
     private static final String DEPLOYMENT_KIND = "Deployment";
@@ -52,7 +55,6 @@ public class AppPodlistFunction implements Function {
 
     @Override
     public String invoke(ResolutionContext context, List<String> parameters) {
-        
         final ApiClient client = context.getApiClient();
         final ComponentInfoRegistry registry = context.getComponentInfoRegistry();
         final JsonObject resource; 
@@ -60,6 +62,9 @@ public class AppPodlistFunction implements Function {
         if (parameters.size() == 0) {
             if (!APPLICATION_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't an application.
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't an application, returning null.");
+                }
                 return null;
             }
             resource = context.getResource();
@@ -70,12 +75,19 @@ public class AppPodlistFunction implements Function {
             // parameters.get(1) :: appName
             final String appNamespace = parameters.get(0);
             final String appName = parameters.get(1);
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "invoke", Logger.LogType.DEBUG, "Two parameters function appNamespace=" + appNamespace + ", appName="+ appName);
+            }
+
             try {
                 //get application namespaced object
                 Object o = registry.getNamespacedObject(client, APPLICATION_KIND, "", appNamespace, appName);
                 resource = KAppNavEndpoint.getItemAsObject(client, o);                                   
             }
             catch (ApiException e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "Caught ApiException, returning null.");
+                }
                 return null;
             }  
         }   
@@ -88,7 +100,7 @@ public class AppPodlistFunction implements Function {
         PodlistResult result = new PodlistResult();             
         //retrieve app namespace from the resource 
         String appNamespace = getNameSpaceFromResource(resource);
-        
+
         //check if app contains "Deployment" component kind        
         componentKinds.forEach(v -> {  
             if (v.kind.equals("Deployment")) {
@@ -124,10 +136,18 @@ public class AppPodlistFunction implements Function {
                                             } 
                                         }
                                     });
-                                } catch (ApiException e) {}
+                                } catch (ApiException e) {
+                                    if (Logger.isDebugEnabled()) {
+                                        Logger.log(className, "getPodListFromApp", Logger.LogType.DEBUG, "Caught ApiException-1 " + e.toString());
+                                    }
+                                }
                             }
                         });
-                    } catch (ApiException e) {}
+                    } catch (ApiException e) {
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(className, "getPodListFromApp", Logger.LogType.DEBUG, "Caught ApiException-2 " + e.toString());
+                        }
+                    }
                 }
             } 
         });           
@@ -143,6 +163,9 @@ public class AppPodlistFunction implements Function {
             if (namespace!= null && namespace.isJsonPrimitive()) {
                 appnamespace = namespace.getAsString();
             }
+        }
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.DEBUG, "appNamespace=" + appnamespace);
         }
         return appnamespace;
     }

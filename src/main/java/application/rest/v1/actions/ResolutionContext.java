@@ -44,8 +44,11 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 
+import com.ibm.kappnav.logging.Logger;
+
 public final class ResolutionContext {
-    
+    private static final String className = ResolutionContext.class.getName();
+
     private static final String JAVA_SCRIPT_FUNCTION_PREFIX = "function ";
     
     private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
@@ -131,11 +134,17 @@ public final class ResolutionContext {
             final String key = entry.getKey();
             if (!fields.has(key)) {
                 // REVISIT: Message translation required.
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "setUserInput", Logger.LogType.ERROR, "Caught ValidationException for key="+key + ". The field was specified but was not expected.");
+                }
                 throw new ValidationException("The field was specified but was not expected.", key);
             }
             final JsonElement element = entry.getValue();
             if (element == null || !element.isJsonPrimitive()) {
                 // REVISIT: Message translation required.
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "setUserInput", Logger.LogType.ERROR, "Caught ValidationException for key="+key + ". The field was specified but does not have a primitive value.");
+                }
                 throw new ValidationException("The field was specified but does not have a primitive value.", key);
             }
             final JsonElement fieldElement = fields.get(key);
@@ -163,6 +172,9 @@ public final class ResolutionContext {
                     }
                     else {
                         // REVISIT: Message translation required.
+                        if (Logger.isErrorEnabled()) {
+                            Logger.log(className, "resolve", Logger.LogType.ERROR, "A required field was not specified for key="+key);
+                        }
                         throw new ValidationException("A required field was not specified.", key);
                     }
                 }
@@ -173,6 +185,10 @@ public final class ResolutionContext {
     
     // This method validates the value of a user supplied input against a JavaScript snippet.
     private void validateField(String name, JsonObject field, String value, String snippet) throws ValidationException {
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "validateField", Logger.LogType.DEBUG, "For name="+name + ", value=" + value + ", snippet=" + snippet + ", field="+field.toString());
+        }
+
         // snippet input: json containing input field value in form: { "value": "<field-value>" }
         final JsonObject input = new JsonObject();
         input.addProperty(VALUE_PROPERTY_NAME, value);
@@ -198,14 +214,23 @@ public final class ResolutionContext {
                 final String message = getPrimitivePropertyValue(output, MESSAGE_PROPERTY_NAME);
                 if (message != null) {
                     // REVISIT: Message translation required.
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(className, "validateField", Logger.LogType.ERROR, "The field is invalid for " + name + ". Reason: " + message);
+                    }
                     throw new ValidationException("The field is invalid. Reason: " + message, name);
                 }
             }
             // REVISIT: Message translation required.
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "validateField", Logger.LogType.ERROR, "The validation result for the field " + name + " could not be processed because it was in the wrong format.");
+            }
             throw new ValidationException("The validation result for the field could not be processed because it was in the wrong format.", name);
         }
         catch (JsonSyntaxException e) {
             // REVISIT: Message translation required.
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "validateField", Logger.LogType.ERROR, "Caught JsonSyntaxException " + e.toString());
+            }
             throw new ValidationException("The validation result for the field could not be processed. Reason: " + e.getMessage(), name);
         }
     }
@@ -227,6 +252,9 @@ public final class ResolutionContext {
     }
     
     private JsonObject getAction(String name, String type) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getAction", Logger.LogType.ENTRY, "For name=" + name + ", type=" + type);
+        }
         initializeResourceMap();
         final JsonElement e = resourceMap.get(type);
         if (e != null && e.isJsonArray()) {
@@ -238,16 +266,25 @@ public final class ResolutionContext {
                     if (actionName != null && actionName.isJsonPrimitive()) {
                         final String nameStr = actionName.getAsString();
                         if (name.equals(nameStr)) {
+                            if (Logger.isExitEnabled()) {
+                                Logger.log(className, "getAction", Logger.LogType.EXIT, actionObject.toString());
+                            }
                             return actionObject;
                         }
                     }
                 }
             }
         }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getAction", Logger.LogType.EXIT, "Return null.");
+        }
         return null;
     }
     
     public JsonObject getInputFields(String inputName) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getInputFields", Logger.LogType.ENTRY, "For inputName=" + inputName);
+        }
         initializeResourceMap();
         JsonElement e = resourceMap.get(INPUTS_PROPERTY_NAME);
         if (e != null && e.isJsonObject()) {
@@ -257,9 +294,16 @@ public final class ResolutionContext {
                 map = e.getAsJsonObject();
                 e = map.get(FIELDS_PROPERTY_NAME);
                 if (e != null && e.isJsonObject()) {
-                    return e.getAsJsonObject();
+                    final JsonObject actionObject = e.getAsJsonObject();
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(className, "getInputFields", Logger.LogType.EXIT, actionObject.toString());
+                    }
+                    return actionObject;
                 }
             }
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getInputFields", Logger.LogType.EXIT, "Return null.");
         }
         return null;
     }
@@ -269,11 +313,21 @@ public final class ResolutionContext {
     }
     
     public JsonObject getInputField(JsonObject fields, String fieldName) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getInputField", Logger.LogType.ENTRY, "For fieldName=" + fieldName);
+        }
         if (fields != null) {
             JsonElement e = fields.get(fieldName);
             if (e != null && e.isJsonObject()) {
-                return e.getAsJsonObject();
+                final JsonObject actionObject = e.getAsJsonObject();
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, "getInputField", Logger.LogType.EXIT, actionObject.toString());
+                }
+                return actionObject;
             }
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getInputField", Logger.LogType.EXIT, "Return null.");
         }
         return null;
     }
@@ -288,6 +342,9 @@ public final class ResolutionContext {
     
     public String getFieldValidatorSnippet(JsonObject field) {
         final String snippetName = getPrimitivePropertyValue(field, VALIDATOR_PROPERTY_NAME);
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getFieldValidatorSnippet", Logger.LogType.DEBUG, "For snippetName=" + snippetName);
+        }
         if (snippetName != null) {
             return getSnippet(snippetName);
         }
@@ -298,7 +355,11 @@ public final class ResolutionContext {
         if (map != null) {
             JsonElement e = map.get(propName);
             if (e != null && e.isJsonPrimitive()) {
-                return e.getAsString();
+                String result = e.getAsString();
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getPrimitivePropertyValue", Logger.LogType.DEBUG, "For propName=" + propName + " return " + result);
+                }
+                return result;
             }
         }
         return null;
@@ -319,9 +380,16 @@ public final class ResolutionContext {
             JsonObject map = e.getAsJsonObject();
             e = map.get(name);
             if (e != null && e.isJsonPrimitive()) {
-                return e.getAsString();
+                String result = e.getAsString();
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getMapValue", Logger.LogType.DEBUG, "For name=" + name + ", type=" + type + ", return " + result);
+                }
+                return result;
             }
             else {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getMapValue", Logger.LogType.ERROR, "For " + type + " and " + name + " is not found.");
+                }
                 throw new PatternException(type + " " + name + " is not found.");
             }
         }
@@ -362,9 +430,16 @@ public final class ResolutionContext {
             // Return value from the local cache.
             final V1ConfigMap map = kappnavNSMapCache.get(mapName);
             if (map != null) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField + " from kappnav map cache.");
+                }
                 return map.getData().get(mapField);
             }
             return null;
+        }
+
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField);
         }
 
         try {
@@ -377,15 +452,28 @@ public final class ResolutionContext {
                 kappnavNSMapCache.put(mapName, map);
                 String result = data.get(mapField);
                 if (result == null) {
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(className, "getConfigMapDataField", Logger.LogType.ERROR, "Cannot get ConfigMap data for " + mapField);
+                    }
                     throw new PatternException("cannot get ConfigMap data for " + mapField);
                 } else {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField + " return " + result + " and added to kappnav map cache.");
+                    }
                     return result;
                 }
             }
         }
-        catch (ApiException e) {}
+        catch (ApiException e) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+            }
+        }
 
         // No map or no data section. Store null in the local cache.
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "No map or no data section. Store null in the local cache.");
+        }
         kappnavNSMapCache.put(mapName, null);
         return null;
     }
@@ -400,6 +488,10 @@ public final class ResolutionContext {
     
     // snippet :: "function xyz(a,b,c) {...}"
     public String invokeSnippet(String snippet, List<String> parameters) throws ValidationException {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "invokeSnippet", Logger.LogType.ENTRY, "For snippet=" + snippet);
+        }
+
         // Determine the function name by inspecting the snippet.
         String functionName = null;
         int start = snippet.indexOf(JAVA_SCRIPT_FUNCTION_PREFIX);
@@ -411,6 +503,9 @@ public final class ResolutionContext {
         }
         // No function found in the snippet.
         if (functionName == null) {
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "No function found in the snippet.");
+            }
             throw new PatternException("no function found in the snippet");
         }
         // Invoke the snippet using the built-in JavaScript engine.
@@ -421,19 +516,32 @@ public final class ResolutionContext {
             Invocable inv = (Invocable) se; // This cast should never fail.
             Object o = inv.invokeFunction(functionName, (Object[]) parameters.toArray());
             if (o != null) {
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, "invokeSnippet", Logger.LogType.EXIT, o.toString());
+                }
                 return o.toString();
             } else {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "Invoke the snippet for functionName=" + functionName + " using the build-in JavaScript engine return null.");
+                }
                 throw new PatternException("cannot invoke snippet " + snippet);
             }
         }
         catch (ClassCastException | NoSuchMethodException | SecurityException | ScriptException e) {
             // can't add the snippet as it will show the whole snippet functions which is so big 
             // so only show the function name to show which function that has issue
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "invokeSnippet", Logger.LogType.ERROR, "Invoke the snippet for functionName=" + functionName + " caught Exception " + e.toString());
+            }
             throw new PatternException("problem invoking snippet for function=" + functionName + ", Reason=" + e.toString());
         }
     }
     
     public ResolvedValue resolve(String pattern) throws PatternException {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.ENTRY, "For pattern=" + pattern);
+        }
+
         final StringBuilder result = new StringBuilder();
         final PatternTokenizer tokenizer = new PatternTokenizer(pattern);
         final AtomicBoolean isFullyResolved = new AtomicBoolean(true);
@@ -441,11 +549,17 @@ public final class ResolutionContext {
             // First check if pattern contains all pattern chars ($, {, }) if not then can throw pattern exception
             if ((t.toString().indexOf("$") != -1) || (t.toString().indexOf("{") != -1) || (t.toString().indexOf("}") != -1)) {
                 if (!((t.toString().indexOf("$") != -1) && (t.toString().indexOf("{") != -1) && (t.toString().indexOf("}") != -1))){
-                    throw new PatternException(pattern + " is not a pattern");
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(className, "resolve", Logger.LogType.ERROR, "Pattern=" + pattern + ", does not contain $ or { or }.");
+                    }
+                    throw new PatternException(pattern + " is not a pattern.");
                 } else {
                     // check if contains space
                     if(t.toString().indexOf(" ") != -1) {
-                        throw new PatternException(pattern + " is not a pattern");
+                        if (Logger.isErrorEnabled()) {
+                            Logger.log(className, "resolve", Logger.LogType.ERROR, "Pattern=" + pattern + ", does not contain space.");
+                        }
+                        throw new PatternException(pattern + " is not a pattern.");
                     }
                 }
             
@@ -471,10 +585,16 @@ public final class ResolutionContext {
                             result.append(s);
                         }
                         else {
+                            if (Logger.isErrorEnabled()) {
+                                Logger.log(className, "resolve", Logger.LogType.ERROR, "Cannot resolve " + suffix);
+                            }
                             throw new PatternException("cannot resolve " + suffix);
                         }
                     }
                     else {
+                        if (Logger.isErrorEnabled()) {
+                            Logger.log(className, "resolve", Logger.LogType.ERROR, "Cannot find the resolver for " + pattern);
+                        }
                         throw new PatternException("can not find the resolver for " + pattern);
                     }
                 }
@@ -484,6 +604,9 @@ public final class ResolutionContext {
                 }
             }
         });
+        if (Logger.isEntryEnabled()) {
+            Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.ENTRY, "Result=" + result.toString());
+        }
         return new ResolvedValue(result.toString(), isFullyResolved.get());
     }
     

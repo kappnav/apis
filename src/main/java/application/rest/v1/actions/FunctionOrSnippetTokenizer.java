@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import com.ibm.kappnav.logging.Logger;
+
 /**
  * Tokenizes a function or snippet string into its name and parameters.
  * e.g. add(${x},${y}) ---> { name: "add", parameters: [${x}, ${y}] }.
@@ -31,6 +33,9 @@ public class FunctionOrSnippetTokenizer implements Iterable<String> {
     private final List<String> parameters;
     
     public FunctionOrSnippetTokenizer(String functionOrSnippet) {
+        if (Logger.isDebugEnabled()) {
+            Logger.log(FunctionOrSnippetTokenizer.class.getName(), "FunctionOrSnippetTokenizer", Logger.LogType.DEBUG, "For commandLine=" + functionOrSnippet);
+        }
         // Get the name of the function or snippet.
         final int nameEnd = functionOrSnippet.indexOf('(');
         if (nameEnd > 0 && functionOrSnippet.endsWith(")")) {
@@ -39,6 +44,9 @@ public class FunctionOrSnippetTokenizer implements Iterable<String> {
         else {
             name = null;
             parameters = Collections.emptyList();
+            if (Logger.isDebugEnabled()) {
+                Logger.log(FunctionOrSnippetTokenizer.class.getName(), "FunctionOrSnippetTokenizer", Logger.LogType.DEBUG, "Function or snippet name is null.");
+            }
             return;
         }
         // Tokenize the parameters.

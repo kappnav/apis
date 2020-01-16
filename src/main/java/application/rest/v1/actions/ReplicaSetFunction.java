@@ -27,6 +27,8 @@ import application.rest.v1.Selector;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 // replicaset() or replicaset(<deployment-namespace>,<deployment-name>)
 // Returns the replica set name for the specified deployment.
 // Return value structure is: {"name"}
@@ -58,6 +60,9 @@ public class ReplicaSetFunction implements Function {
         if (parameters.size() == 0) {
             if (!DEPLOYMENT_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't a deployment.
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment. Returning null.");
+                }
                 return null;
             }
             resource = context.getResource();
@@ -73,6 +78,9 @@ public class ReplicaSetFunction implements Function {
                 resource = KAppNavEndpoint.getItemAsObject(client, o);
             }
             catch (ApiException e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Returning null because it caught ApiException " + e.toString());
+                }
                 return null;
             }  
         }
@@ -91,11 +99,19 @@ public class ReplicaSetFunction implements Function {
                     //get replicaset name  
                     JsonElement rsName  = metadata.get("name");
                     if (rsName!= null && rsName.isJsonPrimitive()) {
-                        return rsName.getAsString();
+                        String result = rsName.getAsString();
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Result="+result);
+                        }
+                        return result;
                     }                               
                 }               
             }
-            catch (ApiException e) {}
+            catch (ApiException e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(ReplicaSetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Returning null because it caught ApiException " + e.toString());
+                }
+            }
         }
         return null;
     }

@@ -98,20 +98,13 @@ public class Logger {
                     typeEnabled[LogType.ERROR.ordinal()]= true;  
                     typeEnabled[LogType.WARNING.ordinal()]= true;  
                     typeEnabled[LogType.INFO.ordinal()]= true;  
-                    typeEnabled[LogType.ENTRY.ordinal()]= true;  
-                    typeEnabled[LogType.EXIT.ordinal()]= true;  
+                    typeEnabled[LogType.DEBUG.ordinal()] = true; 
                     break;
                 case ENTRY: 
                     setLogTypes(true); 
                     break;
                 case ALL: 
                     setLogTypes(true); 
-                    break;
-                default : // same as info
-                    typeEnabled[LogType.ERROR.ordinal()]= true;  
-                    typeEnabled[LogType.WARNING.ordinal()]= true;  
-                    typeEnabled[LogType.INFO.ordinal()]= true;  
-                    Logger.log(Logger.class.getName(), "setLogLevel", Logger.LogType.DEBUG, "Log level was set to invalid value="+ level);
                     break;
             }           
    }  

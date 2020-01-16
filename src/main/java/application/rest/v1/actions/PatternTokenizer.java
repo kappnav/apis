@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.ibm.kappnav.logging.Logger;
+
 /**
  * Tokenizes a pattern string into literal and pattern segments.
  */
@@ -28,6 +30,10 @@ public class PatternTokenizer implements Iterable<PatternTokenizer.Token> {
     private final List<Token> tokens;
     
     public PatternTokenizer(String v) {
+        if (Logger.isDebugEnabled()) {
+            Logger.log(PatternTokenizer.class.getName(), "PatternTokenizer", Logger.LogType.DEBUG, "For " + v);
+        }
+
         tokens = new ArrayList<>();
         int mark = 0;
         int patternDepth = 0;
@@ -100,7 +106,11 @@ public class PatternTokenizer implements Iterable<PatternTokenizer.Token> {
                             result.append(c);
                             mark = i + 3;
                         }
-                        catch (NumberFormatException e) {}
+                        catch (NumberFormatException e) {
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(PatternTokenizer.class.getName(), "getDecodedValue", Logger.LogType.DEBUG, "Caught NumberFormatException " + e.toString());
+                            }
+                        }
                     }
                     // Reached the end of the string.
                     else if (i == length - 1) {
@@ -111,6 +121,7 @@ public class PatternTokenizer implements Iterable<PatternTokenizer.Token> {
             }
             return value;
         }
+
         public void writeTo(StringBuilder sb) {
             if (isPattern) {
                 sb.append("${");

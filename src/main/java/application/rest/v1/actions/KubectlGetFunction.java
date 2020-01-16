@@ -18,6 +18,8 @@ package application.rest.v1.actions;
 
 import java.util.List;
 
+import com.ibm.kappnav.logging.Logger;
+
 // kubectlGet(<arg1>,<arg2>,etc...)
 // Invokes "kubectl get <arg1> <arg2> etc..."
 public class KubectlGetFunction extends CommandFunction {
@@ -47,10 +49,19 @@ public class KubectlGetFunction extends CommandFunction {
         try {
             String result = invoke(context, commandArgs);
             if (result == null) {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.ERROR, "Result is null.");
+                }
                 throw new PatternException("Kubectl get " + parameters + " can not be resolved");
+            }
+            if (Logger.isDebugEnabled()) {
+                Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Result=" + result);
             }
             return result;
         } catch (Exception e) {
+            if (Logger.isErrorEnabled()) {
+                Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.ERROR, "Caught Exception " + e.toString());
+            }
             throw new PatternException("Kubectl get " + parameters + " can not be resolved");
         }
     }
