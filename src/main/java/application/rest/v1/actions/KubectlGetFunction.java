@@ -18,6 +18,8 @@ package application.rest.v1.actions;
 
 import java.util.List;
 
+import com.ibm.kappnav.logging.Logger;
+
 // kubectlGet(<arg1>,<arg2>,etc...)
 // Invokes "kubectl get <arg1> <arg2> etc..."
 public class KubectlGetFunction extends CommandFunction {
@@ -39,7 +41,10 @@ public class KubectlGetFunction extends CommandFunction {
     public String invoke(ResolutionContext context, List<String> parameters) {
         final int length = parameters.size();
         final String[] params = parameters.toArray(new String[length]);
-        
+        if (Logger.isDebugEnabled()) {
+            Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Kubectl get using params="+params.toString());
+        }
+
         final String[] commandArgs = new String[length + 2];
         commandArgs[0] = KUBECTL;
         commandArgs[1] = GET;
@@ -47,11 +52,20 @@ public class KubectlGetFunction extends CommandFunction {
         try {
             String result = invoke(context, commandArgs);
             if (result == null) {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.ERROR, "Result is null.");
+                }
                 throw new PatternException("Kubectl get " + parameters + " can not be resolved");
+            }
+            if (Logger.isDebugEnabled()) {
+                Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.DEBUG, "Result=" + result);
             }
             return result;
         } catch (Exception e) {
-            throw new PatternException("Kubectl get " + parameters + " can not be resolved");
+            if (Logger.isErrorEnabled()) {
+                Logger.log(KubectlGetFunction.class.getName(), "invoke", Logger.LogType.ERROR, "Caught Exception " + e.toString());
+            }
+            throw new PatternException("Kubectl get " + params.toString() + " can not be resolved");
         }
     }
 }

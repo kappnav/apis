@@ -47,14 +47,24 @@ public class JSONPath {
                     o = e.getAsJsonObject();
                 }
                 else {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "Returning null.");
+                    }
                     return null;
                 }
             }
             // Return the value of the leaf node.
             final JsonElement result = o.get(children.get(end));
             if (result != null && result.isJsonPrimitive()) {
-                return result.getAsString();
+                String finalResult = result.getAsString();
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "Result=" + finalResult);
+                }
+                return finalResult;
             }
+        }
+        if (Logger.isDebugEnabled()) {
+            Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "Returning null.");
         }
         return null;
     }

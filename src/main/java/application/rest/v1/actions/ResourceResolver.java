@@ -19,6 +19,8 @@ package application.rest.v1.actions;
 import application.rest.v1.json.JSONPath;
 import application.rest.v1.json.JSONPathParser;
 
+import com.ibm.kappnav.logging.Logger;
+
 // ${resource.<json-path>} (only supports child-axis; dot and bracket notation)
 public final class ResourceResolver implements Resolver {
     
@@ -29,11 +31,17 @@ public final class ResourceResolver implements Resolver {
     
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
+        if (Logger.isErrorEnabled()) {
+            Logger.log(ResourceResolver.class.getName(), "resolve", Logger.LogType.ERROR, "For suffix=" + suffix);
+        }
         final JSONPathParser parser = new JSONPathParser();
         final JSONPath path = parser.parse(suffix);
         if (path != null) {
             return path.resolveLeaf(context.getResource());
         } else {
+            if (Logger.isErrorEnabled()) {
+                Logger.log(ResourceResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Path is null. Cannot resolve resource for suffix=" + suffix);
+            }
             throw new PatternException("Cannot resolve resource " + suffix);
         }
     }

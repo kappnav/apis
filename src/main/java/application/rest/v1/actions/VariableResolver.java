@@ -17,6 +17,7 @@
 package application.rest.v1.actions;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
+import com.ibm.kappnav.logging.Logger;
 
 // ${var.<variable-name>}
 // e.g. ${var.nodePort}
@@ -40,16 +41,26 @@ public class VariableResolver implements Resolver {
             suffix= suffix.substring(0,pos); // grab variable name 
         }
 
+        if (Logger.isDebugEnabled()) {
+            Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "For suffix="+suffix);
+        }
+
         // Immediately return the value if the variable has been previously resolved.
         String value = context.getResolvedVariable(suffix);
         if (value != null) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "Result=" + value);
+            }
             return value;
         } 
 
         // Guard against cycles in variable definitions.
         // (e.g. var x = "${var.y}", var y = "${var.z}", var z = "${var.x}").
         if (context.isVisitingVariable(suffix)) {
-            throw new PatternException(suffix + " contains cycles in variable definitions");
+            if (Logger.isErrorEnabled()) {
+                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Suffix=" + suffix + " contains cycles in variable definitions.");
+            }
+            throw new PatternException(suffix + " contains cycles in variable definitions.");
         }
 
         // Retrieve the pattern from the config map and resolve the variable.
@@ -65,6 +76,9 @@ public class VariableResolver implements Resolver {
                     value = rv.getValue();
                     // Cache the resolved value.
                     context.setResolvedVariable(suffix, value);
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "Result=" + value);
+                    }
                     return value;
                 }
             } 
@@ -72,9 +86,15 @@ public class VariableResolver implements Resolver {
                to return. If not, re-throw exception. */
             catch(PatternException e) { 
                 if ( defaultValue == null ) { 
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.ERROR, suffix + "Default value is null and caught PatternException " + e.toString());
+                    }
                     throw e; 
                 } 
                 else { 
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "Return defaultValue=" + defaultValue);
+                    }
                     return defaultValue; 
                 }
             } 
@@ -82,9 +102,15 @@ public class VariableResolver implements Resolver {
         /* If can't resolve, check if there is a default value
                to return. If not, throw exception. */        
         if ( defaultValue == null ) { 
+            if (Logger.isErrorEnabled()) {
+                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.ERROR, suffix + "Default value is null. Cannot resolve " + suffix);
+            }
             throw new PatternException("can not resolve " + suffix);
         } 
         else { 
+            if (Logger.isDebugEnabled()) {
+                Logger.log(VariableResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "Return defaultValue=" + defaultValue);
+            }
             return defaultValue; 
         }
     }

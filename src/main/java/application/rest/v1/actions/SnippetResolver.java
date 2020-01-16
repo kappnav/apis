@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
+import com.ibm.kappnav.logging.Logger;
 
 // ${snippet.<snippet-name>(<parameter1>,<parameter2>,etc...>}
 // e.g. ${snippet.create-kibana-log-url(${builtin.kibana-url},${func.podlist(${resource.metadata.name})})}
@@ -32,6 +33,9 @@ public class SnippetResolver implements Resolver {
     
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
+        if (Logger.isDebugEnabled()) {
+            Logger.log(SnippetResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "For suffix=" + suffix);
+        }
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String snippetName = tokenizer.getName();
         String result = null;
@@ -40,7 +44,10 @@ public class SnippetResolver implements Resolver {
             final String snippet = context.getSnippet(snippetName);
             if (snippet == null) {
                 // No snippet was found in the action config map.
-                throw new PatternException("snippet " + snippetName + " is not found in the action config map");
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(SnippetResolver.class.getName(), "resolve", Logger.LogType.ERROR, "No snippet was found in the action config map.");
+                }
+                throw new PatternException("snippet " + snippetName + " is not found in the action config map.");
             }
             
             // Resolve parameters.
@@ -54,12 +61,21 @@ public class SnippetResolver implements Resolver {
                 // Stop here instead of invoking the script with a
                 // 'bad' parameter.
                 else {
-                    throw new PatternException("one or more of the script parameters can not be resolved");
+                    if (Logger.isErrorEnabled()) {
+                        Logger.log(SnippetResolver.class.getName(), "resolve", Logger.LogType.ERROR, "One or more of the script parameters can not be resolved.");
+                    }
+                    throw new PatternException("one or more of the script parameters can not be resolved.");
                 }
             }           
             result = context.invokeSnippet(snippet, parameters);
         } else {
+            if (Logger.isErrorEnabled()) {
+                Logger.log(SnippetResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Cannot resolve snippet because snippet name is null.");
+            }
             throw new PatternException("can not resolve snippet because snippet name is null.");
+        }
+        if (Logger.isDebugEnabled()) {
+            Logger.log(SnippetResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "Result="+result);
         }
         return result;
     }

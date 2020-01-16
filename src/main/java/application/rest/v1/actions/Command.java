@@ -24,6 +24,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.ibm.kappnav.logging.Logger;
+
 public final class Command {
     
     public static final long DEFAULT_TIMEOUT = 30L; // 30 seconds
@@ -45,6 +47,9 @@ public final class Command {
     
     // Executes the command synchronously.
     public Result invoke() {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(Command.class.getName(), "invoke", Logger.LogType.ENTRY, "");
+        }
         try {
             final ProcessBuilder pb = new ProcessBuilder(commandArgs);
             final Process p = pb.start();
@@ -58,16 +63,28 @@ public final class Command {
                     while ((count = reader.read(buffer)) != -1) {
                         sb.append(buffer, 0, count);
                     }
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(Command.class.getName(), "invoke", Logger.LogType.EXIT, sb.toString());
+                    }
                     return Result.complete(0, sb.toString());
+                }
+                if (Logger.isExitEnabled()) {
+                    Logger.log(Command.class.getName(), "invoke", Logger.LogType.EXIT, "Returning null.");
                 }
                 return Result.complete(i, null);
             }
             else {
                 p.destroy();
+                if (Logger.isExitEnabled()) {
+                    Logger.log(Command.class.getName(), "invoke", Logger.LogType.EXIT, "Timed out.");
+                }
                 return Result.timedOut();
             }
         }
         catch (IOException | InterruptedException | SecurityException e) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(Command.class.getName(), "invoke", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
+            }
             return Result.failed(e);
         }
     }
@@ -75,6 +92,9 @@ public final class Command {
     // Executes the command asynchronously. The result is
     // written to the Future once its available.
     public Future<Result> asyncInvoke() {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(Command.class.getName(), "asyncInvoke", Logger.LogType.ENTRY, "");
+        }
         final FutureResult result = new FutureResult();
         final Thread t = new Thread(new Runnable() {
             @Override
@@ -83,12 +103,18 @@ public final class Command {
                     result.set(invoke());
                 }
                 catch (Exception e) {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(Command.class.getName(), "asyncInvoke", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
+                    }
                     result.setException(e);
                 }
             }
         });
         t.setDaemon(true);
         t.start();
+        if (Logger.isExitEnabled()) {
+            Logger.log(Command.class.getName(), "asyncInvoke", Logger.LogType.EXIT, "");
+        }
         return result;
     }
     

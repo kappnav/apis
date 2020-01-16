@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import com.ibm.kappnav.logging.Logger;
+
 /**
  * Tokenizes a command line string into its parameters.
  */
@@ -29,6 +31,9 @@ public class CommandLineTokenizer implements Iterable<String> {
     private final List<String> parameters;
     
     public CommandLineTokenizer(String commandLine) {
+        if (Logger.isDebugEnabled()) {
+            Logger.log(CommandLineTokenizer.class.getName(), "CommandLineTokenizer", Logger.LogType.DEBUG, "For commandLine=" + commandLine);
+        }
         if (commandLine.isEmpty()) {
             parameters = Collections.emptyList();
             return;

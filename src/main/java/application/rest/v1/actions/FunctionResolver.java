@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
+import com.ibm.kappnav.logging.Logger;
 
 // ${func.<function-name>(<parameter1>,<parameter2>,etc...>}
 // e.g. ${func.podlist(${resource.metata.name})}
@@ -50,6 +51,9 @@ public final class FunctionResolver implements Resolver {
     
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.ENTRY, "For suffix=" + suffix);
+        }
         final FunctionOrSnippetTokenizer tokenizer = new FunctionOrSnippetTokenizer(suffix);
         final String functionName = tokenizer.getName();
         if (functionName != null) {
@@ -69,12 +73,22 @@ public final class FunctionResolver implements Resolver {
                 }
                 // One of the function parameters couldn't be resolved.
                 else {
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.EXIT, "Return null.");
+                    }
                     return null;
                 }
             }
             
             // Invoke the function.
-            return function.invoke(context, parameters);
+            final String result = function.invoke(context, parameters);
+            if (Logger.isExitEnabled()) {
+                Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.EXIT, "Result=" + result);
+            }
+            return result;
+        }
+        if (Logger.isErrorEnabled()) {
+            Logger.log(FunctionResolver.class.getName(), "resolve", Logger.LogType.ERROR, "Cannot resolve " + suffix + " because function name is null");
         }
         throw new PatternException("can not resolve " + suffix + " because function name is null");
     }

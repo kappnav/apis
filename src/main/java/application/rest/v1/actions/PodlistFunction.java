@@ -28,11 +28,14 @@ import application.rest.v1.Selector;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 
+import com.ibm.kappnav.logging.Logger;
+
 // podlist() or podlist(<deployment-namespace>,<deployment-name>)
 // Returns a list of pod names for the specified deployment.
 // Return value structure is: { "pods" : "[<name1>,<name2>,etc]" }
 public class PodlistFunction implements Function {
-    
+    private static final String className = PodlistFunction.class.getName();
+
     private static final String PODS_PROPERTY_NAME = "pods";
     
     private static final String DEPLOYMENT_KIND = "Deployment";
@@ -61,6 +64,9 @@ public class PodlistFunction implements Function {
         if (parameters.size() == 0) {
             if (!DEPLOYMENT_KIND.equals(context.getResourceKind())) {
                 // The context resource isn't a deployment.
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "The context resource isn't a deployment but " + context.getResourceKind() + ". Returning null.");
+                }
                 return null;
             }
             resource = context.getResource();
@@ -76,6 +82,9 @@ public class PodlistFunction implements Function {
                 resource = KAppNavEndpoint.getItemAsObject(client, o);
             }
             catch (ApiException e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "invoke", Logger.LogType.DEBUG, "Returning null because it caught ApiException " + e.toString());
+                }
                 return null;
             }  
         }
@@ -113,12 +122,23 @@ public class PodlistFunction implements Function {
                     }
                 });               
             }
-            catch (ApiException e) {}
+            catch (ApiException e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getPodListFromDeployment", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+                }
+            }
+        }
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getPodListFromDeployment", Logger.LogType.DEBUG, "Result=" + result.getJSON());
         }
         return result.getJSON();
     }
 
     private String getNameSpaceFromResource(JsonObject resource) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.ENTRY, "For resource="+ resource.toString());
+        }
+        
         String deplnamespace = null;
         JsonElement element = resource.get(METADATA_PROPERTY_NAME);
         if (element != null && element.isJsonObject()) {
@@ -127,6 +147,9 @@ public class PodlistFunction implements Function {
             if (namespace!= null && namespace.isJsonPrimitive()) {
                 deplnamespace = namespace.getAsString();
             }
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getNameSpaceFromResource", Logger.LogType.EXIT, "Result=" + deplnamespace);
         }
         return deplnamespace;
     }
