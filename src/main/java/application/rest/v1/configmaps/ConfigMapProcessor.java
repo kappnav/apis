@@ -67,7 +67,9 @@ public class ConfigMapProcessor {
         final String subkind = KAppNavEndpoint.getComponentSubKind(component);
         final String name = KAppNavEndpoint.getComponentName(component);
         
-        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For component subkind=" + subkind + ", component name=" + name);
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For component subkind=" + subkind + ", component name=" + name);
+        }
 
         // Map: kappnav.actions.{kind}[-{subkind}].{name}
         if (name != null && !name.isEmpty()) {
@@ -81,7 +83,9 @@ public class ConfigMapProcessor {
                     return builder.getConfigMap();
                 }
             } else {
-                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-1 is null.");
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-1 is null.");
+                }
             }
         }
 
@@ -95,7 +99,9 @@ public class ConfigMapProcessor {
                     return builder.getConfigMap();
                 }
             } else {
-                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-2 is null.");
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-2 is null.");
+                }
             }
         }
 
@@ -104,7 +110,9 @@ public class ConfigMapProcessor {
         if (map != null) {
             builder.merge(map);
         } else {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-3 is null.");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-3 is null.");
+            }
         }
 
         if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
@@ -113,7 +121,9 @@ public class ConfigMapProcessor {
             if (map != null) {
                 builder.merge(map);
             } else {
-                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-4 is null.");
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-4 is null.");
+                }
             }
         }
 
@@ -130,7 +140,9 @@ public class ConfigMapProcessor {
 
     private JsonObject getConfigMap(ApiClient client, String namespace, String configMapName) {
         // Return the map from the local cache if it's been previously loaded.
-        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For namespace=" + namespace + ", configMapName=" + configMapName);
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For namespace=" + namespace + ", configMapName=" + configMapName);
+        }
 
         final boolean isGlobalNS = GLOBAL_NAMESPACE.equals(namespace);
         if (isGlobalNS && kappnavNSMapCache.containsKey(configMapName)) {
@@ -152,10 +164,15 @@ public class ConfigMapProcessor {
             }
         }
         catch (ApiException e) {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+            }
         }
+
         if (isGlobalNS) {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Global namespace, store null in the local cache");
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Global namespace, store null in the local cache");
+            }
             // No map. Store null in the local cache.
             kappnavNSMapCache.put(configMapName, null);
         }

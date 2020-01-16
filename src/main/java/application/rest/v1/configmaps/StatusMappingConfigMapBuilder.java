@@ -67,7 +67,10 @@ public final class StatusMappingConfigMapBuilder extends ConfigMapBuilder {
                     map.add(group, value);
                 }
                 catch (JsonSyntaxException e) {
-                    Logger.log(StatusMappingConfigMapBuilder.class.getName(), "merge", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(StatusMappingConfigMapBuilder.class.getName(), "merge", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                
+                    }
                 }
             } 
             else if(value.isJsonObject()) {

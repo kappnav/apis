@@ -59,22 +59,30 @@ public class KAppNavConfig {
     }
     
     private static String getEnvironmentVariable(String name, String defaultValue) {
-        Logger.log(className, "getEnvironmentVariable", Logger.LogType.ENTRY, "For name=" + name + ", defaultValue=" + defaultValue);
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getEnvironmentVariable", Logger.LogType.ENTRY, "For name=" + name + ", defaultValue=" + defaultValue);
+        }
         try {
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {
                     // Check environment variable.
                     final String var = System.getenv(name);
                     if (var != null && !var.trim().isEmpty()) {
-                        Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, var);
+                        if (Logger.isExitEnabled()) {
+                            Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, var);
+                        }
                         return var;
                     }
-                    Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, defaultValue);
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, defaultValue);
+                    }
                     return defaultValue;
                 }
             });
         } catch (SecurityException se) {
-            Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, "Caught SecurityException returning defaultValue="+defaultValue);
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, "Caught SecurityException returning defaultValue="+defaultValue);
+            }
             return defaultValue;
         }
     }
@@ -150,7 +158,9 @@ public class KAppNavConfig {
                             }
                         }
                         catch (JsonSyntaxException e) {
-                            Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught JsonSyntaxException " + e.toString());
+                            }
                         }
                     }
                 }
@@ -160,7 +170,9 @@ public class KAppNavConfig {
             }
         }
         catch (ApiException e) {
-            Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "KAppNavConfig contructor", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+            }
         }
         this.serviceAccountName = serviceAccountName;
         this.statusUnknown = statusUnknown;

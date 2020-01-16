@@ -91,7 +91,9 @@ public class StatusEndpoint extends KAppNavEndpoint {
             return Response.ok(status.toString()).build();
         }
         catch (IOException | ApiException e) {
-            Logger.log(StatusEndpoint.class.getName(), "computeStatus", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(StatusEndpoint.class.getName(), "computeStatus", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         } 
     }
@@ -110,7 +112,9 @@ public class StatusEndpoint extends KAppNavEndpoint {
         try {
             return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException ex) {
-            Logger.log(StatusEndpoint.class.getName(), "urlDecode", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + ex.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(StatusEndpoint.class.getName(), "urlDecode", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + ex.toString());
+            }
             throw new RuntimeException(ex.getCause());
         }
     }

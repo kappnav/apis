@@ -78,12 +78,16 @@ public class SecretEndpoint extends KAppNavEndpoint {
             }
             else {
                 // This should never happen.
-                Logger.log(className, "resolve", Logger.LogType.ERROR, "Should never happen. No object");
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Should never happen. No object");
+                }
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(getStatusMessageAsJSON("No object")).build();
             }   
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -110,7 +114,9 @@ public class SecretEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
-            Logger.log(className, "createSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "createSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -138,7 +144,9 @@ public class SecretEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
-            Logger.log(className, "replaceSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "replaceSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -165,7 +173,9 @@ public class SecretEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "deleteSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "deleteSecret", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

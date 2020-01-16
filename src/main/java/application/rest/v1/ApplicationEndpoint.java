@@ -75,7 +75,9 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(json.toString()).build();
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "getApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "getApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -103,7 +105,9 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonSyntaxException | ApiException e) {
-            Logger.log(className, "createApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "createApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -133,7 +137,9 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonSyntaxException | ApiException e) {
-            Logger.log(className, "replaceApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "replaceApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
@@ -157,7 +163,9 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
-            Logger.log(className, "deleteApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, "deleteApplication", Logger.LogType.ERROR, "Caught Exception returning status: " + getResponseCode(e) + " " + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }

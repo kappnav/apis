@@ -36,13 +36,15 @@ public class JSONPath {
     public String resolveLeaf(final JsonObject context) {
         if (!children.isEmpty()) {
             JsonObject o = context;
+            if (Logger.isDebugEnabled()) {
+                Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "For " +  o.toString());
+            }
             // Walk to the JsonObject that contains the leaf.
             final int end = children.size() - 1;
             for (int i = 0; i < end; ++i) {
                 JsonElement e = o.get(children.get(i));
                 if (e != null && e.isJsonObject()) {
                     o = e.getAsJsonObject();
-                    Logger.log(JSONPath.class.getName(), "resolveLeaf", Logger.LogType.DEBUG, "JsonObject=" +  o.toString());
                 }
                 else {
                     return null;

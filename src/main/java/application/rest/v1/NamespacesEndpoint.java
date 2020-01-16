@@ -62,7 +62,9 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
             return processNamespaces(client, getItemsAsList(client, o));
         }
         catch (IOException | ApiException e) {
-            Logger.log(NamespacesEndpoint.class.getName(), "getNamespaceList", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            if (Logger.isDebugEnabled()) {
+                Logger.log(NamespacesEndpoint.class.getName(), "getNamespaceList", Logger.LogType.DEBUG, "Caught Exception returning status: " + getResponseCode(e) + e.toString());
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
