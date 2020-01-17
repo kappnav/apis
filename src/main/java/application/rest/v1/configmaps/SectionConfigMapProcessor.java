@@ -20,20 +20,17 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
+import com.ibm.kappnav.logging.Logger;
 
 import application.rest.v1.KAppNavConfig;
 import application.rest.v1.KAppNavEndpoint;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1ConfigMap;
-
-import com.ibm.kappnav.logging.Logger;
 
 public class SectionConfigMapProcessor {
+	
     private static final String className = SectionConfigMapProcessor.class.getName();
 
     private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
@@ -100,26 +97,16 @@ public class SectionConfigMapProcessor {
         if (kappnavNSMapCache.containsKey(configMapName)) {
             return kappnavNSMapCache.get(configMapName);
         }
-        try {
-            CoreV1Api api = new CoreV1Api();
-            api.setApiClient(client);
-            
-            V1ConfigMap map = api.readNamespacedConfigMap(configMapName, GLOBAL_NAMESPACE, null, null, null);
-            final JsonElement element = client.getJSON().getGson().toJsonTree(map);
-            if (element != null && element.isJsonObject()) {
-                final JsonObject m = element.getAsJsonObject();   
-                    
-                // Store the map in the local cache.
-                kappnavNSMapCache.put(configMapName, m);    
-                return m;
-            }
+
+        final JsonElement element = ConfigMapCache.getConfigMapAsJSON(client, GLOBAL_NAMESPACE, configMapName);
+        if (element != null && element.isJsonObject()) {
+            final JsonObject m = element.getAsJsonObject();   
+
+            // Store the map in the local cache.
+            kappnavNSMapCache.put(configMapName, m);    
+            return m;
         }
-        catch (ApiException e) {
-            if (Logger.isDebugEnabled()) {
-                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
-            }
-        }
-        
+
         // No map. Store null in the local cache.
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "No map so storing null to local cache.");

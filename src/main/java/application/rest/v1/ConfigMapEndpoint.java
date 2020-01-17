@@ -49,10 +49,16 @@ import io.kubernetes.client.models.V1DeleteOptions;
 
 import com.ibm.kappnav.logging.Logger;
 
+import application.rest.v1.configmaps.ConfigMapCache;
+
 @Path("/configmap")
 @Tag(name = "configmap", description="kAppNav ConfigMap CRUD API")
 public class ConfigMapEndpoint extends KAppNavEndpoint {
+    
     private static final String className = ConfigMapEndpoint.class.getName();
+    
+    private static final String KAPPNAV_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
+    private static final String KAPPNAV_CONFIG_MAP_NAME = KAppNavConfig.getkAppNavConfigMapName();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -69,9 +75,16 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the config map") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
-            api.setApiClient(client);
-            final V1ConfigMap map = api.readNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), null, null, null);
+            V1ConfigMap map = null;
+            // The kappnav-config map is frequently accessed by the UI. Try retrieving it from the cache.
+            if (KAPPNAV_NAMESPACE.equals(namespace) && KAPPNAV_CONFIG_MAP_NAME.equals(name)) {
+                map = ConfigMapCache.getConfigMap(client, KAPPNAV_NAMESPACE, KAPPNAV_CONFIG_MAP_NAME);
+            }
+            if (map == null) {
+                final CoreV1Api api = new CoreV1Api();
+                api.setApiClient(client);
+                map = api.readNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), null, null, null);
+            }    
             final JsonObject json = getItemAsObject(client, map);
             if (json != null) {
                 return Response.ok(json.toString()).build();

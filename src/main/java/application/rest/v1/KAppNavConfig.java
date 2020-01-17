@@ -187,6 +187,10 @@ public class KAppNavConfig {
         return KAPPNAV_KUBE_ENV;
     }
     
+    public static String getkAppNavConfigMapName() {
+        return MAP_NAME;
+    }
+    
     // Returns value of 'kappnav-sa-name'.
     public String getkAppNavServiceAccountName() {
         return this.serviceAccountName;
