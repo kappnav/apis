@@ -30,6 +30,7 @@ import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.OkHttpClient;
 
 import application.rest.v1.KAppNavConfig;
+import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.Selector;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -72,14 +73,14 @@ public class ConfigMapCache {
             public void run() {
                 while (true) {
                     try {
-                        ApiClient client = Config.defaultClient();
+                        ApiClient client = KAppNavEndpoint.getApiClient();
                         OkHttpClient httpClient = client.getHttpClient();
                         // Infinite timeout
                         httpClient.setReadTimeout(0, TimeUnit.SECONDS);
                         client.setHttpClient(httpClient);
-                        Configuration.setDefaultApiClient(client);
-
+                        
                         CoreV1Api api = new CoreV1Api();
+                        api.setApiClient(client);
                         Selector selector = new Selector();
                         selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
 
