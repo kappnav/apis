@@ -22,15 +22,11 @@ import java.util.Map;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.ibm.kappnav.logging.Logger;
 
 import application.rest.v1.KAppNavConfig;
 import application.rest.v1.KAppNavEndpoint;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1ConfigMap;
-
-import com.ibm.kappnav.logging.Logger;
 
 public class ConfigMapProcessor {
 
@@ -148,25 +144,15 @@ public class ConfigMapProcessor {
         if (isGlobalNS && kappnavNSMapCache.containsKey(configMapName)) {
             return kappnavNSMapCache.get(configMapName);
         }
-        try {
-            CoreV1Api api = new CoreV1Api();
-            api.setApiClient(client);
-
-            V1ConfigMap map = api.readNamespacedConfigMap(configMapName, namespace, null, null, null);
-            final JsonElement element = client.getJSON().getGson().toJsonTree(map);
-            if (element != null && element.isJsonObject()) {
-                final JsonObject m = element.getAsJsonObject();
-                if (isGlobalNS) {
-                    // Store the map in the local cache.
-                    kappnavNSMapCache.put(configMapName, m);
-                }
-                return m;
+        
+        final JsonElement element = ConfigMapCache.getConfigMapAsJSON(client, namespace, configMapName);
+        if (element != null && element.isJsonObject()) {
+            final JsonObject m = element.getAsJsonObject();
+            if (isGlobalNS) {
+                // Store the map in the local cache.
+                kappnavNSMapCache.put(configMapName, m);
             }
-        }
-        catch (ApiException e) {
-            if (Logger.isDebugEnabled()) {
-                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
-            }
+            return m;
         }
 
         if (isGlobalNS) {

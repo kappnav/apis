@@ -19,15 +19,15 @@ package application.rest.v1;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -38,17 +38,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
+import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.ConnectionSpec;
 
 import application.rest.v1.actions.ValidationException;
-import application.rest.v1.actions.PatternException;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.util.Config; 
-
-import com.ibm.kappnav.logging.Logger;
+import io.kubernetes.client.util.Config;
 
 public abstract class KAppNavEndpoint {
     private static final String className = KAppNavEndpoint.class.getName();
@@ -271,7 +269,7 @@ public abstract class KAppNavEndpoint {
         return result;
     }
     
-    protected static ApiClient getApiClient() throws IOException {
+    public static ApiClient getApiClient() throws IOException {
         final ApiClient client = Config.defaultClient();
         if (!DISABLE_TRUST_ALL_CERTS) {
             trustAllCerts(client);

@@ -35,18 +35,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.ibm.kappnav.logging.Logger;
 
 import application.rest.v1.ComponentInfoRegistry;
 import application.rest.v1.KAppNavConfig;
+import application.rest.v1.configmaps.ConfigMapCache;
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 
-import com.ibm.kappnav.logging.Logger;
-
 public final class ResolutionContext {
+	
     private static final String className = ResolutionContext.class.getName();
 
     private static final String JAVA_SCRIPT_FUNCTION_PREFIX = "function ";
@@ -441,32 +441,25 @@ public final class ResolutionContext {
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField);
         }
-
-        try {
-            CoreV1Api api = new CoreV1Api();
-            api.setApiClient(client);
-            final V1ConfigMap map = api.readNamespacedConfigMap(mapName, GLOBAL_NAMESPACE, null, null, null);
-            Map<String,String> data = map.getData();
-            if (data != null) {
-                // Store the map in the local cache.
-                kappnavNSMapCache.put(mapName, map);
-                String result = data.get(mapField);
-                if (result == null) {
-                    if (Logger.isErrorEnabled()) {
-                        Logger.log(className, "getConfigMapDataField", Logger.LogType.ERROR, "Cannot get ConfigMap data for " + mapField);
-                    }
-                    throw new PatternException("cannot get ConfigMap data for " + mapField);
-                } else {
-                    if (Logger.isDebugEnabled()) {
-                        Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField + " return " + result + " and added to kappnav map cache.");
-                    }
-                    return result;
+        
+        CoreV1Api api = new CoreV1Api();
+        api.setApiClient(client);
+        final V1ConfigMap map = ConfigMapCache.getConfigMap(client, GLOBAL_NAMESPACE, mapName);
+        Map<String,String> data = (map != null) ? map.getData() : null;
+        if (data != null) {
+            // Store the map in the local cache.
+            kappnavNSMapCache.put(mapName, map);
+            String result = data.get(mapField);
+            if (result == null) {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getConfigMapDataField", Logger.LogType.ERROR, "Cannot get ConfigMap data for " + mapField);
                 }
-            }
-        }
-        catch (ApiException e) {
-            if (Logger.isDebugEnabled()) {
-                Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "Caught ApiException " + e.toString());
+                throw new PatternException("cannot get ConfigMap data for " + mapField);
+            } else {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, "getConfigMapDataField", Logger.LogType.DEBUG, "For mapName=" + mapName + ", mapField=" + mapField + " return " + result + " and added to kappnav map cache.");
+                }
+                return result;
             }
         }
 
