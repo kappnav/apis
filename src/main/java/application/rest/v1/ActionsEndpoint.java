@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -302,9 +302,14 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
                 final ConfigMapProcessor processor = new ConfigMapProcessor(KAPPNAV_JOB_RESOURCE_KIND);
                 JsonObject actionsMap = processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
-                response.addActions(actionsMap); 
+                response.addActions(actionsMap);
             }
-            return Response.ok(response.getJSON()).build(); 
+
+            final String responseJSON = response.getJSON();
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, "responseJSON=" + responseJSON);
+            }
+            return Response.ok(responseJSON).build(); 
         }
         catch (IOException | ApiException e ) {
             String msg = null;          
