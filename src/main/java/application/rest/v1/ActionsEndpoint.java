@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -233,8 +233,13 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response getCommands(@DefaultValue("") @QueryParam("user") @Parameter(description = "The user that submitted the command action") String user,
-                                @DefaultValue("") @QueryParam("time") @Parameter(description = "The job completion time stamp in yyyy-MM-dd'T'HH:mm:sss format") String time) {
+    public Response getCommands(@CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user,
+                                @QueryParam("time") @DefaultValue("") @Parameter(description = "The job completion time stamp in yyyy-MM-dd'T'HH:mm:sss format") String time) {
+
+        final String methodName = "getCommands";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "user=" + user + ", time=" + time);
+        }
         try {
             final ApiClient client = getApiClient();
             
@@ -242,7 +247,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
             if (user != null && !user.isEmpty()) {
                 s.addMatchLabel(KAPPNAV_JOB_USER_ID, user);
-            }           
+            }
             
             // convert time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
             Timestamp timelaterTimestamp = convertTimeStringToTimestamp(time);
@@ -251,6 +256,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             // Query the list of jobs from Kubernetes and return the list to the caller.
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
+
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                    "GLOBAL_NAMESPACE=" + GLOBAL_NAMESPACE + " ,labelSelector=" + labelSelector);
+            }
+
             List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, null, null, null, labelSelector, null, null, null, null));           
             final CommandsResponse response = new CommandsResponse();           
             
@@ -278,7 +289,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                                     }       
                                 } catch (Exception ex)  {
                                     if (Logger.isDebugEnabled()) {
-                                        Logger.log(className, "getCommands", Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
+                                        Logger.log(className, methodName, Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
                                     }
                                 }                                        
                             }
@@ -291,21 +302,26 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
                 final ConfigMapProcessor processor = new ConfigMapProcessor(KAPPNAV_JOB_RESOURCE_KIND);
                 JsonObject actionsMap = processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
-                response.addActions(actionsMap); 
+                response.addActions(actionsMap);
             }
-            return Response.ok(response.getJSON()).build(); 
+
+            final String responseJSON = response.getJSON();
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, "responseJSON=" + responseJSON);
+            }
+            return Response.ok(responseJSON).build(); 
         }
         catch (IOException | ApiException e ) {
             String msg = null;          
             if (e instanceof ApiException)  {              
                 msg = "input-error: " + e.getMessage(); 
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
+                    Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
                 }
             } else {
                 msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();  
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "getCommands", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);   
+                    Logger.log(className, methodName, Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);   
                 }          
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
