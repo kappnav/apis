@@ -264,7 +264,19 @@ public class ComponentInfoRegistry {
         V1APIGroupList list = api.getAPIVersions();
         List<V1APIGroup> groups = list.getGroups();
         groups.forEach(v -> {
-            processGroupVersion(client, map, groupKindMap, v.getName(), v.getPreferredVersion().getVersion());
+            // Special case for kube 1.16 / OCP 4.3 which added apiextensions.k8s.io/v1
+            // so can't use only the preferred version.
+            // TODO: Probably should handle all versions of all resources, more test needed first
+            if (v.getName().equals("apiextensions.k8s.io")) {
+                for (int i = 0; i < v.getVersions().size(); i++ ) {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, "processGroupList", Logger.LogType.DEBUG,"Processing apiextensions.k8s.io GroupVersion: " + v.getVersions().get(i).getGroupVersion());
+                    }
+                    processGroupVersion(client, map, groupKindMap, v.getName(), v.getVersions().get(i).getVersion());
+                }
+            } else {
+                processGroupVersion(client, map, groupKindMap, v.getName(), v.getPreferredVersion().getVersion());
+            }
         });
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "processGroupList", Logger.LogType.DEBUG,"Setting groupKind map: " + groupKindMap);
