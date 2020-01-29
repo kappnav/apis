@@ -167,8 +167,17 @@ public class ComponentInfoRegistry {
         V1APIGroupList list = api.getAPIVersions();
         List<V1APIGroup> groups = list.getGroups();
         groups.forEach(v -> {
-            processGroupVersion(client, map, v.getName(), v.getPreferredVersion().getVersion());
-        });
+            // Special case for kube 1.16 / OCP 4.3 which added apiextensions.k8s.io/v1
+            // so can't use the preferred version (which is now v1)
+            if (v.getName().equals("apiextensions.k8s.io")) {
+                for (int i = 0; i < v.getVersions().size(); i++ ) {
+                    if (v.getVersions().get(i).getVersion().equals("v1beta1")) {
+                        processGroupVersion(client, map, v.getName(), v.getVersions().get(i).getVersion());
+                    }
+                }
+            } else {
+                processGroupVersion(client, map, v.getName(), v.getPreferredVersion().getVersion());
+            }        });
         return map;
     }
 
