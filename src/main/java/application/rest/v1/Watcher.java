@@ -36,7 +36,14 @@ public class Watcher {
         public void shutdown(ApiClient client);
     }
     
+    // Returns a synchronization object for waking up the thread.
     public static <T> Object start(final Handler<T> h) {
+        return start(h, false);
+    }
+    
+    // Returns a synchronization object for waking up the thread if autoRestart is false.
+    // Returns null if autoRestart is true.
+    public static <T> Object start(final Handler<T> h, boolean autoRestart) {
         // Synchronization lock used for waking up the watcher thread.
         final Object LOCK = new Object();
         Thread t = new Thread(new Runnable() {
@@ -51,12 +58,17 @@ public class Watcher {
                         httpClient.setReadTimeout(0, TimeUnit.SECONDS);
                         client.setHttpClient(httpClient);
                         
+                        final long now = System.currentTimeMillis();
                         Watch<T> watch = null;
                         try {
                             watch = Watch.createWatch(
                                     client,
                                     h.createWatchCall(client),
                                     new TypeToken<Watch.Response<T>>() {}.getType());
+                            
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch started for " + h.getClass().getName() + ".");
+                            }
 
                             // Note: While the watch is active this iterator loop will block waiting for notifications of ConfigMap changes from the Kube API. 
                             for (Watch.Response<T> item : watch) {
@@ -73,6 +85,9 @@ public class Watcher {
                             if (watch != null) {
                                 watch.close();
                             }
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch completed for " + h.getClass().getName() + " after " + (System.currentTimeMillis() - now) + " ms.");
+                            }
                         }
                     }
                     catch (Exception e) {
@@ -80,14 +95,16 @@ public class Watcher {
                             Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from watch initialization or shutdown: " + e.toString());
                         }
                     }
-                    // Sleep until a request is made for a ConfigMap, then try to re-establish the watch.
-                    synchronized (LOCK) {
-                        try {
-                            LOCK.wait();
-                        }
-                        catch (InterruptedException e) {
-                            if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Thread (" + h.getWatcherThreadName() + ") awakened.");
+                    if (!autoRestart) {
+                        // Sleep until a request is made for a ConfigMap, then try to re-establish the watch.
+                        synchronized (LOCK) {
+                            try {
+                                LOCK.wait();
+                            }
+                            catch (InterruptedException e) {
+                                if (Logger.isDebugEnabled()) {
+                                    Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Thread (" + h.getWatcherThreadName() + ") awakened.");
+                                }
                             }
                         }
                     }
@@ -97,6 +114,6 @@ public class Watcher {
         t.setName(h.getWatcherThreadName());
         t.setDaemon(true);
         t.start();
-        return LOCK;
+        return !autoRestart ? LOCK : null;
     }
 }
