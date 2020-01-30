@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.ibm.kappnav.logging.Logger.LogLevel;
 import com.squareup.okhttp.Call;
 
 import io.kubernetes.client.ApiClient;
@@ -271,61 +270,5 @@ public class ApplicationCache {
     
     public static long updateModCount() {
         return MOD_COUNT.incrementAndGet();
-    }
-
-    public static void main (String[] args) {
-        try {
-            Logger.setLogLevel(LogLevel.DEBUG);
-            System.setProperty("kappnav.disable.trust.all.certs", "true");
-            final ApiClient client = KAppNavEndpoint.getApiClient();
-            List<JsonObject> list = listApplicationObject(client);
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listApplicationObject(client);
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listApplicationObject(client);
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listApplicationObject(client);
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listApplicationObject(client);
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listNamespacedApplicationObject(client, "kappnav");
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listNamespacedApplicationObject(client, "default");
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listNamespacedApplicationObject(client, "kappnav");
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            list = listNamespacedApplicationObject(client, "default");
-            System.out.println(list.getClass().getName());
-            System.out.println(list.size());
-            System.out.println(list);
-            JsonObject o = getNamespacedApplicationObject(client, "default", "app12");
-            System.out.println("app12");
-            System.out.println(o);
-            o = getNamespacedApplicationObject(client, "default", "app13");
-            System.out.println("app13");
-            System.out.println(o);
-            o = getNamespacedApplicationObject(client, "default", "app12");
-            System.out.println("app12");
-            System.out.println(o);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
     }
  }
