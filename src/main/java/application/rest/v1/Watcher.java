@@ -27,6 +27,9 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 
+/**
+ * Convenience class for building a watch on a set of resources.
+ */
 public class Watcher {
     
     public interface Handler<T> {

@@ -32,6 +32,11 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Watch.Response;
 
+/**
+ * Cache for all Applications in the cluster. Cached lists of applications for all 
+ * namespaces or a specific namespace are invalidated when a CRUD operation is
+ * performed on an Application. 
+ */
 public class ApplicationCache {
     
     private static final String CLASS_NAME = ApplicationCache.class.getName();
@@ -130,7 +135,7 @@ public class ApplicationCache {
                             break;
                     }
                     if (updated && Logger.isDebugEnabled()) {
-                        Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Application cache updated due to Application change event :: Type: " 
+                        Logger.log(getClass().getName(), "processResponse", Logger.LogType.DEBUG, "Application cache updated due to Application change event :: Type: " 
                                 + response.type + " :: Name: " + name + " :: Namespace: " + namespace);
                     }
                 }
@@ -154,6 +159,10 @@ public class ApplicationCache {
             if (cachedList != null) {
                 final List<JsonObject> list = cachedList.getList();
                 if (list != null) {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(CLASS_NAME, "listNamespacedApplicationObject", Logger.LogType.DEBUG, 
+                                "Returning cached Application list for all namespaces.");
+                    }
                     return list;
                 }
             }
@@ -161,6 +170,10 @@ public class ApplicationCache {
             final long modCount = MOD_COUNT.get();
             final List<JsonObject> list = listApplicationObject0(client);
             CACHED_LIST.set(new CachedList(list, modCount));
+            if (Logger.isDebugEnabled()) {
+                Logger.log(CLASS_NAME, "listNamespacedApplicationObject", Logger.LogType.DEBUG, 
+                        "Caching Application list for all namespaces.");
+            }
             return Collections.unmodifiableList(list);
         }
         else {
@@ -193,6 +206,10 @@ public class ApplicationCache {
                 if (cachedList != null) {
                     final List<JsonObject> list = cachedList.getList();
                     if (list != null) {
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(CLASS_NAME, "listNamespacedApplicationObject", Logger.LogType.DEBUG, 
+                                    "Returning cached Application list for namespace " + namespace + ".");
+                        }
                         return list;
                     }
                 }
@@ -205,6 +222,10 @@ public class ApplicationCache {
             final long modCount = MOD_COUNT.get();
             List<JsonObject> list = listNamespacedApplicationObject0(client, namespace);
             cachedListMap.put(namespace, new CachedList(list, modCount));
+            if (Logger.isDebugEnabled()) {
+                Logger.log(CLASS_NAME, "listNamespacedApplicationObject", Logger.LogType.DEBUG, 
+                        "Caching Application list for namespace " + namespace + ".");
+            }
             return Collections.unmodifiableList(list);
         }
         else {
