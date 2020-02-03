@@ -16,28 +16,16 @@
 
 package application.rest.v1;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.squareup.okhttp.Call;
-import io.kubernetes.client.util.Watch.Response;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
-
+import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
+import com.squareup.okhttp.Call;
 
-import application.rest.v1.KAppNavConfig;
-import application.rest.v1.KAppNavEndpoint;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
 import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.util.Watch;
-import com.squareup.okhttp.OkHttpClient;
+import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.util.Watch.Response;
-
 
 /**
  * Watch kappnav custom resource (CR) that have been installed by the kAppNav operator. 
@@ -55,73 +43,48 @@ public class CustomResourceWatcher {
     private static final String WATCHER_THREAD_NAME = "kAppNav Custom Resource Watcher";
 
     public static void startCustomResourceWatcher() {
-        Thread t = new Thread(new Runnable() {
-            @SuppressWarnings("serial")
+        Watcher.start(new Watcher.Handler<V1ConfigMap>() {
+
             @Override
-            public void run() {
-                while (true) {
-                    try {                    
-                        ApiClient client = KAppNavEndpoint.getApiClient();
-                        OkHttpClient httpClient = client.getHttpClient();
-                        // Infinite timeout
-                        httpClient.setReadTimeout(0, TimeUnit.SECONDS);
-                        client.setHttpClient(httpClient);
-                        CustomObjectsApi coa = new CustomObjectsApi();
-                        coa.setApiClient(client);
-                        
-                        // create a Watch to monitor Kappnav custom resource installed in kappnav namespace
-                        Watch<Object> watch = null;
-                        try {                            
-                            watch = Watch.createWatch (
-                                    client,
-                                    coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, Boolean.TRUE, null, null),                              
-                                    new TypeToken<Watch.Response<Object>>() {}.getType());
-                                                        
-                            // Note: While the watch is active this iterator loop will block waiting for notifications of custom resource changes from the Kube API.
-                            for (Watch.Response<Object> item : watch) {                           
-                                JsonObject o = KAppNavEndpoint.getItemAsObject(client, item.object);                               
-                                if (o != null) {
-                                    //only handle ADDED case
-                                    switch (item.type) {
-                                        case "ADDED":
-                                            // check if Logging is specified in operator's CR, invoke Logger.setLogLevel() if it is specified
-                                            //System.out.println("kappnav CR is added");
-                                            setLoggerLevel(o);
-                                            break;
-                                        case "MODIFIED":
-                                            // check if Logging is specified in operator's CR, invoke Logger.setLogLevel() if it is specified
-                                            //System.out.println("kappnav CR is modified");
-                                            setLoggerLevel(o);
-                                            break;
-                                        case "DELETED":
-                                            //resource deleted - ignoring
-                                            break;                                        
-                                    }                           
-                                }
-                            }
-                        } catch (ApiException e) {                           
-                            if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from running custom object watch: " + e.toString());
-                            }
-                        } finally {                           
-                            // If the watch stops or fails delete the cache.
-                            if (watch != null) {
-                                watch.close();
-                            }
-                        }
-                    } catch (Exception e) {
-                        if (Logger.isDebugEnabled()) {
-                            Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from watch initialization or shutdown: " + e.toString());
-                        }
-                    }                  
+            public String getWatcherThreadName() {
+                return WATCHER_THREAD_NAME;
+            }
+
+            @Override
+            public Call createWatchCall(ApiClient client) throws ApiException {
+                CustomObjectsApi coa = new CustomObjectsApi();
+                coa.setApiClient(client);
+                return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, Boolean.TRUE, null, null);
+            }
+
+            @Override
+            public void processResponse(ApiClient client, Response<V1ConfigMap> response) {
+                JsonObject o = KAppNavEndpoint.getItemAsObject(client, response.object);                               
+                if (o != null) {
+                    // Only handle ADDED and MODIFIED cases
+                    switch (response.type) {
+                        case "ADDED":
+                            // check if Logging is specified in operator's CR, invoke Logger.setLogLevel() if it is specified
+                            //System.out.println("kappnav CR is added");
+                            setLoggerLevel(o);
+                            break;
+                        case "MODIFIED":
+                            // check if Logging is specified in operator's CR, invoke Logger.setLogLevel() if it is specified
+                            //System.out.println("kappnav CR is modified");
+                            setLoggerLevel(o);
+                            break;
+                        case "DELETED":
+                            //resource deleted - ignoring
+                            break;                                        
+                    }                           
                 }
             }
-        });
-        t.setName(WATCHER_THREAD_NAME);
-        t.setDaemon(true);
-        t.start();
-    }
 
+            @Override
+            public void shutdown(ApiClient client) {}
+            
+        }, true);
+    }
 
     // set logger level
     private static void setLoggerLevel(JsonObject o) { 
@@ -160,12 +123,4 @@ public class CustomResourceWatcher {
             }
         }                                                    
     }
-             
  }
-
- 
-   
-        
-
-    
-
