@@ -19,25 +19,23 @@ package application.rest.v1.configmaps;
 import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.xml.namespace.QName;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Call;
 
 import application.rest.v1.KAppNavConfig;
-import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.Selector;
+import application.rest.v1.Watcher;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watch.Response;
 
 /**
  * Cache for frequently accessed config maps, including action/status/section maps and built-in
@@ -59,83 +57,45 @@ public class ConfigMapCache {
     private static final SoftReference<V1ConfigMap> NULL_REFERENCE = new SoftReference<>(null);
 
     // Synchronization lock used for waking up the "kAppNav ConfigMap Watcher" thread.
-    private static final Object LOCK = new Object();
+    private static final Object LOCK;
 
     // Name of the watcher thread.
     private static final String WATCHER_THREAD_NAME = "kAppNav ConfigMap Watcher";
 
     static {
-        Thread t = new Thread(new Runnable() {
-            @SuppressWarnings("serial")
+        LOCK = Watcher.start(new Watcher.Handler<V1ConfigMap>() {
+
             @Override
-            public void run() {
-                while (true) {
-                    try {
-                        ApiClient client = KAppNavEndpoint.getApiClient();
-                        OkHttpClient httpClient = client.getHttpClient();
-                        // Infinite timeout
-                        httpClient.setReadTimeout(0, TimeUnit.SECONDS);
-                        client.setHttpClient(httpClient);
-                        
-                        CoreV1Api api = new CoreV1Api();
-                        api.setApiClient(client);
-                        Selector selector = new Selector();
-                        selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
+            public String getWatcherThreadName() {
+                return WATCHER_THREAD_NAME;
+            }
 
-                        Watch<V1ConfigMap> watch = null;
-                        try {
-                            // REVISIT: The watch is currently limited to the config maps that were installed by the operator. This will need to be revisited
-                            // as config maps are introduced into other namespaces and possibly managed by components other than the operator.
-                            watch = Watch.createWatch(
-                                    client,
-                                    api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, Boolean.TRUE, null, null),
-                                    new TypeToken<Watch.Response<V1ConfigMap>>() {}.getType());
+            @Override
+            public Call createWatchCall(ApiClient client) throws ApiException {
+                CoreV1Api api = new CoreV1Api();
+                api.setApiClient(client);
+                Selector selector = new Selector();
+                selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
+                return api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, Boolean.TRUE, null, null);
+            }
 
-                            // Note: While the watch is active this iterator loop will block waiting for notifications of ConfigMap changes from the Kube API. 
-                            for (Watch.Response<V1ConfigMap> item : watch) {
-                                // Invalidate the cache if any changes are made to the ConfigMaps under watch.
-                                MAP_CACHE_REF.set(new ConcurrentHashMap<>());
-                                if (Logger.isDebugEnabled()) {
-                                    V1ObjectMeta meta = item.object.getMetadata();
-                                    Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "ConfigMap Cache invalidated due to ConfigMap change event :: Type: " 
-                                            + item.type + " :: Name: " + meta.getName() + " :: Namespace: " + meta.getNamespace());
-                                }
-                            }
-                        }
-                        catch (Exception e) {
-                            if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from running ConfigMap watch: " + e.toString());
-                            }
-                        }
-                        finally {
-                            // If the watch stops or fails delete the cache.
-                            MAP_CACHE_REF.set(null);
-                            if (watch != null) {
-                                watch.close();
-                            }
-                        }
-                    } catch (Exception e) {
-                        if (Logger.isDebugEnabled()) {
-                            Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from watch initialization or shutdown: " + e.toString());
-                        }
-                    }
-                    // Sleep until a request is made for a ConfigMap, then try to re-establish the watch.
-                    synchronized (LOCK) {
-                        try {
-                            LOCK.wait();
-                        }
-                        catch (InterruptedException e) {
-                            if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Thread (" + WATCHER_THREAD_NAME + ") awakened.");
-                            }
-                        }
-                    }
+            @Override
+            public void processResponse(ApiClient client, Response<V1ConfigMap> response) {
+                // Invalidate the cache if any changes are made to the ConfigMaps under watch.
+                MAP_CACHE_REF.set(new ConcurrentHashMap<>());
+                if (Logger.isDebugEnabled()) {
+                    V1ObjectMeta meta = response.object.getMetadata();
+                    Logger.log(getClass().getName(), "processResponse", Logger.LogType.DEBUG, "ConfigMap Cache invalidated due to ConfigMap change event :: Type: " 
+                            + response.type + " :: Name: " + meta.getName() + " :: Namespace: " + meta.getNamespace());
                 }
             }
+
+            @Override
+            public void shutdown(ApiClient client) {
+                // If the watch stops or fails delete the cache.
+                MAP_CACHE_REF.set(null);
+            }
         });
-        t.setName(WATCHER_THREAD_NAME);
-        t.setDaemon(true);
-        t.start();
     }
 
     public static JsonElement getConfigMapAsJSON(ApiClient client, String namespace, String name) {

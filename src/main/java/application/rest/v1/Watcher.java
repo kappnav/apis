@@ -73,7 +73,7 @@ public class Watcher {
                                 Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch started for " + h.getClass().getName() + ".");
                             }
 
-                            // Note: While the watch is active this iterator loop will block waiting for notifications of ConfigMap changes from the Kube API. 
+                            // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
                             for (Watch.Response<T> item : watch) {
                                 h.processResponse(client, item);
                             }
@@ -99,7 +99,7 @@ public class Watcher {
                         }
                     }
                     if (!autoRestart) {
-                        // Sleep until a request is made for a ConfigMap, then try to re-establish the watch.
+                        // Sleep until notified by another thread, then try to re-establish the watch.
                         synchronized (LOCK) {
                             try {
                                 LOCK.wait();
