@@ -24,7 +24,6 @@ import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.util.Watch.Response;
 
 /**
