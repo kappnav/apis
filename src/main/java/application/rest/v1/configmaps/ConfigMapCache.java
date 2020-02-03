@@ -17,12 +17,14 @@
 package application.rest.v1.configmaps;
 
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.xml.namespace.QName;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
@@ -35,6 +37,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 
 /**
@@ -77,6 +80,12 @@ public class ConfigMapCache {
                 Selector selector = new Selector();
                 selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
                 return api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, Boolean.TRUE, null, null);
+            }
+            
+            @SuppressWarnings("serial")
+            @Override
+            public Type getWatchType() {
+                return new TypeToken<Watch.Response<V1ConfigMap>>() {}.getType();
             }
 
             @Override

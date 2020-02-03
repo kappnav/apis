@@ -16,9 +16,9 @@
 
 package application.rest.v1;
 
+import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.reflect.TypeToken;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.OkHttpClient;
@@ -35,6 +35,7 @@ public class Watcher {
     public interface Handler<T> {
         public String getWatcherThreadName();
         public Call createWatchCall(ApiClient client) throws ApiException;
+        public Type getWatchType();
         public void processResponse(ApiClient client, Watch.Response<T> response);
         public void shutdown(ApiClient client);
     }
@@ -50,7 +51,6 @@ public class Watcher {
         // Synchronization lock used for waking up the watcher thread.
         final Object LOCK = new Object();
         Thread t = new Thread(new Runnable() {
-            @SuppressWarnings("serial")
             @Override
             public void run() {
                 while (true) {
@@ -67,7 +67,7 @@ public class Watcher {
                             watch = Watch.createWatch(
                                     client,
                                     h.createWatchCall(client),
-                                    new TypeToken<Watch.Response<T>>() {}.getType());
+                                    h.getWatchType());
                             
                             if (Logger.isDebugEnabled()) {
                                 Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch started for " + h.getClass().getName() + ".");

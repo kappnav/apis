@@ -16,6 +16,9 @@
 
 package application.rest.v1;
 
+import java.lang.reflect.Type;
+
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
@@ -24,6 +27,7 @@ import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 
 /**
@@ -54,6 +58,12 @@ public class CustomResourceWatcher {
                 CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
                 return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, Boolean.TRUE, null, null);
+            }
+            
+            @SuppressWarnings("serial")
+            @Override
+            public Type getWatchType() {
+                return new TypeToken<Watch.Response<Object>>() {}.getType();
             }
 
             @Override
