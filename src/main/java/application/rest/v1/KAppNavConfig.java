@@ -48,6 +48,9 @@ public class KAppNavConfig {
     private static final String KAPPNAV_NAMESPACE;
     private static final String KAPPNAV_CONFIG_NAMESPACE = "KAPPNAV_CONFIG_NAMESPACE";
     private static final String KAPPNAV_DEFAULT_NAMESPACE = "kappnav";
+    private static final String KAPPNAV_CUSTOM_RESOURCE_NAME;
+    private static final String KAPPNAV_CR_NAME = "KAPPNAV_CR_NAME";
+    private static final String KAPPNAV_DEFAULT_CR_NAME = "kappnav";
     
     private static final String KAPPNAV_KUBE_ENV;
     private static final String KUBE_ENV = "KUBE_ENV";
@@ -56,33 +59,35 @@ public class KAppNavConfig {
     static {
         KAPPNAV_NAMESPACE = getEnvironmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
         KAPPNAV_KUBE_ENV = getEnvironmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
+        KAPPNAV_CUSTOM_RESOURCE_NAME = getEnvironmentVariable(KAPPNAV_CR_NAME, KAPPNAV_DEFAULT_CR_NAME);
     }
     
     private static String getEnvironmentVariable(String name, String defaultValue) {
-        if (Logger.isEntryEnabled()) {
-            Logger.log(className, "getEnvironmentVariable", Logger.LogType.ENTRY, "For name=" + name + ", defaultValue=" + defaultValue);
-        }
+        // remove all Logger messages as Logger needs to call this method to initialize itself
+        //if (Logger.isEntryEnabled()) {
+        //    Logger.log(className, "getEnvironmentVariable", Logger.LogType.ENTRY, "For name=" + name + ", defaultValue=" + defaultValue);
+        //}
         try {
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {
                     // Check environment variable.
                     final String var = System.getenv(name);
                     if (var != null && !var.trim().isEmpty()) {
-                        if (Logger.isExitEnabled()) {
-                            Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, var);
-                        }
+                        //if (Logger.isExitEnabled()) {
+                        //    Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, var);
+                        //}
                         return var;
                     }
-                    if (Logger.isExitEnabled()) {
-                        Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, defaultValue);
-                    }
+                    //if (Logger.isExitEnabled()) {
+                    //    Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, defaultValue);
+                    //}
                     return defaultValue;
                 }
             });
         } catch (SecurityException se) {
-            if (Logger.isExitEnabled()) {
-                Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, "Caught SecurityException returning defaultValue="+defaultValue);
-            }
+            //if (Logger.isExitEnabled()) {
+            //    Logger.log(className, "getEnvironmentVariable", Logger.LogType.EXIT, "Caught SecurityException returning defaultValue="+defaultValue);
+            //}
             return defaultValue;
         }
     }
@@ -179,7 +184,7 @@ public class KAppNavConfig {
         this.appStatusPrecedence = appStatusPrecedence;     
     }
     
-    public static String getkAppNavNamespace() {
+    public static String getkAppNavNamespace() {     
         return KAPPNAV_NAMESPACE;
     }
     
@@ -189,6 +194,10 @@ public class KAppNavConfig {
     
     public static String getkAppNavConfigMapName() {
         return MAP_NAME;
+    }
+
+    public static String getkAppNavCRName() {
+        return KAPPNAV_CUSTOM_RESOURCE_NAME;
     }
     
     // Returns value of 'kappnav-sa-name'.

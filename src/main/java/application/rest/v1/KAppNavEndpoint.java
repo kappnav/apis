@@ -234,12 +234,13 @@ public abstract class KAppNavEndpoint {
         }
         return DEFAULT_NAMESPACE;
     }
-
-
+    
     public static List<String> getAnnotationNamespaces(ApiClient client, Object application) {
-        List<String> result = new ArrayList<>();
+        return getAnnotationNamespaces(client.getJSON().getGson().toJsonTree(application));
+    }
 
-        JsonElement element = client.getJSON().getGson().toJsonTree(application);
+    public static List<String> getAnnotationNamespaces(final JsonElement element) {
+        List<String> result = new ArrayList<>();
         if (element != null && element.isJsonObject()) {
             JsonObject root = element.getAsJsonObject();
             JsonElement metadata = root.get(METADATA_PROPERTY_NAME);
