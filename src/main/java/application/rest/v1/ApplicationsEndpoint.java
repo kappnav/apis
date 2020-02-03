@@ -17,6 +17,7 @@
 package application.rest.v1;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import javax.validation.constraints.Pattern;
@@ -48,6 +49,7 @@ import com.ibm.kappnav.logging.Logger;
 @Path("/applications")
 @Tag(name = "applications", description="kAppNav Applications API")
 public class ApplicationsEndpoint extends KAppNavEndpoint {
+    
     private static final String className = ApplicationsEndpoint.class.getName();
 
     private static final String APPLICATIONS_PROPERTY_NAME = "applications";
@@ -68,14 +70,14 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
     public Response getApplications(@Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final Object o;
+            final List<JsonObject> o;
             if (namespace.isEmpty()) {
-                o = listApplicationObject(client);
+                o = ApplicationCache.listApplicationObject(client);
             }
             else {
-                o = listNamespacedApplicationObject(client, namespace);
+                o = ApplicationCache.listNamespacedApplicationObject(client, namespace);
             }
-            return processApplications(client, getItemsAsList(client, o));
+            return processApplications(client, o);
         }
         catch (IOException | ApiException e) {
             if (Logger.isErrorEnabled()) {
@@ -100,8 +102,8 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final Object o = getNamespacedApplicationObject(client, namespace, name);  
-            return processApplications(client, getItemAsList(client, o));
+            final JsonObject o = ApplicationCache.getNamespacedApplicationObject(client, namespace, name);  
+            return processApplications(client, Collections.singletonList(o));
         }
         catch (IOException | ApiException e) {
             if (Logger.isErrorEnabled()) {

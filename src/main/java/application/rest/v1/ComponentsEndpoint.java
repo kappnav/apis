@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -42,14 +40,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.ibm.kappnav.logging.Logger;
 
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-
-import com.ibm.kappnav.logging.Logger;
 
 @Path("/components")
 @Tag(name = "components", description="kAppNav Components API")
@@ -84,13 +80,13 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                 // Initialize the registry here if CDI failed to do it.
                 registry = new ComponentInfoRegistry(client);
             }
-            final Object o = getNamespacedApplicationObject(client, namespace, name);
+            final JsonObject o = ApplicationCache.getNamespacedApplicationObject(client, namespace, name);
 
             //get names from application and application annotations
-            final List<String> namespaces = getNamespaceList(client, o, namespace);    
+            final List<String> namespaces = getNamespaceList(client, o, namespace);  
                                           
-            final List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(client, o);
-            final Selector selector = Selector.getSelector(client, o);
+            final List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(o);
+            final Selector selector = Selector.getSelector(o);
             return processComponentKinds(client, componentKinds, namespaces, selector, namespace, name);
         }
         catch (IOException | ApiException e) {
@@ -170,14 +166,14 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
         });
     }    
 
-    private List<String> getNamespaceList(ApiClient client, Object o, String namespace) {
+    private List<String> getNamespaceList(ApiClient client, JsonObject o, String namespace) {
         final List<String> newNamespaces = new ArrayList<String>();
     
         //get namespaces from application
         List<String> appNamespaces = Collections.singletonList(namespace);
 
         //get kappnav.component.namespaces from application annotations
-        List<String> kappnavNamespaces = getAnnotationNamespaces(client, o);
+        List<String> kappnavNamespaces = getAnnotationNamespaces(o);
 
         kappnavNamespaces.addAll(appNamespaces);
         

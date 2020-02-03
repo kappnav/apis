@@ -69,9 +69,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final Object o = getNamespacedApplicationObject(client, namespace, name);
-            JsonElement element = client.getJSON().getGson().toJsonTree(o);
-            JsonObject json = element.getAsJsonObject();
+            final JsonObject json = ApplicationCache.getNamespacedApplicationObject(client, namespace, name);
             return Response.ok(json.toString()).build();
         }
         catch (IOException | ApiException e) {
@@ -101,6 +99,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             JsonElement element= parser.parse(jsonstr);
             JsonObject json= element.getAsJsonObject();
             createNamespacedApplicationObject(client, namespace, json);
+            ApplicationCache.updateModCount();
 
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
@@ -133,6 +132,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
             JsonElement element= parser.parse(jsonstr);
             JsonObject json= element.getAsJsonObject();
             replaceNamespacedApplicationObject(client, namespace, name, json);
+            ApplicationCache.updateModCount();
 
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
@@ -160,6 +160,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
         try {
             final ApiClient client = getApiClient();
             deleteNamespacedApplicationObject(client, namespace, name);
+            ApplicationCache.updateModCount();
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {

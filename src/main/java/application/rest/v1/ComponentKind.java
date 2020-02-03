@@ -43,8 +43,11 @@ public final class ComponentKind {
     }
     
     public static List<ComponentKind> getComponentKinds(ApiClient client, Object application) {
+        return getComponentKinds(client.getJSON().getGson().toJsonTree(application));
+    }
+    
+    public static List<ComponentKind> getComponentKinds(final JsonElement element) {
         List<ComponentKind> result = new ArrayList<>();
-        final JsonElement element = client.getJSON().getGson().toJsonTree(application);
         if (element != null && element.isJsonObject()) {
             JsonObject root = element.getAsJsonObject();
             JsonElement spec = root.get("spec");
