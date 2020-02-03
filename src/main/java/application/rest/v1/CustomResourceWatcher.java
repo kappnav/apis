@@ -43,7 +43,7 @@ public class CustomResourceWatcher {
     private static final String WATCHER_THREAD_NAME = "kAppNav Custom Resource Watcher";
 
     public static void startCustomResourceWatcher() {
-        Watcher.start(new Watcher.Handler<V1ConfigMap>() {
+        Watcher.start(new Watcher.Handler<Object>() {
 
             @Override
             public String getWatcherThreadName() {
@@ -58,7 +58,7 @@ public class CustomResourceWatcher {
             }
 
             @Override
-            public void processResponse(ApiClient client, Response<V1ConfigMap> response) {
+            public void processResponse(ApiClient client, Response<Object> response) {
                 JsonObject o = KAppNavEndpoint.getItemAsObject(client, response.object);                               
                 if (o != null) {
                     // Only handle ADDED and MODIFIED cases
