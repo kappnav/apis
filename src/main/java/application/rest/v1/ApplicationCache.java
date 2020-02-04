@@ -16,6 +16,7 @@
 
 package application.rest.v1;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
@@ -30,6 +32,7 @@ import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 
 /**
@@ -95,6 +98,12 @@ public class ApplicationCache {
                 final CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
                 return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, Boolean.TRUE, null, null);
+            }
+            
+            @SuppressWarnings("serial")
+            @Override
+            public Type getWatchType() {
+                return new TypeToken<Watch.Response<Object>>() {}.getType();
             }
 
             @Override
