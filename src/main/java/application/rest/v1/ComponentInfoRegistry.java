@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019,2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,7 @@ public class ComponentInfoRegistry {
         CORE_KIND_TO_API_VERSION_MAP.put("RoleBinding", "rbac.authorization.k8s.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("StorageClass", "rbac.authorization.k8s.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Endpoint", "rbac.authorization.k8s.io/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("DeploymentConfig", "apps.openshift.io/v1");
         
         // Initialize extensions to KAppNav
         KAppNavExtension.init();
