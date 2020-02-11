@@ -16,9 +16,9 @@
 
 package application.rest.v1;
 
+import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.reflect.TypeToken;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.OkHttpClient;
@@ -35,6 +35,7 @@ public class Watcher {
     public interface Handler<T> {
         public String getWatcherThreadName();
         public Call createWatchCall(ApiClient client) throws ApiException;
+        public Type getWatchType();
         public void processResponse(ApiClient client, Watch.Response<T> response);
         public void shutdown(ApiClient client);
     }
@@ -50,7 +51,6 @@ public class Watcher {
         // Synchronization lock used for waking up the watcher thread.
         final Object LOCK = new Object();
         Thread t = new Thread(new Runnable() {
-            @SuppressWarnings("serial")
             @Override
             public void run() {
                 while (true) {
@@ -67,13 +67,13 @@ public class Watcher {
                             watch = Watch.createWatch(
                                     client,
                                     h.createWatchCall(client),
-                                    new TypeToken<Watch.Response<T>>() {}.getType());
+                                    h.getWatchType());
                             
                             if (Logger.isDebugEnabled()) {
                                 Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch started for " + h.getClass().getName() + ".");
                             }
 
-                            // Note: While the watch is active this iterator loop will block waiting for notifications of ConfigMap changes from the Kube API. 
+                            // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
                             for (Watch.Response<T> item : watch) {
                                 h.processResponse(client, item);
                             }
@@ -99,7 +99,7 @@ public class Watcher {
                         }
                     }
                     if (!autoRestart) {
-                        // Sleep until a request is made for a ConfigMap, then try to re-establish the watch.
+                        // Sleep until notified by another thread, then try to re-establish the watch.
                         synchronized (LOCK) {
                             try {
                                 LOCK.wait();
