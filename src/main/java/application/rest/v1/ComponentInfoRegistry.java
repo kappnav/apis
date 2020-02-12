@@ -18,9 +18,12 @@ package application.rest.v1;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -129,7 +132,6 @@ public class ComponentInfoRegistry {
         CORE_KIND_TO_API_VERSION_MAP.put("RoleBinding", "rbac.authorization.k8s.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("StorageClass", "rbac.authorization.k8s.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Endpoint", "rbac.authorization.k8s.io/v1");
-        CORE_KIND_TO_API_VERSION_MAP.put("DeploymentConfig", "apps.openshift.io/v1");
         
         // Initialize extensions to KAppNav
         KAppNavExtension.init();
@@ -137,7 +139,7 @@ public class ComponentInfoRegistry {
 
     private final AtomicReference<Map<String,ComponentInfo>> componentKindMap;
 
-    final AtomicReference<Map<String,String>> groupKindToApiVersionMap;
+    final AtomicReference<Map<String,Set<String>>> groupKindToApiVersionMap;
 
     public ComponentInfoRegistry() throws ApiException, IOException {
         this(KAppNavEndpoint.getApiClient());
@@ -246,9 +248,11 @@ public class ComponentInfoRegistry {
         ApisApi api = new ApisApi();
         api.setApiClient(client);
 
-        final Map<String,String> groupKindMap = new HashMap<String,String>();
-        groupKindMap.putAll(BUILT_IN_KIND_TO_API_VERSION_MAP);
-        
+        final Map<String,Set<String>> groupKindMap = new HashMap<String,Set<String>>();
+        for (Map.Entry<String,String> entry : BUILT_IN_KIND_TO_API_VERSION_MAP.entrySet()) {
+            groupKindMap.put(entry.getKey(), new HashSet<String>(Arrays.asList(entry.getKey())));
+        } 
+
         final Map<String,ComponentInfo> map = new HashMap<>();
         map.putAll(BUILT_IN_COMPONENT_KIND_MAP);
 
@@ -265,9 +269,8 @@ public class ComponentInfoRegistry {
         V1APIGroupList list = api.getAPIVersions();
         List<V1APIGroup> groups = list.getGroups();
         groups.forEach(v -> {
-            // Special case for kube 1.16 / OCP 4.3 which added apiextensions.k8s.io/v1
-            // so can't use only the preferred version.
-            // TODO: Probably should handle all versions of all resources, more test needed first
+            // kube 1.16 / OCP 4.3 added apiextensions.k8s.io/v1
+            // so can no longer use only the preferred version.
             if (v.getName().equals("apiextensions.k8s.io")) {
                 for (int i = 0; i < v.getVersions().size(); i++ ) {
                     if (Logger.isDebugEnabled()) {
@@ -286,7 +289,7 @@ public class ComponentInfoRegistry {
         return map;
     }
 
-    private void processGroupVersion(ApiClient client, Map<String,ComponentInfo> map, Map<String,String> groupKindMap, String group, String version) {
+    private void processGroupVersion(ApiClient client, Map<String,ComponentInfo> map, Map<String,Set<String>> groupKindMap, String group, String version) {
         Logger.log(className, "processGroupVersion", Logger.LogType.ENTRY, "For group=" + group + ", version="+version);
         try {
             CustomObjectsApi coa = new CustomObjectsApi();
@@ -333,10 +336,18 @@ public class ComponentInfoRegistry {
                                     }
                                     map.put(key, new ComponentInfo(kind, group, version, plural, namespaced));
                                     String value = (group != null ? group : "") + "/" + version;
-                                    if (Logger.isDebugEnabled()) {
-                                        Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "Adding groupKind key: " + groupKindKey + " value: " + value);
+                                    Set<String> apiVersions = groupKindMap.get(groupKindKey);
+                                    if (apiVersions == null) {
+                                        if (Logger.isDebugEnabled()) {
+                                            Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "No apiVersion Set found in groupKindMap: key: " + groupKindKey + ", creating new Set");
+                                        }
+                                        apiVersions = new HashSet<String>();
+                                        groupKindMap.put(groupKindKey, apiVersions);
                                     }
-                                    groupKindMap.put(groupKindKey, value);
+                                    if (Logger.isDebugEnabled()) {
+                                        Logger.log(className, "processGroupVersion", Logger.LogType.DEBUG, "Adding apiVersion: " + value + " to groupKind: " + groupKindKey);
+                                    }
+                                    apiVersions.add(value);
                                 }
                             }
                         }
@@ -355,31 +366,33 @@ public class ComponentInfoRegistry {
     }
 
     /**
-     * Get the apiVersion for a componentKind
+     * Get all the apiVersions for a componentKind
      */
-    public String getComponentGroupApiVersion(ComponentKind componentKind) {
+    public Set<String> getComponentGroupApiVersions(ComponentKind componentKind) {
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, "getComponentGroupApiVersion", Logger.LogType.ENTRY, "");
+            Logger.log(className, "getComponentGroupApiVersions", Logger.LogType.ENTRY, "componentKind " + componentKind.toString());
         }
         String group = componentKind.group;
-        // Group "core" in the componeneKind external is "" internal group
-        if (group.equals("core")) {
-            group = "";
+
+        Map<String, Set<String>> groupKindMap = groupKindToApiVersionMap.get();
+        String key = group + "/" + componentKind.kind;
+        if (Logger.isDebugEnabled()) {
+            Logger.log(className, "getComponentGroupApiVersions", Logger.LogType.WARNING, "Getting groupKindMap key: " + key);
         }
-        Map<String, String> groupKindMap = groupKindToApiVersionMap.get();
-        String apiVersion = groupKindMap.get(group + "/" + componentKind.kind);
-        if (apiVersion == null) {
+        Set<String> apiVersions = groupKindMap.get(group + "/" + componentKind.kind);
+        if (apiVersions == null) {
             if (Logger.isWarningEnabled()) {
-                Logger.log(className, "getComponentGroupApiVersion", Logger.LogType.WARNING, "No CRD found for componentKind group: " + componentKind.group + " kind: " + componentKind.kind);
+                Logger.log(className, "getComponentGroupApiVersions", Logger.LogType.WARNING, "No CRD found for componentKind group: " + componentKind.group + " kind: " + componentKind.kind);
             }
             // no CRDs installed with the specified group/kind
             // See if it's one of the core kinds for compatibility
-            apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(componentKind.kind);
+            String apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(componentKind.kind);
+            apiVersions = new HashSet<String>(Arrays.asList(apiVersion));
         }
         if (Logger.isExitEnabled()) {
-            Logger.log(className, "getComponentGroupApiVersion", Logger.LogType.EXIT, "ApiVersion="+apiVersion);
+            Logger.log(className, "getComponentGroupApiVersions", Logger.LogType.EXIT, "ApiVersions="+apiVersions);
         }
-        return apiVersion;
+        return apiVersions;
     }
 
     public String toString() {

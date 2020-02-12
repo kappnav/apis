@@ -91,7 +91,7 @@ public class AppPodlistFunction implements Function {
                 return null;
             }  
         }   
-        List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(client, resource);    
+        List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(client, resource, registry);    
         return getPodListFromApp(client, resource, registry, componentKinds);                    
     }
 

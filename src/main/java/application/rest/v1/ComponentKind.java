@@ -18,10 +18,12 @@ package application.rest.v1;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.ibm.kappnav.logging.Logger;
 
 import io.kubernetes.client.ApiClient;
 
@@ -32,7 +34,9 @@ public final class ComponentKind {
     
     public final String group;
     public final String kind;
-    
+
+    private static final String className = ComponentKind.class.getName();
+
     public ComponentKind(String group, String kind) {
         this.group = group;
         this.kind = kind;
@@ -42,11 +46,11 @@ public final class ComponentKind {
         return "{ Group: " + group  + ", Kind: " + kind + " }";
     }
     
-    public static List<ComponentKind> getComponentKinds(ApiClient client, Object application) {
-        return getComponentKinds(client.getJSON().getGson().toJsonTree(application));
+    public static List<ComponentKind> getComponentKinds(ApiClient client, Object application, ComponentInfoRegistry registry) {
+        return getComponentKinds(client.getJSON().getGson().toJsonTree(application), registry);
     }
     
-    public static List<ComponentKind> getComponentKinds(final JsonElement element) {
+    public static List<ComponentKind> getComponentKinds(final JsonElement element, ComponentInfoRegistry registry) {
         List<ComponentKind> result = new ArrayList<>();
         if (element != null && element.isJsonObject()) {
             JsonObject root = element.getAsJsonObject();
@@ -63,7 +67,40 @@ public final class ComponentKind {
                             JsonElement kind = componentKind.get("kind");
                             if (kind != null) {
                                 String groupString = group != null ? group.getAsString() : "";
-                                result.add(new ComponentKind(groupString, kind.getAsString()));
+                                ComponentKind ck = new ComponentKind(groupString, kind.getAsString());
+                                if (Logger.isInfoEnabled()) {
+                                    Logger.log(className, "getComponentKinds", Logger.LogType.INFO, "processing componentKind group: " + groupString + " kind: " +  kind.getAsString());
+                                }
+                                // validate group and kind
+                                Set<String> apiVersions = registry.getComponentGroupApiVersions(ck);
+                                if (apiVersions != null && !apiVersions.isEmpty()) {
+                                    for (String apiVersion : apiVersions) {
+                                        if (apiVersion != null) {
+                                            if (Logger.isInfoEnabled()) {
+                                                Logger.log(className, "getComponentKinds", Logger.LogType.INFO, "found apiVersion " + apiVersion + " for componentKind group: " + groupString + " kind: " +  kind.getAsString());
+                                            }
+                                            String[] substring = apiVersion.split("/");
+                                            // For backwards compatibility, invalid group name case,
+                                            // use the group of the default apiversion 
+                                            if (!substring[0].equals(groupString)) {
+                                                ck = new ComponentKind(substring[0], kind.getAsString());
+                                                Logger.log(className, "getComponentKinds", Logger.LogType.INFO, "Substituting group: " + substring[0] + " for group: " + groupString + " with kind: " + kind.getAsString());
+                                            }
+                                            result.add(ck);
+                                        }
+                                        else {
+                                            if (Logger.isInfoEnabled()) {
+                                                Logger.log(className, "getComponentKinds", Logger.LogType.INFO, "apiVersion null for componentKind group: " + groupString + " kind: " +  kind.getAsString() + " skipping");
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                                else {
+                                    if (Logger.isInfoEnabled()) {
+                                        Logger.log(className, "getComponentKinds", Logger.LogType.INFO, "componentKind group: " + groupString + " kind: " +  kind.getAsString() + " not recognized. skipping");
+                                    }
+                                }
                             }
                         }
                     });
