@@ -59,6 +59,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 
 import application.rest.v1.actions.CommandLineTokenizer;
@@ -99,6 +100,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     private static final String COMMANDS_PROPERTY_NAME = "commands";
     private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
+
+    private static final String TIME_PROPERTY_NAME = "time";
     
     private static final String IMAGE_PROPERTY_NAME = "image";
     private static final String CMD_PATTERN_PROPERTY_NAME = "cmd-pattern";
@@ -221,6 +224,43 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
             @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
         return executeCommand(jsonstr, name, kind, "", namespace, commandName, appName, appNamespace, user);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/command-time")
+    @Operation(
+            summary = "Retrieve current time to specify as query value for retrieving Kubernetes jobs using /commands api. Time returned in yyyy-MM-dd'T'HH:mm:sss format",
+            description = "Retrieve current time for retrieving jobs."
+            )
+    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")})
+    public Response getCommandTime() { 
+
+        final String methodName = "getCommandTime";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+        } 
+
+        // convert current time to {time: value} JSON where value is yyyy-MM-dd'T'HH:mm:sss format
+        SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:sss");
+        String formattedTimestamp= null; 
+        try { 
+            formattedTimestamp = dateFormat.format( new Date() );
+        }
+        catch(Exception e) { 
+            String msg= "internal error parsing date";
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
+        }
+        JsonObject timeJSON = new JsonObject();
+        JsonElement timeElement= new JsonPrimitive(formattedTimestamp); 
+        timeJSON.add(TIME_PROPERTY_NAME, timeElement);
+
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "timeJSON="+timeJSON);
+        }
+        return Response.ok(timeJSON.toString()).build(); 
     }
     
     @GET
