@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -243,8 +244,11 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             Logger.log(className, methodName, Logger.LogType.ENTRY,"");
         } 
 
-        // convert current time to {time: value} JSON where value is yyyy-MM-dd'T'HH:mm:sss format
-        SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:sss");
+        // convert current time to {time: value} JSON where value is yyyy-MM-dd'T'HH:mm:ss.000Z format
+        // This format matches the format returned in the completionTime field for jobs.  Kubernetes
+        // stores timestamps only to the second, the 000 (millisecond) is just to unify timestamp format
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.'000Z'");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp= null; 
         try { 
             formattedTimestamp = dateFormat.format( new Date() );
