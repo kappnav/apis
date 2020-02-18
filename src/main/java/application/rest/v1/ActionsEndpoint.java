@@ -231,7 +231,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/command-time")
     @Operation(
-            summary = "Retrieve current time to specify as query value for retrieving Kubernetes jobs using /commands api. Time returned in yyyy-MM-dd'T'HH:mm:sss format",
+            summary = "Retrieve current time to specify as query value for retrieving Kubernetes jobs using /commands api. Time returned in yyyy-MM-dd'T'HH:mm:ss.000Z format",
             description = "Retrieve current time for retrieving jobs."
             )
     @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
@@ -241,7 +241,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
         final String methodName = "getCommandTime";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "");
         } 
 
         // convert current time to {time: value} JSON where value is yyyy-MM-dd'T'HH:mm:ss.000Z format
@@ -249,16 +249,20 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         // stores timestamps only to the second, the 000 (millisecond) is just to unify timestamp format
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.'000Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String formattedTimestamp= null; 
+        String formattedTimestamp = null;
+        final Date date = new Date();
         try { 
-            formattedTimestamp = dateFormat.format( new Date() );
+            formattedTimestamp = dateFormat.format( date );
         }
         catch(Exception e) { 
-            String msg= "internal error parsing date";
+            String msg = "Internal error parsing date: " + date;
+            if (Logger.isErrorEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.ERROR, msg); 
+            }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
         JsonObject timeJSON = new JsonObject();
-        JsonElement timeElement= new JsonPrimitive(formattedTimestamp); 
+        JsonElement timeElement = new JsonPrimitive(formattedTimestamp); 
         timeJSON.add(TIME_PROPERTY_NAME, timeElement);
 
         if (Logger.isExitEnabled()) {
