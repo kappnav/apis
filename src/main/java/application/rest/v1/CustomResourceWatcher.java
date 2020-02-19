@@ -17,6 +17,8 @@
 package application.rest.v1;
 
 import java.lang.reflect.Type;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
@@ -52,12 +54,21 @@ public class CustomResourceWatcher {
             public String getWatcherThreadName() {
                 return WATCHER_THREAD_NAME;
             }
-
+            
             @Override
-            public Call createWatchCall(ApiClient client) throws ApiException {
+            public List<Object> listResources(ApiClient client, AtomicReference<String> resourceVersion)
+                    throws ApiException {
                 CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
-                return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, Boolean.TRUE, null, null);
+                Object o = coa.listNamespacedCustomObject(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, null);
+                return Watcher.processCustomObjectsApiList(client, o, resourceVersion);
+            }
+
+            @Override
+            public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
+                CustomObjectsApi coa = new CustomObjectsApi();
+                coa.setApiClient(client);
+                return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, resourceVersion, Boolean.TRUE, null, null);
             }
             
             @SuppressWarnings("serial")
@@ -67,11 +78,11 @@ public class CustomResourceWatcher {
             }
 
             @Override
-            public void processResponse(ApiClient client, Response<Object> response) {
-                JsonObject o = KAppNavEndpoint.getItemAsObject(client, response.object);                               
+            public void processResponse(ApiClient client, String type, Object object) {
+                JsonObject o = KAppNavEndpoint.getItemAsObject(client, object);                               
                 if (o != null) {
                     // Only handle ADDED and MODIFIED cases
-                    switch (response.type) {
+                    switch (type) {
                         case "ADDED":
                             // check if Logging is specified in operator's CR, invoke Logger.setLogLevel() if it is specified
                             //System.out.println("kappnav CR is added");

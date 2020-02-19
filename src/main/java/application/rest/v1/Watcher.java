@@ -17,8 +17,13 @@
 package application.rest.v1;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.OkHttpClient;
@@ -32,11 +37,33 @@ import io.kubernetes.client.util.Watch;
  */
 public class Watcher {
     
+    /**
+     * A callback interface that the watcher invokes to set up the watch and report results.
+     */
     public interface Handler<T> {
+        /**
+         * Returns the name of the thread.
+         */
         public String getWatcherThreadName();
-        public Call createWatchCall(ApiClient client) throws ApiException;
+        /**
+         * Returns the current set of resources under watch. Sets the resource version list on the AtomicReference.
+         */
+        public List<T> listResources(ApiClient client, AtomicReference<String> resourceVersion) throws ApiException;
+        /**
+         * Returns the watch call for the resource under watch, created using the given resource version.
+         */
+        public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException;
+        /**
+         * Returns the Java type of the resources under watch.
+         */
         public Type getWatchType();
-        public void processResponse(ApiClient client, Watch.Response<T> response);
+        /**
+         * Processes a response returned from the watch.
+         */
+        public void processResponse(ApiClient client, String type, T object);
+        /**
+         * Clean up method for when the watch ends or fails.
+         */
         public void shutdown(ApiClient client);
     }
     
@@ -61,12 +88,18 @@ public class Watcher {
                         httpClient.setReadTimeout(0, TimeUnit.SECONDS);
                         client.setHttpClient(httpClient);
                         
+                        final AtomicReference<String> resourceVersion = new AtomicReference<>();
                         final long now = System.currentTimeMillis();
                         Watch<T> watch = null;
                         try {
+                            List<T> list = h.listResources(client, resourceVersion);
+                            list.forEach(v -> {
+                                h.processResponse(client, "ADDED", v);
+                            }); 
+                            
                             watch = Watch.createWatch(
                                     client,
-                                    h.createWatchCall(client),
+                                    h.createWatchCall(client, resourceVersion.get()),
                                     h.getWatchType());
                             
                             if (Logger.isDebugEnabled()) {
@@ -75,7 +108,7 @@ public class Watcher {
 
                             // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
                             for (Watch.Response<T> item : watch) {
-                                h.processResponse(client, item);
+                                h.processResponse(client, item.type, item.object);
                             }
                         }
                         catch (Exception e) {
@@ -118,5 +151,20 @@ public class Watcher {
         t.setDaemon(true);
         t.start();
         return !autoRestart ? LOCK : null;
+    }
+    
+    /**
+     * Utility method for processing a generic list from the CustomObjectsApi.
+     */
+    public static List<Object> processCustomObjectsApiList(ApiClient client, Object objectList, AtomicReference<String> resourceVersion) {
+        JsonObject jsonList = KAppNavEndpoint.getItemAsObject(client, objectList);
+        if (jsonList != null) {
+            String version = KAppNavEndpoint.getResourceVersion(jsonList);
+            resourceVersion.set(version);
+            List<Object> list = new ArrayList<>();
+            KAppNavEndpoint.writeItemsToList(jsonList, list);
+            return list;
+        }
+        return Collections.emptyList();
     }
 }

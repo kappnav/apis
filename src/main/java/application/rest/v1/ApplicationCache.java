@@ -92,12 +92,21 @@ public class ApplicationCache {
             public String getWatcherThreadName() {
                 return WATCHER_THREAD_NAME;
             }
-
+            
             @Override
-            public Call createWatchCall(ApiClient client) throws ApiException {
+            public List<Object> listResources(ApiClient client, AtomicReference<String> resourceVersion)
+                    throws ApiException {
                 final CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
-                return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, Boolean.TRUE, null, null);
+                Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
+                return Watcher.processCustomObjectsApiList(client, o, resourceVersion);
+            }
+
+            @Override
+            public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
+                final CustomObjectsApi coa = new CustomObjectsApi();
+                coa.setApiClient(client);
+                return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, resourceVersion, Boolean.TRUE, null, null);
             }
             
             @SuppressWarnings("serial")
@@ -107,7 +116,7 @@ public class ApplicationCache {
             }
 
             @Override
-            public void processResponse(ApiClient client, Response<Object> response) {
+            public void processResponse(ApiClient client, String type, Object object) {
                 Map<String,Map<String,JsonObject>> mapCache = MAP_CACHE_REF.get();
                 if (mapCache == null) {
                     updateModCount(); // Prevents a stale cached list from being returned when the map is restored.
@@ -115,13 +124,13 @@ public class ApplicationCache {
                     MAP_CACHE_REF.set(mapCache);
                     updateModCount();
                 }
-                JsonObject o = KAppNavEndpoint.getItemAsObject(client, response.object);
+                JsonObject o = KAppNavEndpoint.getItemAsObject(client, object);
                 if (o != null) {
                     String namespace = KAppNavEndpoint.getComponentNamespace(o);
                     String name = KAppNavEndpoint.getComponentName(o);
                     Map<String, JsonObject> nsMap = mapCache.get(namespace);
                     boolean updated = false;
-                    switch (response.type) {
+                    switch (type) {
                         case "ADDED":
                         case "MODIFIED":
                             if (nsMap == null) {
@@ -145,7 +154,7 @@ public class ApplicationCache {
                     }
                     if (updated && Logger.isDebugEnabled()) {
                         Logger.log(getClass().getName(), "processResponse", Logger.LogType.DEBUG, "Application cache updated due to Application change event :: Type: " 
-                                + response.type + " :: Name: " + name + " :: Namespace: " + namespace);
+                                + type + " :: Name: " + name + " :: Namespace: " + namespace);
                     }
                 }
             }
