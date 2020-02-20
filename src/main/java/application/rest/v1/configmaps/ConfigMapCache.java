@@ -40,7 +40,6 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
 
 /**
  * Cache for frequently accessed config maps, including action/status/section maps and built-in
@@ -110,7 +109,7 @@ public class ConfigMapCache {
             }
 
             @Override
-            public void shutdown(ApiClient client) {
+            public void reset(ApiClient client) {
                 // If the watch stops or fails delete the cache.
                 MAP_CACHE_REF.set(null);
             }

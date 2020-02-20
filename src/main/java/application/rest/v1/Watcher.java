@@ -64,7 +64,7 @@ public class Watcher {
         /**
          * Clean up method for when the watch ends or fails.
          */
-        public void shutdown(ApiClient client);
+        public void reset(ApiClient client);
     }
     
     // Returns a synchronization object for waking up the thread.
@@ -78,9 +78,14 @@ public class Watcher {
         // Synchronization lock used for waking up the watcher thread.
         final Object LOCK = new Object();
         Thread t = new Thread(new Runnable() {
+            
+            // Indicates that the resource requested is no longer available and will not be available again.
+            private static final int HTTP_STATUS_CODE_GONE = 410;
+            
             @Override
             public void run() {
                 while (true) {
+                    boolean gone = false;
                     try {
                         ApiClient client = KAppNavEndpoint.getApiClient();
                         OkHttpClient httpClient = client.getHttpClient();
@@ -89,26 +94,46 @@ public class Watcher {
                         client.setHttpClient(httpClient);
                         
                         final AtomicReference<String> resourceVersion = new AtomicReference<>();
-                        final long now = System.currentTimeMillis();
+                        long watchStartTime = 0L;
                         Watch<T> watch = null;
                         try {
                             List<T> list = h.listResources(client, resourceVersion);
                             list.forEach(v -> {
                                 h.processResponse(client, "ADDED", v);
-                            }); 
+                            });
                             
-                            watch = Watch.createWatch(
-                                    client,
-                                    h.createWatchCall(client, resourceVersion.get()),
-                                    h.getWatchType());
+                            watchStartTime = System.currentTimeMillis();
                             
                             if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch started for " + h.getClass().getName() + ".");
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch starting for " + h.getClass().getName() + " at resourceVersion (" + resourceVersion.get() + ").");
                             }
-
-                            // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
-                            for (Watch.Response<T> item : watch) {
-                                h.processResponse(client, item.type, item.object);
+                            
+                            OUTER: while (true) {
+                                watch = Watch.createWatch(
+                                        client,
+                                        h.createWatchCall(client, resourceVersion.get()),
+                                        h.getWatchType());
+                                
+                                // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
+                                for (Watch.Response<T> item : watch) {
+                                    if (item.status != null) {
+                                        Integer code = item.status.getCode();
+                                        if (code != null && code.intValue() == HTTP_STATUS_CODE_GONE) {
+                                            gone = true;
+                                            if (Logger.isDebugEnabled()) {
+                                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
+                                                        "The resourceVersion (" + resourceVersion.get() +
+                                                        ") is too old (status 410). The watch will be restarted from the current resource version."); 
+                                            }
+                                            // Breaking out of the outer loop in order to restart the watch from the current resource version.
+                                            break OUTER;
+                                        }
+                                        continue;
+                                    }
+                                    h.processResponse(client, item.type, item.object);
+                                }
+                                watch.close();
+                                watch = null;
                             }
                         }
                         catch (Exception e) {
@@ -117,12 +142,13 @@ public class Watcher {
                             }
                         }
                         finally {
-                            h.shutdown(client);
+                            h.reset(client);
                             if (watch != null) {
                                 watch.close();
                             }
-                            if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch completed for " + h.getClass().getName() + " after " + (System.currentTimeMillis() - now) + " ms.");
+                            if (Logger.isDebugEnabled() && watchStartTime > 0L) {
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch completed for " + h.getClass().getName() +
+                                        " at resourceVersion (" + resourceVersion.get() + ") after " + (System.currentTimeMillis() - watchStartTime) + " ms.");
                             }
                         }
                     }
@@ -131,7 +157,8 @@ public class Watcher {
                             Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Caught Exception from watch initialization or shutdown: " + e.toString());
                         }
                     }
-                    if (!autoRestart) {
+                    // If the version of the resource being watched is gone or the creator of the watch requested an auto-restart, restart immediately.
+                    if (gone || !autoRestart) {
                         // Sleep until notified by another thread, then try to re-establish the watch.
                         synchronized (LOCK) {
                             try {

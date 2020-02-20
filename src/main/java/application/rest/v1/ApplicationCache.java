@@ -33,7 +33,6 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
 
 /**
  * Cache for all Applications in the cluster. Cached lists of applications for all 
@@ -160,7 +159,7 @@ public class ApplicationCache {
             }
 
             @Override
-            public void shutdown(ApiClient client) {
+            public void reset(ApiClient client) {
                 // If the watch stops or fails delete the caches.
                 MAP_CACHE_REF.set(null);
                 CACHED_LIST.set(null);

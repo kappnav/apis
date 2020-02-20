@@ -30,7 +30,6 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
 
 /**
  * Watch kappnav custom resource (CR) that have been installed by the kAppNav operator. 
@@ -101,7 +100,7 @@ public class CustomResourceWatcher {
             }
 
             @Override
-            public void shutdown(ApiClient client) {}
+            public void reset(ApiClient client) {}
             
         }, true);
     }
