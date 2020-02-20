@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -85,7 +86,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             //get names from application and application annotations
             final List<String> namespaces = getNamespaceList(client, o, namespace);  
                                           
-            final List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(o);
+            final List<ComponentKind> componentKinds = ComponentKind.getComponentKinds(o, registry);
             final Selector selector = Selector.getSelector(o);
             return processComponentKinds(client, componentKinds, namespaces, selector, namespace, name);
         }
@@ -103,26 +104,28 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             final String labelSelector = selector.toString();
             componentKinds.forEach(v -> {
                 try {
-                    String apiVersion = registry.getComponentGroupApiVersion(v);
-                    if (apiVersion != null) {
-                        System.out.println("processComponentKinds using apiVersion: " + apiVersion + " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
-                        if (!registry.isNamespaced(client, v.kind, apiVersion)) {
-                            Object o = registry.listClusterObject(client, v.kind, apiVersion, null, labelSelector, null, null);
-                            processComponents(client, response, v, getItemsAsList(client, o));
+                    Set<String> apiVersions = registry.getComponentGroupApiVersions(v);
+                    for (String apiVersion : apiVersions) {
+                        if (apiVersion != null) {
+                            System.out.println("processComponentKinds using apiVersion: " + apiVersion + " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
+                            if (!registry.isNamespaced(client, v.kind, apiVersion)) {
+                                Object o = registry.listClusterObject(client, v.kind, apiVersion, null, labelSelector, null, null);
+                                processComponents(client, response, v, getItemsAsList(client, o));
+                            } else {
+                                // If the component kind is namespaced, query components for each of the specified namespaces.
+                                final String apiVersion1 = apiVersion;    // to avoid compiler error
+                                namespaces.forEach(n -> {
+                                    try {
+                                        Object o = registry.listNamespacedObject(client, v.kind, apiVersion1, n, null, labelSelector, null, null);
+                                        processComponents(client, response, v, getItemsAsList(client, o), appNamespace, appName);
+                                    } catch (ApiException e) {
+                                    }
+                                });
+                            }
                         } else {
-                            // If the component kind is namespaced, query components for each of the specified namespaces.
-                            final String apiVersion1 = apiVersion;    // to avoid compiler error
-                            namespaces.forEach(n -> {
-                                try {
-                                    Object o = registry.listNamespacedObject(client, v.kind, apiVersion1, n, null, labelSelector, null, null);
-                                    processComponents(client, response, v, getItemsAsList(client, o), appNamespace, appName);
-                                } catch (ApiException e) {
-                                }
-                            });
-                        }
-                    } else {
-                        if (Logger.isWarningEnabled()) {
-                            Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                            if (Logger.isWarningEnabled()) {
+                                Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                            }
                         }
                     }
                 }
