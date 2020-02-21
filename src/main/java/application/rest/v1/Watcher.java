@@ -98,6 +98,11 @@ public class Watcher {
                         Watch<T> watch = null;
                         try {
                             List<T> list = h.listResources(client, resourceVersion);
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Retrieved current list of resources for " +
+                                        h.getClass().getName() + " at resourceVersion (" + resourceVersion.get() + ").");
+                            }
+                            
                             list.forEach(v -> {
                                 h.processResponse(client, "ADDED", v);
                             });
@@ -105,7 +110,8 @@ public class Watcher {
                             watchStartTime = System.currentTimeMillis();
                             
                             if (Logger.isDebugEnabled()) {
-                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch starting for " + h.getClass().getName() + " at resourceVersion (" + resourceVersion.get() + ").");
+                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch starting for " + h.getClass().getName() +
+                                        " at resourceVersion (" + resourceVersion.get() + ").");
                             }
                             
                             OUTER: while (true) {
@@ -134,6 +140,11 @@ public class Watcher {
                                 }
                                 watch.close();
                                 watch = null;
+                                
+                                if (Logger.isDebugEnabled()) {
+                                    Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG, "Watch restarting for " + h.getClass().getName() +
+                                            " at resourceVersion (" + resourceVersion.get() + ").");
+                                }
                             }
                         }
                         catch (Exception e) {
