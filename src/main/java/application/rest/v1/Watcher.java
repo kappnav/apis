@@ -139,7 +139,7 @@ public class Watcher {
                                                 else if (Logger.isDebugEnabled()) {
                                                     Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
                                                             "Status (" + codeValue + ") returned from the watch on resourceVersion (" +
-                                                            resourceVersion.get() + ". The watch for " + h.getClass().getName() +
+                                                            resourceVersion.get() + "). The watch for " + h.getClass().getName() +
                                                             " will be restarted from the current resource version.");
                                                 }
                                             }
@@ -147,7 +147,7 @@ public class Watcher {
                                         else if (Logger.isDebugEnabled()) {
                                             Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
                                                     "An unknown error was returned from the watch on resourceVersion (" +
-                                                    resourceVersion.get() + ". The watch for " + h.getClass().getName() +
+                                                    resourceVersion.get() + "). The watch for " + h.getClass().getName() +
                                                     " will be restarted from the current resource version.");
                                         }
                                         // Breaking out of the outer loop in order to restart the watch from the current resource version.
