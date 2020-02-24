@@ -186,7 +186,7 @@ public class Watcher {
                         }
                     }
                     // If the version of the resource being watched is gone or the creator of the watch requested an auto-restart, restart immediately.
-                    if (gone || !autoRestart) {
+                    if (!(gone || autoRestart)) {
                         // Sleep until notified by another thread, then try to re-establish the watch.
                         synchronized (LOCK) {
                             try {
