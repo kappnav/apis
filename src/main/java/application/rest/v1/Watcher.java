@@ -46,7 +46,7 @@ public class Watcher {
          */
         public String getWatcherThreadName();
         /**
-         * Returns the current set of resources under watch. Sets the resource version list on the AtomicReference.
+         * Returns the current set of resources under watch. Sets the resource version of the list on the AtomicReference.
          */
         public List<T> listResources(ApiClient client, AtomicReference<String> resourceVersion) throws ApiException;
         /**
