@@ -122,19 +122,36 @@ public class Watcher {
                                 
                                 // Note: While the watch is active this iterator loop will block waiting for notifications of resource changes from the Kube API. 
                                 for (Watch.Response<T> item : watch) {
-                                    if (item.status != null) {
-                                        Integer code = item.status.getCode();
-                                        if (code != null && code.intValue() == HTTP_STATUS_CODE_GONE) {
-                                            gone = true;
-                                            if (Logger.isDebugEnabled()) {
-                                                Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
-                                                        "The resourceVersion (" + resourceVersion.get() +
-                                                        ") is too old (status 410). The watch will be restarted from the current resource version."); 
+                                    if (item.status != null || "ERROR".equals(item.type)) {
+                                        if (item.status != null) {
+                                            final Integer code = item.status.getCode();
+                                            if (code != null) {
+                                                final int codeValue = code.intValue();
+                                                if (codeValue == HTTP_STATUS_CODE_GONE) {
+                                                    gone = true;
+                                                    if (Logger.isDebugEnabled()) {
+                                                        Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
+                                                                "The resourceVersion (" + resourceVersion.get() +
+                                                                ") is too old (status 410). The watch for " + h.getClass().getName() +
+                                                                " will be restarted from the current resource version."); 
+                                                    }
+                                                }
+                                                else if (Logger.isDebugEnabled()) {
+                                                    Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
+                                                            "Status (" + codeValue + ") returned from the watch on resourceVersion (" +
+                                                            resourceVersion.get() + ". The watch for " + h.getClass().getName() +
+                                                            " will be restarted from the current resource version.");
+                                                }
                                             }
-                                            // Breaking out of the outer loop in order to restart the watch from the current resource version.
-                                            break OUTER;
                                         }
-                                        continue;
+                                        else if (Logger.isDebugEnabled()) {
+                                            Logger.log(getClass().getName(), "run", Logger.LogType.DEBUG,
+                                                    "An unknown error was returned from the watch on resourceVersion (" +
+                                                    resourceVersion.get() + ". The watch for " + h.getClass().getName() +
+                                                    " will be restarted from the current resource version.");
+                                        }
+                                        // Breaking out of the outer loop in order to restart the watch from the current resource version.
+                                        break OUTER;
                                     }
                                     h.processResponse(client, item.type, item.object);
                                 }
