@@ -18,6 +18,7 @@ package application.rest.v1.configmaps;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,9 +37,9 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
 
 /**
  * Cache for frequently accessed config maps, including action/status/section maps and built-in
@@ -72,14 +73,22 @@ public class ConfigMapCache {
             public String getWatcherThreadName() {
                 return WATCHER_THREAD_NAME;
             }
+            
+            public List<V1ConfigMap> listResources(ApiClient client, AtomicReference<String> resourceVersion) throws ApiException {
+                final CoreV1Api api = new CoreV1Api();
+                api.setApiClient(client);
+                final Selector selector = getSelector();
+                final V1ConfigMapList list = api.listNamespacedConfigMap(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, null);
+                resourceVersion.set(list.getMetadata().getResourceVersion());
+                return list.getItems();
+            }
 
             @Override
-            public Call createWatchCall(ApiClient client) throws ApiException {
-                CoreV1Api api = new CoreV1Api();
+            public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
+                final CoreV1Api api = new CoreV1Api();
                 api.setApiClient(client);
-                Selector selector = new Selector();
-                selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
-                return api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, Boolean.TRUE, null, null);
+                final Selector selector = getSelector();
+                return api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, resourceVersion, null, Boolean.TRUE, null, null);
             }
             
             @SuppressWarnings("serial")
@@ -89,20 +98,26 @@ public class ConfigMapCache {
             }
 
             @Override
-            public void processResponse(ApiClient client, Response<V1ConfigMap> response) {
+            public void processResponse(ApiClient client, String type, V1ConfigMap object) {
                 // Invalidate the cache if any changes are made to the ConfigMaps under watch.
                 MAP_CACHE_REF.set(new ConcurrentHashMap<>());
                 if (Logger.isDebugEnabled()) {
-                    V1ObjectMeta meta = response.object.getMetadata();
+                    V1ObjectMeta meta = object.getMetadata();
                     Logger.log(getClass().getName(), "processResponse", Logger.LogType.DEBUG, "ConfigMap Cache invalidated due to ConfigMap change event :: Type: " 
-                            + response.type + " :: Name: " + meta.getName() + " :: Namespace: " + meta.getNamespace());
+                            + type + " :: Name: " + meta.getName() + " :: Namespace: " + meta.getNamespace());
                 }
             }
 
             @Override
-            public void shutdown(ApiClient client) {
+            public void reset(ApiClient client) {
                 // If the watch stops or fails delete the cache.
                 MAP_CACHE_REF.set(null);
+            }
+            
+            private Selector getSelector() {
+                final Selector selector = new Selector();
+                selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
+                return selector;
             }
         });
     }
