@@ -198,7 +198,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response executeApplicationCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {  
         return executeCommand(jsonstr, name, APPLICATION_KIND, "", namespace, commandName, null, null, user);
     }
     
