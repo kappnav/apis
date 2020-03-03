@@ -124,6 +124,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     private static final String KAPPNAV_JOB_APPLICATION_NAME = "kappnav-job-application-name";
     private static final String KAPPNAV_JOB_APPLICATION_NAMESPACE = "kappnav-job-application-namespace";
+    private static final String KAPPNAV_JOB_APPLICATION_SCOPE = "kappnav-job-application-scope";
     
     // App nav job label values
     private static final String KAPPNAV_JOB_COMMAND_TYPE = "command";
@@ -758,6 +759,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         if (appName == null || appName.isEmpty()) {
             labels.put(KAPPNAV_JOB_APPLICATION_NAME, name);
             labels.put(KAPPNAV_JOB_APPLICATION_NAMESPACE, namespace);
+            labels.put(KAPPNAV_JOB_APPLICATION_SCOPE, "true");
         }
         else {
             // Set application labels.
