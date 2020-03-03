@@ -83,6 +83,7 @@ public abstract class KAppNavEndpoint {
     private static final String ANNOTATIONS_PROPERTY_NAME = "annotations";
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String NAMESPACE_PROPERTY_NAME = "namespace";
+    private static final String RESOURCE_VERSION_PROPERTY_NAME = "resourceVersion";
     private static final String KAPPNAV_STATUS_PROPERTY_NAME = "kappnav.status";
     private static final String KAPPNAV_SUB_KIND_PROPERTY_NAME = "kappnav.subkind";
     
@@ -117,18 +118,23 @@ public abstract class KAppNavEndpoint {
         final JsonElement element = client.getJSON().getGson().toJsonTree(resources);
 
         if (element != null && element.isJsonObject()) {
-            JsonObject root = element.getAsJsonObject();
+            writeItemsToList(element.getAsJsonObject(), result);
+        }
+        return result;
+    }
+    
+    public static void writeItemsToList(JsonObject root, List<? super JsonObject> destination) {
+        if (root != null) {
             JsonElement items = root.get("items");
             if (items != null && items.isJsonArray()) {
                 JsonArray itemsArray = items.getAsJsonArray();
                 itemsArray.forEach(v -> {
                     if (v != null && v.isJsonObject()) {
-                        result.add(v.getAsJsonObject());
+                        destination.add(v.getAsJsonObject());
                     }
                 });
             }
         }
-        return result;
     }
 
     public static List<JsonObject> getItemAsList(ApiClient client, Object resource) {
@@ -143,6 +149,9 @@ public abstract class KAppNavEndpoint {
     
     public static JsonObject getItemAsObject(ApiClient client, Object resource) {
         
+        if (resource instanceof JsonObject) {
+            return (JsonObject) resource;
+        }
         final JsonElement element = client.getJSON().getGson().toJsonTree(resource);
         
         if (element != null && element.isJsonObject()) {
@@ -233,6 +242,32 @@ public abstract class KAppNavEndpoint {
             Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Returning defaultNamespace=" + DEFAULT_NAMESPACE);
         }
         return DEFAULT_NAMESPACE;
+    }
+    
+    public static String getResourceVersion(JsonObject component) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getResourceVersion", Logger.LogType.ENTRY, "");
+        }
+        final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
+        if (metadata != null) {
+            JsonElement e = metadata.get(RESOURCE_VERSION_PROPERTY_NAME);
+            if (e != null && e.isJsonPrimitive()) {
+                String resourceVersion = e.getAsString();
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, "getResourceVersion", Logger.LogType.EXIT, resourceVersion);
+                }
+                return resourceVersion;
+            }
+        }
+        else {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getResourceVersion", Logger.LogType.DEBUG, "Metadata is null.");
+            }
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getResourceVersion", Logger.LogType.EXIT, "Return null.");
+        }
+        return null;
     }
     
     public static List<String> getAnnotationNamespaces(ApiClient client, Object application) {

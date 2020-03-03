@@ -96,6 +96,10 @@ COPY --chown=1001:0 licenses/ /licenses/
 
 USER root
 
+RUN microdnf install -y yum \
+    && yum update -y \
+    && microdnf remove yum
+
 # Make the home dir writeable so that kubectl can use it for its cache.
 RUN mkdir /home/default \
     && chown -R 1001:0 /home/default \
