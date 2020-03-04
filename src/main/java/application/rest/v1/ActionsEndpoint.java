@@ -113,6 +113,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     private static final String KAPPNAV_JOB_ACTION_TEXT = "kappnav-job-action-text";
     
     // App nav job labels
+    private static final String LABELS_PROPERTY_NAME = "labels";
     private static final String KAPPNAV_JOB_TYPE = "kappnav-job-type";
     private static final String KAPPNAV_JOB_ACTION_NAME = "kappnav-job-action-name";
     
@@ -322,7 +323,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
                 if(user != null && !user.isEmpty()) {
                     // Only return jobs belonging to the user
-                    final String job_username = getCommandUserName(v);
+                    final String job_username = getCommandActionUserName(v);
                     if(! user.equals(job_username)) {
                         // Completely skip this command because it does
                         // not belong to the user requested by the API caller
@@ -891,24 +892,52 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     }
 
     /**
-     *  Return the username associated with the command action
-     * @param job - JsonObject of the job details
-     * @return String - username who created the job, else empty String
+     * Return the username associated with the command action
+     * @param commandAction - JsonObject of the command action details
+     * @return String - username who created the command action, else empty String
      */
-    private String getCommandUserName(JsonObject job) {
+    private String getCommandActionUserName(JsonObject commandAction) {
         final String methodName = "getCommandUserName";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "job=" + job);
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "job=" + commandAction);
         }
         String result = "";
 
-        final JsonObject metadata = job.getAsJsonObject(METADATA_PROPERTY_NAME);
+        //
+        // Look for the username in the annotations
+        //
+        final JsonObject metadata = commandAction.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
             if (annotations != null) {
                 final JsonElement userId = annotations.get(KAPPNAV_JOB_USER_ID);
                 if (userId != null) {
                     result = userId.getAsString();
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, methodName, Logger.LogType.DEBUG, "userId=" + userId);
+                    }
+                }
+            }
+        }
+
+        //
+        // Legacy Command Actions:
+        // Look for the username in the labels, if we did not find the username
+        // in the annotations
+        //
+        if(result != null && result.isEmpty()) {
+            if (metadata != null) {
+                final JsonObject metadataObj = metadata.getAsJsonObject();
+                final JsonElement labels = metadataObj.get(LABELS_PROPERTY_NAME);
+                if (labels != null && labels.isJsonObject()) {
+                    final JsonObject labelsObj = labels.getAsJsonObject();
+                    final JsonElement legacy_userId = labelsObj.get(KAPPNAV_JOB_USER_ID);
+                    if (legacy_userId != null) {
+                        result = legacy_userId.getAsString();
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(className, methodName, Logger.LogType.DEBUG, "legacy_userId=" + legacy_userId);
+                        }
+                    }
                 }
             }
         }
