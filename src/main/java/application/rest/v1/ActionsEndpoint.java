@@ -115,7 +115,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     // App nav job labels
     private static final String KAPPNAV_JOB_TYPE = "kappnav-job-type";
     private static final String KAPPNAV_JOB_ACTION_NAME = "kappnav-job-action-name";
-    private static final String KAPPNAV_JOB_USER_ID = "kappnav-job-user-id";
     
     private static final String KAPPNAV_JOB_COMPONENT_KIND = "kappnav-job-component-kind";
     private static final String KAPPNAV_JOB_COMPONENT_SUB_KIND = "kappnav-job-component-sub-kind";
@@ -131,6 +130,12 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
     private static final String STATUS_PROPERTY_NAME = "status";
     private static final String COMPLETION_TIME_PROPERTY_NAME = "completionTime";
+
+    // Annotation properties.
+    private static final String METADATA_PROPERTY_NAME = "metadata";
+    private static final String ANNOTATIONS_PROPERTY_NAME = "annotations";
+    private static final String KAPPNAV_JOB_USER_ID = "kappnav-job-user-id";
+
     @Inject
     private ComponentInfoRegistry registry;
     
@@ -293,9 +298,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             
             // Build the selector for the query.
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
-            if (user != null && !user.isEmpty()) {
-                s.addMatchLabel(KAPPNAV_JOB_USER_ID, user);
-            }
             
             // convert time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
             Timestamp timelaterTimestamp = convertTimeStringToTimestamp(time);
@@ -313,10 +315,20 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, null, null, null, labelSelector, null, null, null, null));           
             final CommandsResponse response = new CommandsResponse();           
             
-            commands.forEach(v -> {                               
+            commands.forEach(v -> {
                 if (v.get(KIND_PROPERTY_NAME) == null) {
                     v.addProperty(KIND_PROPERTY_NAME, JOB_KIND);
-                } 
+                }
+
+                if(user != null && !user.isEmpty()) {
+                    // Only return jobs belonging to the user
+                    final String job_username = getCommandUserName(v);
+                    if(! user.equals(job_username)) {
+                        // Completely skip this command because it does
+                        // not belong to the user requested by the API caller
+                        return;
+                    }
+                }
 
                 if (time == null || time.isEmpty()) {   
                     //no time specified, return all jobs
@@ -345,6 +357,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                     }
                 }
             });
+
             // If there are jobs, get actions available for jobs and add to response 
             if ( ! commands.isEmpty() && response.size() > 0) { 
                 JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
@@ -525,10 +538,15 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         return resolvedValue.getValue();     
     }
     
-    private Response executeCommand(String jsonstr, String name, String kind, String apiVersion, String namespace, String commandName, String appName, String appNamespace, String user) {
-        String methodName = "executeCommand";
+    private Response executeCommand(String jsonstr, String name, String kind, String apiVersion, String namespace,
+            String commandName, String appName, String appNamespace, String user) {
+
+        final String methodName = "executeCommand";
         if (Logger.isErrorEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", commandName="+commandName + ", appName="+appName + ", appNamespace=" + appNamespace + ", user=" +user);
+            Logger.log(className, methodName, Logger.LogType.ENTRY,
+                    "name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace
+                            + ", commandName=" + commandName + ", appName=" + appName + ", appNamespace=" + appNamespace
+                            + ", user=" + user);
         }
 
         try {
@@ -630,10 +648,10 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             
             // Add context labels to the job, allowing for queries using selectors.
             final Map<String,String> labels = createJobLabels(client, resource, name, kind, 
-                    namespace, appName, appNamespace, commandName, user);
+                    namespace, appName, appNamespace, commandName);
             meta.setLabels(labels);
             
-            final Map<String,String> annotations = createJobAnnotations(text);
+            final Map<String,String> annotations = createJobAnnotations(text, user);
             if (annotations != null) {
                 meta.setAnnotations(annotations);
             } 
@@ -733,27 +751,27 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         spec.setServiceAccountName(config.getkAppNavServiceAccountName()); 
     }
     
-    private Map<String,String> createJobAnnotations(String text) {
+    private Map<String,String> createJobAnnotations(String text, String user) {
         if (text != null && !text.isEmpty()) {
-            return Collections.singletonMap(KAPPNAV_JOB_ACTION_TEXT, text);
+            Map<String, String> annotations = new HashMap<String, String>();
+            annotations.put(KAPPNAV_JOB_ACTION_TEXT, text);
+            annotations.put(KAPPNAV_JOB_USER_ID, user);
+            return Collections.unmodifiableMap(annotations);
         }
         return null;
     }
     
     private Map<String,String> createJobLabels(ApiClient client, JsonObject resource, String name, String kind, 
-            String namespace, String appName, String appNamespace, String actionName, String userId) {
+            String namespace, String appName, String appNamespace, String actionName) {
         String methodName = "createJobLabels";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "Resource=" + resource.toString() + ", name="+ name + ", kind=" + kind + ", namespace="+namespace + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName + ", userId="+userId);
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Resource=" + resource.toString() + ", name="+ name + ", kind=" + kind + ", namespace="+namespace + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName);
         }
 
         final Map<String,String> labels = new HashMap<>();
         labels.put(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
         labels.put(KAPPNAV_JOB_ACTION_NAME, actionName);
-        // Set the user id if it's available.
-        if (userId != null && !userId.isEmpty()) {
-            labels.put(KAPPNAV_JOB_USER_ID, userId);
-        }
+
         // If appName is not set this resource is an application. Only set the application labels.
         if (appName == null || appName.isEmpty()) {
             labels.put(KAPPNAV_JOB_APPLICATION_NAME, name);
@@ -870,5 +888,34 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
             throw new RuntimeException(ex.getCause());
         }
+    }
+
+    /**
+     *  Return the username associated with the command action
+     * @param job - JsonObject of the job details
+     * @return String - username who created the job, else empty String
+     */
+    private String getCommandUserName(JsonObject job) {
+        final String methodName = "getCommandUserName";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "job=" + job);
+        }
+        String result = "";
+
+        final JsonObject metadata = job.getAsJsonObject(METADATA_PROPERTY_NAME);
+        if (metadata != null) {
+            final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
+            if (annotations != null) {
+                JsonElement userId = annotations.get(KAPPNAV_JOB_USER_ID);
+                if (userId != null) {
+                    result = userId.getAsString();
+                }
+            }
+        }
+
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "result=" + result);
+        }
+        return result;
     }
 }
