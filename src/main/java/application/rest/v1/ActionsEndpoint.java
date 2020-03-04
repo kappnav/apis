@@ -906,7 +906,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
             if (annotations != null) {
-                JsonElement userId = annotations.get(KAPPNAV_JOB_USER_ID);
+                final JsonElement userId = annotations.get(KAPPNAV_JOB_USER_ID);
                 if (userId != null) {
                     result = userId.getAsString();
                 }
