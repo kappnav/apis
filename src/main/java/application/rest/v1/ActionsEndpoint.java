@@ -753,10 +753,16 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     }
     
     private Map<String,String> createJobAnnotations(String text, String user) {
+        Map<String, String> annotations = new HashMap<String, String>();
+
         if (text != null && !text.isEmpty()) {
-            Map<String, String> annotations = new HashMap<String, String>();
             annotations.put(KAPPNAV_JOB_ACTION_TEXT, text);
+        }
+        if(user != null && !user.isEmpty()) {
             annotations.put(KAPPNAV_JOB_USER_ID, user);
+        }
+
+        if(! annotations.isEmpty()) {
             return Collections.unmodifiableMap(annotations);
         }
         return null;
