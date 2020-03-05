@@ -124,6 +124,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     
     private static final String KAPPNAV_JOB_APPLICATION_NAME = "kappnav-job-application-name";
     private static final String KAPPNAV_JOB_APPLICATION_NAMESPACE = "kappnav-job-application-namespace";
+    private static final String KAPPNAV_JOB_APPLICATION_SCOPE = "kappnav-job-application-scope";
     
     // App nav job label values
     private static final String KAPPNAV_JOB_COMMAND_TYPE = "command";
@@ -204,7 +205,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
     public Response executeApplicationCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace,
             @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {  
         return executeCommand(jsonstr, name, APPLICATION_KIND, "", namespace, commandName, null, null, user);
     }
     
@@ -783,6 +784,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         if (appName == null || appName.isEmpty()) {
             labels.put(KAPPNAV_JOB_APPLICATION_NAME, name);
             labels.put(KAPPNAV_JOB_APPLICATION_NAMESPACE, namespace);
+            labels.put(KAPPNAV_JOB_APPLICATION_SCOPE, "true");
         }
         else {
             // Set application labels.
