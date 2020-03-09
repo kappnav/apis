@@ -274,6 +274,28 @@ public abstract class KAppNavEndpoint {
         return getAnnotationNamespaces(client.getJSON().getGson().toJsonTree(application));
     }
 
+    public static boolean isApplicationHidden(final JsonElement element) {
+        if (element != null && element.isJsonObject()) {
+            JsonObject root = element.getAsJsonObject();
+            JsonElement metadata = root.get(METADATA_PROPERTY_NAME);
+            if (metadata != null && metadata.isJsonObject()) {
+                JsonObject metadataObj = metadata.getAsJsonObject();
+                JsonElement annotations = metadataObj.get(ANNOTATIONS_PROPERTY_NAME);
+                if (annotations != null && annotations.isJsonObject()) {
+                    JsonObject annoObj = annotations.getAsJsonObject(); 
+                    JsonElement value = annoObj.get("kappnav.application.hidden");
+                    if (value != null && value.isJsonPrimitive()) {  
+                        return true;                     
+                    }   
+                    else { 
+                        return false; 
+                    }
+                }                                      
+            }
+        }
+        return false;
+    }
+
     public static List<String> getAnnotationNamespaces(final JsonElement element) {
         List<String> result = new ArrayList<>();
         if (element != null && element.isJsonObject()) {

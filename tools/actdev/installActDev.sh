@@ -2,7 +2,7 @@
   
 #*****************************************************************
 #*
-#* Copyright 2019 IBM Corporation
+#* Copyright 2019, 2020 IBM Corporation
 #*
 #* Licensed under the Apache License, Version 2.0 (the "License");
 #* you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ echo ''
 
 read -p 'Install actdev? (Y|n)' response 
 
-if [ x$response == 'y' ] || [ x$response == 'x' ]; then
+if [ x$response = x"y" ] || [ x$response = x"Y" ]|| [ x$response = 'x' ]; then
     echo "Installing..."
 else
     echo "Install canceled."
@@ -152,5 +152,29 @@ else
         echo "Install failed, cleaning up now"
         # cleaning up
         ./uninstallActDev.sh
+        exit 1
     fi
 fi 
+
+# make sure actdev pod is running
+actdevPod=$(kubectl get pods -n actdev --no-headers -o custom-columns=NAME:.metadata.name)
+
+status="false"
+count=0
+while [ "$status" = "false" ] 
+do 
+    # check to make sure the apps created for 5 minutes at the most with 5s delay in between checking
+    if [ $count -eq 60 ]; then
+        exit 1
+    else
+        echo "kubectl get pods $actdevPod -n actdev --no-headers -o custom-columns=Ready:status.containerStatuses[0].ready"
+        status=$(kubectl get pods $actdevPod -n actdev --no-headers -o custom-columns=Ready:status.containerStatuses[0].ready)
+          if [ "$status" = "false" ]; then
+            sleep 5
+          fi
+          count=$((count+1))
+    fi
+    echo "Status : $status"
+done
+
+echo "ActDev installed and running"

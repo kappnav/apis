@@ -1,7 +1,7 @@
 #!/bin/sh  
 #*****************************************************************
 #*
-#* Copyright 2019 IBM Corporation
+#* Copyright 2019, 2020 IBM Corporation
 #*
 #* Licensed under the Apache License, Version 2.0 (the "License");
 #* you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ if [ x$kubeEnv = 'xminikube' ]; then
     url=$(minikube service actdev -n actdev --url --format "http://{{.IP}}:{{.Port}}/openapi/ui")
 else
     # check if route is available on okd/ocp
+    echo "Checking if route is available"
     host=$(kubectl get route actdev -n actdev -o=jsonpath={@.spec.host})
     if [ -z host ]; then
         echo "Could not retrieve host from actdev route. Confirm install is correct."
@@ -102,6 +103,7 @@ else
 fi 
 
 # check if url responding 
+echo "Checking if url $url is responding"
 curl=$(curl $url >/dev/null 2>/dev/null)
 if [ $? -ne 0 ]; then
     echo "Error: $url not responding. Check that initialization is complete and successful."
@@ -110,6 +112,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # everything checks out, open browser
+echo "Launching actdev url $url"
 open $url
         
 exit 0
