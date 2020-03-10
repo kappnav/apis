@@ -39,6 +39,8 @@ import com.squareup.okhttp.OkHttpClient;
  */
 public class Logger { 
 
+    private static final String className = Logger.class.getName();
+ 
    // end user requests log level to select log types captured in log 
    public enum LogLevel { NONE, WARNING, ERROR, INFO, ENTRY, DEBUG, ALL }; 
    
@@ -131,7 +133,10 @@ public class Logger {
             case ALL: 
                 setLogTypes(true); 
                 break;
-        }           
+        }
+
+        if (isInfoEnabled())
+            log(className, "setLogLevel", LogType.INFO, "Logging level is now " + level);
     } 
    
     // set initial logger level from operator CR before it is added 
