@@ -43,6 +43,7 @@ public class Logger {
  
    // end user requests log level to select log types captured in log 
    public enum LogLevel { NONE, WARNING, ERROR, INFO, ENTRY, DEBUG, ALL }; 
+   private static LogLevel currentLevel;
    
    // code specifies log type it is writing 
    public enum LogType { ENTRY, EXIT, INFO, WARNING, ERROR, DEBUG }; 
@@ -105,6 +106,10 @@ public class Logger {
     } 
 
     public static void setLogLevel(LogLevel level) {
+        if (level == currentLevel) {
+            return;
+        }
+
         setLogTypes(false); 
         switch(level) { 
             case NONE: 
