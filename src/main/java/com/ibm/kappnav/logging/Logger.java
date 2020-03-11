@@ -140,6 +140,7 @@ public class Logger {
                 break;
         }
 
+        currentLevel = level;
         if (isInfoEnabled())
             log(className, "setLogLevel", LogType.INFO, "Logging level is now " + level);
     } 
