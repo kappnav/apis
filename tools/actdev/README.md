@@ -24,7 +24,7 @@ A period ('.') may be specified in the place of any of the preceding positional 
 
 ## Start 
 
-Run ./actdev.sh  (
+Run ./actdev.sh
     
 Note, you may have to refresh browser after it first starts to see fully initialized openapi/ui.
 
@@ -32,6 +32,43 @@ Note, you may have to refresh browser after it first starts to see fully initial
 
 Run ./uninstallActDev.sh 
 
-## Usage
+## Tutorial - Create New Action
 
+Note: this tutorial is designed for Openshift. 
 
+In this mini tutorial, we will create an action to open the stock-trader application's loyalty-component home page.  We will take these steps: 
+
+1. Create Route resource 
+2. Test home page URL
+3. Install action
+4. Test action in {k}AppNav 
+
+### Create Route resource 
+
+1. login to your Openshift cluster
+1. download [loyalty_level.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_route.yaml)
+1. invoke command: 
+
+```
+kubectl -f loyalty_level.md
+```
+
+### Test home page URL
+
+The target pattern we are creating is: 
+
+```
+http://{loyalty-route-hostname}
+```
+
+If we were forming the manually,  we would retrieve {loyalty-route-hostname} from the route using this command: 
+
+```
+kubectl get route -n stock-trader loyalty-level -o jsonpath='{.spec.host}'
+```
+
+In a {k}AppNav action, we can form the URL using the following substitution pattern to retrieve the route host name: 
+
+```
+${kubectlGet(Route,-n,${resource.$.metadata.namespace},${resource.$.metadata.name},-o,jsonpath='{.spec.host}')}
+```
