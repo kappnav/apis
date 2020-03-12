@@ -24,8 +24,14 @@ A period ('.') may be specified in the place of any of the preceding positional 
 
 ## Start 
 
-Run ./actdev.sh
+Run ./actdev.sh  (
+    
+Note, you may have to refresh browser after it first starts to see fully initialized openapi/ui.
 
 ## Uninstall 
 
 Run ./uninstallActDev.sh 
+
+## Usage
+
+
