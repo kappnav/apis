@@ -72,7 +72,7 @@ Pull out the spec.host value, and then form the full URL.
 
 ---------
 
-In a {k}AppNav action, we can form the URL using the following substitution pattern to retrieve the route host name: 
+In a {k}AppNav action, we can form the URL using the following substitution pattern to retrieve the Route resource in JSON format: 
 
 ```
 ${func.kubectlGet(Route,-n,${resource.$.metadata.namespace},${resource.$.metadata.name},-o,json)}
@@ -81,11 +81,11 @@ ${func.kubectlGet(Route,-n,${resource.$.metadata.namespace},${resource.$.metadat
 Since the kubectlGet function above returns the entire Route JSON object, we will use a Javascript snippet to parse out the host value: 
 
 ```
-    function getNodeJSRouteHost(nodeJSRoute) { 
-        var nodeJSRouteJSON = JSON.parse(nodeJSRoute);
-        var host = nodeJSRouteJSON.spec.host;
-        return host;
-    }
+function getRouteHost(route) { 
+    var routeJSON = JSON.parse(route);
+    var host = routeJSON.spec.host;
+    return host;
+}
 ```
 
 ### 3. Install Action
