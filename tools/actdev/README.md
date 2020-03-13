@@ -40,7 +40,7 @@ In this mini tutorial, we will create an action to open the stock-trader applica
 
 1. Create Route resource 
 1. Design URL action
-1. Install action
+1. Install the action
 1. Test URl action substitution
 1. Test action in {k}AppNav
 
@@ -88,37 +88,7 @@ function getRouteHost(route) {
 }
 ```
 
-### 3. Install Action
-
-Putting the fragments from the preceding section together into a url-action definition, we have:
-
-```
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kappnav.actions.deployment-liberty.loyalty-level
-  namespace: stock-trader
-data:
-  url-actions: |
-    [
-      { 
-        "name":"loyalty-home", 
-        "text":"View Home Page", 
-        "description":"View loyalty-level home page.", 
-        "url-pattern":"http://${snippet.get_route_host(${func.kubectlGet(Route,${resource.$.metadata.name},-n,${resource.$.metadata.namespace},-o,json)})}",
-        "open-window": "tab", 
-        "menu-item": "true",
-      }
-    ]
-  snippets: |
-    {
-        "get_route_host": "function getRouteHost(route) { 
-            var routeJSON = JSON.parse(route);
-            var host = routeJSON.spec.host;
-            return host;
-        }"
-    }
-```
+### 3. Install the Action
 
 Download [loyalty_action.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_actions.yaml) and install with command: 
 
