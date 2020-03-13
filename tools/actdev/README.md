@@ -47,11 +47,11 @@ In this mini tutorial, we will create an action to open the stock-trader applica
 ### 1. Create Route resource 
 
 1. login to your Openshift cluster
-1. download [loyalty_level.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_route.yaml)
-1. invoke command: 
+1. download [loyalty_route.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_route.yaml)
+1. create, with command: 
 
 ```
-kubectl apply -f loyalty_level.md
+kubectl apply -f loyalty_route.md
 ```
 
 ### 2. Test home page URL
@@ -65,10 +65,12 @@ http://{loyalty-route-hostname}
 If we were forming the url manually, we would first retrieve {loyalty-route-hostname} from the route using this command: 
 
 ```
-kubectl get route -n stock-trader loyalty-level -o jsonpath='{.spec.host}'
+kubectl get route -n stock-trader loyalty-level -o json 
 ```
 
-We could then form the full URL.  
+Pull out the spec.host value, and then form the full URL.  
+
+---------
 
 In a {k}AppNav action, we can form the URL using the following substitution pattern to retrieve the route host name: 
 
