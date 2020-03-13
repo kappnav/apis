@@ -110,3 +110,7 @@ kubectl apply -f loyalty_action.md
 
 
 ### 5. Test action in {k}AppNav
+
+![view](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty-view-home-page.png)
+
+![home](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty-home-page.png)
