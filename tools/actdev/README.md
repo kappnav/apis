@@ -111,6 +111,13 @@ kubectl apply -f loyalty_action.md
 
 ### 5. Test action in {k}AppNav
 
+Please note, we took a short cut in this tutorial:  the loyalty-level application is really just a default Open Liberty container.  So the home page is simply the Open Liberty home page.  But it still illustrates the essential goal of creating a custom 
+{k}AppNav action that opens a user-defined URL.
+
+So when you click the "View Home Page" menu item: 
+
 ![view](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty-view-home-page.png)
+
+Up comes the loyalty-level Deployment's home page: 
 
 ![home](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty-home-page.png)
