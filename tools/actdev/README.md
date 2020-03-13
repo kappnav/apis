@@ -54,7 +54,7 @@ In this mini tutorial, we will create an action to open the stock-trader applica
 kubectl apply -f loyalty_route.md
 ```
 
-### 2. Test home page URL
+### 2. Design URL action
 
 The target pattern we are creating is: 
 
@@ -86,6 +86,12 @@ function getRouteHost(route) {
     var host = routeJSON.spec.host;
     return host;
 }
+```
+
+The complete url-pattern for the action definition is then:
+
+```
+http://${snippet.get_route_host(${func.kubectlGet(Route,${resource.$.metadata.name},-n,${resource.$.metadata.namespace},-o,json)})}
 ```
 
 ### 3. Install the Action
