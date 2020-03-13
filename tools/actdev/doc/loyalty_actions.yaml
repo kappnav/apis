@@ -9,13 +9,14 @@ data:
       { 
         "name":"loyalty-home", 
         "text":"View Home Page", 
+        "text.nls": "View Home Page",
         "description":"View loyalty-level home page.", 
+        "description.nls": "View loyalty-level home page.",
         "url-pattern":"http://${snippet.get_route_host(${func.kubectlGet(Route,${resource.$.metadata.name},-n,${resource.$.metadata.namespace},-o,json)})}",
         "open-window": "tab", 
-        "menu-item": "true",
+        "menu-item": "true"
       }
     ]
-
   snippets: |
     {
         "get_route_host": "function getRouteHost(route) { 
@@ -24,4 +25,3 @@ data:
             return host;
         }"
     }
-
