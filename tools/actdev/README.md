@@ -39,9 +39,10 @@ Note: this tutorial is designed for Openshift.
 In this mini tutorial, we will create an action to open the stock-trader application's loyalty-component home page.  We will take these steps: 
 
 1. Create Route resource 
-2. Test home page URL
-3. Install action
-4. Test action in {k}AppNav 
+1. Design URL action
+1. Install action
+1. Test URl action substitution
+1. Test action in {k}AppNav
 
 ### 1. Create Route resource 
 
@@ -117,9 +118,17 @@ data:
     }
 ```
 
-Download [loyalty_action.md]() and install with command: 
+Download [loyalty_action.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_actions.yaml) and install with command: 
 
 ```
 kubectl apply -f loyalty_action.md
 ```
 
+### 4. Test URl action substitution
+
+![test](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/actdev.test-action.png)
+
+![result](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/actdev.action-result.png)
+
+
+### 5. Test action in {k}AppNav
