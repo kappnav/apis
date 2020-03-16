@@ -81,12 +81,14 @@ FROM liberty
 
 ARG VERSION
 ARG BUILD_DATE
+ARG COMMIT
 
 LABEL name="Application Navigator" \
       vendor="kAppNav" \
       version=$VERSION \
       release=$VERSION \
       created=$BUILD_DATE \
+      commit=$COMMIT \
       summary="APIs image for Application Navigator" \
       description="This image contains the APIs for Application Navigator"
 
