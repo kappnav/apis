@@ -87,7 +87,11 @@ public abstract class KAppNavEndpoint {
     private static final String KAPPNAV_STATUS_PROPERTY_NAME = "kappnav.status";
     private static final String KAPPNAV_SUB_KIND_PROPERTY_NAME = "kappnav.subkind";
     
-    // Status object properties.
+    // Kind actions mapping properties
+    private static final String API_VERSION_PROPERTY_NAME = "apiVersion";
+    private static final String KIND_PROPRETY_NAME = "kind";
+
+     // Status object properties.
     private static final String VALUE_PROPERTY_NAME = "value";
     private static final String FLYOVER_PROPERTY_NAME = "flyover";
     private static final String FLYOVER_NLS_PROPERTY_NAME = "flyover.nls";
@@ -163,8 +167,45 @@ public abstract class KAppNavEndpoint {
         return null;
     }
     
+    public static String getComponentApiVersion(JsonObject component, String kind) {
+        if (Logger.isEntryEnabled())
+            Logger.log(className, "getComponentApiVersion", Logger.LogType.ENTRY,"kind = " + kind);
+
+        final JsonElement apiv_e = component.get(API_VERSION_PROPERTY_NAME);
+        String apiVersion = null;
+        if (apiv_e != null)
+            apiVersion = apiv_e.getAsString();
+            
+        if (apiVersion == null || apiVersion.length() == 0) {
+            if (Logger.isEntryEnabled())
+                Logger.log(className, "getComponentApiVersion", Logger.LogType.ENTRY,
+                    "apiVersion is null or empty and get it from ComponentInfoRegistry");
+            apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
+        }   
+
+        if (Logger.isExitEnabled())
+            Logger.log(className, "getComponentApiVersion", Logger.LogType.EXIT,"apiVersion = "
+                       + apiVersion);
+        return apiVersion;
+    }
+
+    public static String getComponentKind(JsonObject component) {
+        if (Logger.isEntryEnabled())
+            Logger.log(className, "getComponentKind", Logger.LogType.ENTRY,"");
+
+        final JsonElement kind_e = component.get(KIND_PROPRETY_NAME);
+        String kind = null;
+        if (kind_e != null)
+            kind = kind_e.getAsString();
+
+        if (Logger.isExitEnabled())
+                Logger.log(className, "getComponentKind", Logger.LogType.EXIT,"kind = "
+                    + kind);
+        return kind;
+    }    
+
     public static String getComponentSubKind(JsonObject component) {
-        if (Logger.isEntryEnabled()) {
+               if (Logger.isEntryEnabled()) {
             Logger.log(className, "getComponentSubKind", Logger.LogType.ENTRY,"");
         }
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
@@ -195,26 +236,17 @@ public abstract class KAppNavEndpoint {
     }
     
     public static String getComponentName(JsonObject component) {
-        if (Logger.isEntryEnabled()) {
-            Logger.log(className, "getComponentName", Logger.LogType.ENTRY,"");
-        }
         final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
         if (metadata != null) {
             JsonElement e = metadata.get(NAME_PROPERTY_NAME);
             if (e != null && e.isJsonPrimitive()) {
                 String componentName = e.getAsString();
-                if (Logger.isExitEnabled()) {
-                    Logger.log(className, "getComponentName", Logger.LogType.EXIT, componentName);
-                }
                 return componentName;
             }
         } else {
             if (Logger.isDebugEnabled()) {
                 Logger.log(className, "getComponentName", Logger.LogType.DEBUG, "Metadata is null.");
             }
-        }
-        if (Logger.isExitEnabled()) {
-            Logger.log(className, "getComponentName", Logger.LogType.EXIT, "Return null.");
         }
         return null;
     }
@@ -479,7 +511,7 @@ public abstract class KAppNavEndpoint {
         }
     }
     
-    protected static String encodeURLParameter(String s) {
+    public static String encodeURLParameter(String s) {
         try {
             return URLEncoder.encode(s, "UTF-8");
         }

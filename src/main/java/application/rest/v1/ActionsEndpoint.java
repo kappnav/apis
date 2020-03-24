@@ -30,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import javax.inject.Inject;
@@ -88,9 +87,7 @@ import com.ibm.kappnav.logging.Logger;
 public class ActionsEndpoint extends KAppNavEndpoint {
     
     private static final String className = ActionsEndpoint.class.getName();
-    
-    private static final String CMD_NOT_FOUND = "Command Not Found";
-    
+
     private static final String APPLICATION_KIND = "Application";
     private static final String JOB_KIND = "Job";
     private static final String KAPPNAV_PREVIX = "kappnav";
@@ -151,145 +148,146 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             summary = "Resolves an action config map action pattern.",
             description = "Returns the resolved action pattern string for a kAppNav action config map action pattern."
             )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
+        @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
         @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
         @APIResponse(responseCode = "422", description = "Unprocessable Entity (User input is invalid)"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response resolve(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
-            @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace,
-            @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") String pattern) {
+    public Response resolve(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") final String name,
+            @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") final String kind,
+            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiVersion") @Parameter(description = "The apiVersion of the resource") final String apiVersion,
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") final String namespace,
+            @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") final String pattern) {
         try {
             final ApiClient client = getApiClient();
-            ResponseBuilder builder = Response.ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, "", namespace, pattern)).getJSON());
+            final ResponseBuilder builder = Response
+                    .ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, apiVersion, namespace, pattern))
+                    .getJSON());
             return builder.build();
-        }
-        catch (IOException | ApiException | PatternException e) {
+        } catch (IOException | ApiException | PatternException e) {
             String msg = null;
             if (e instanceof PatternException) {
                 msg = "pattern-error: " + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught PatternException returning status: " + getResponseCode(e) + " " + msg);
+                    Logger.log(className, "resolve", Logger.LogType.ERROR,
+                            "Caught PatternException returning status: " + getResponseCode(e) + " " + msg);
                 }
             } else if (e instanceof ApiException) {
-                msg = "input-error: " + e.getMessage(); 
+                msg = "input-error: " + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                    Logger.log(className, "resolve", Logger.LogType.ERROR,
+                            "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
                 }
             } else {
-                msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: " + e.getMessage();
+                msg = "internal-error: An internal error occurred in resolving an action config map pattern. error: "
+                        + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "resolve", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                    Logger.log(className, "resolve", Logger.LogType.ERROR,
+                            "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
                 }
-            }
+            } 
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         } 
     }
-    
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}/execute/command/{command-action-name}")
-    @Operation(
-            summary = "Resolves a command action pattern from the action config map and creates a job in Kubernetes from the resolved action.",
-            description = "Returns the Kubernetes job created from the resolved command action pattern."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
-        @APIResponse(responseCode = "404", description = "Not Found (Command not found in Config Map)"),
-        @APIResponse(responseCode = "422", description = "Unprocessable Entity (User input is invalid)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
+    @Operation(summary = "Resolves a command action pattern from the action config map and creates a job in Kubernetes from the resolved action.", description = "Returns the Kubernetes job created from the resolved command action pattern.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
+            @APIResponse(responseCode = "404", description = "Not Found (Command not found in Config Map)"),
+            @APIResponse(responseCode = "422", description = "Unprocessable Entity (User input is invalid)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
     @RequestBody(description = "User Input Map")
-    public Response executeApplicationCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace,
-            @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {  
-        return executeCommand(jsonstr, name, APPLICATION_KIND, "", namespace, commandName, null, null, user);
+    public Response executeApplicationCommand(final String jsonstr,
+            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") final String name,
+            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("apiVersion") @Parameter(description = "The apiVersion of the resource") final String apiVersion,
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") final String namespace,
+            @PathParam("command-action-name") @Parameter(description = "The name of the command action") final String commandName,
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") final String user) {
+        return executeCommand(jsonstr, name, APPLICATION_KIND, apiVersion, namespace, commandName, null, null, user);
     }
-    
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}/{component-name}/{component-kind}/execute/command/{command-action-name}")
-    @Operation(
-            summary = "Resolves a command action pattern from the action config map and creates a job in Kubernetes from the resolved action.",
-            description = "Returns the Kubernetes job created from the resolved command action pattern."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
-        @APIResponse(responseCode = "404", description = "Not Found (Command not found in Config Map)"),
-        @APIResponse(responseCode = "422", description = "Unprocessable Entity (User input is invalid)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
+    @Operation(summary = "Resolves a command action pattern from the action config map and creates a job in Kubernetes from the resolved action.", description = "Returns the Kubernetes job created from the resolved command action pattern.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
+            @APIResponse(responseCode = "404", description = "Not Found (Command not found in Config Map)"),
+            @APIResponse(responseCode = "422", description = "Unprocessable Entity (User input is invalid)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
     @RequestBody(description = "User Input Map")
-    public Response executeComponentCommand(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String appName,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("application-namespace") @Parameter(description = "The namespace of the application") String appNamespace,
-            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("component-name") @Parameter(description = "The name of the component") String name,
-            @PathParam("component-kind") @Parameter(description = "The Kubernetes resource kind for the component") String kind,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the component") String namespace,
-            @PathParam("command-action-name") @Parameter(description = "The name of the command action") String commandName,
-            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user) {
-        return executeCommand(jsonstr, name, kind, "", namespace, commandName, appName, appNamespace, user);
+    public Response executeComponentCommand(final String jsonstr,
+            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") final String appName,
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("application-namespace") @Parameter(description = "The namespace of the application") final String appNamespace,
+            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("component-name") @Parameter(description = "The name of the component") final String name,
+            @PathParam("component-kind") @Parameter(description = "The Kubernetes resource kind for the component") final String kind,
+            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("apiVersion") @Parameter(description = "The apiVersion of the resource") final String apiVersion,
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the component") final String namespace,
+            @PathParam("command-action-name") @Parameter(description = "The name of the command action") final String commandName,
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") final String user) {
+        return executeCommand(jsonstr, name, kind, apiVersion, namespace, commandName, appName, appNamespace, user);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/command-time")
-    @Operation(
-            summary = "Retrieve current time to specify as query value for retrieving Kubernetes jobs using /commands api. Time returned in yyyy-MM-dd'T'HH:mm:ss.000Z format",
-            description = "Retrieve current time for retrieving jobs."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response getCommandTime() { 
+    @Operation(summary = "Retrieve current time to specify as query value for retrieving Kubernetes jobs using /commands api. Time returned in yyyy-MM-dd'T'HH:mm:ss.000Z format", description = "Retrieve current time for retrieving jobs.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
+    public Response getCommandTime() {
 
         final String methodName = "getCommandTime";
         if (Logger.isEntryEnabled()) {
             Logger.log(className, methodName, Logger.LogType.ENTRY, "");
-        } 
+        }
 
-        // convert current time to {time: value} JSON where value is yyyy-MM-dd'T'HH:mm:ss.000Z format
-        // This format matches the format returned in the completionTime field for jobs.  Kubernetes
-        // stores timestamps only to the second, the 000 (millisecond) is just to unify timestamp format
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.'000Z'");
+        // convert current time to {time: value} JSON where value is
+        // yyyy-MM-dd'T'HH:mm:ss.000Z format
+        // This format matches the format returned in the completionTime field for jobs.
+        // Kubernetes
+        // stores timestamps only to the second, the 000 (millisecond) is just to unify
+        // timestamp format
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.'000Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp = null;
         final Date date = new Date();
-        try { 
-            formattedTimestamp = dateFormat.format( date );
-        }
-        catch(Exception e) { 
-            String msg = "Internal error parsing date: " + date;
+        try {
+            formattedTimestamp = dateFormat.format(date);
+        } catch (final Exception e) {
+            final String msg = "Internal error parsing date: " + date;
             if (Logger.isErrorEnabled()) {
-                Logger.log(className, methodName, Logger.LogType.ERROR, msg); 
+                Logger.log(className, methodName, Logger.LogType.ERROR, msg);
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
-        JsonObject timeJSON = new JsonObject();
-        JsonElement timeElement = new JsonPrimitive(formattedTimestamp); 
+        final JsonObject timeJSON = new JsonObject();
+        final JsonElement timeElement = new JsonPrimitive(formattedTimestamp);
         timeJSON.add(TIME_PROPERTY_NAME, timeElement);
 
         if (Logger.isExitEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.EXIT, "timeJSON="+timeJSON);
+            Logger.log(className, methodName, Logger.LogType.EXIT, "timeJSON=" + timeJSON);
         }
-        return Response.ok(timeJSON.toString()).build(); 
+        return Response.ok(timeJSON.toString()).build();
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/commands")
-    @Operation(
-            summary = "Retrieve the list of Kubernetes jobs for command actions, optionally filtered by user and time and only jobs with completion timestamp newer than specified timestamp are returned",
-            description = "Returns two lists: the list of Kubernetes jobs for command actions; the list of job actions for the jobs."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response getCommands(@CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") String user,
-                                @QueryParam("time") @DefaultValue("") @Parameter(description = "The job completion time stamp in yyyy-MM-dd'T'HH:mm:sss format") String time) {
+    @Operation(summary = "Retrieve the list of Kubernetes jobs for command actions, optionally filtered by user and time and only jobs with completion timestamp newer than specified timestamp are returned", description = "Returns two lists: the list of Kubernetes jobs for command actions; the list of job actions for the jobs.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
+    public Response getCommands(
+            @CookieParam("kappnav-user") @DefaultValue("") @Parameter(description = "The user that submitted the command action") final String user,
+            @QueryParam("time") @DefaultValue("") @Parameter(description = "The job completion time stamp in yyyy-MM-dd'T'HH:mm:sss format") final String time) {
 
         final String methodName = "getCommands";
         if (Logger.isEntryEnabled()) {
@@ -297,74 +295,78 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         try {
             final ApiClient client = getApiClient();
-            
+
             // Build the selector for the query.
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
-            
+
             // convert time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
-            Timestamp timelaterTimestamp = convertTimeStringToTimestamp(time);
-            
-            final String labelSelector = s.toString();           
+            final Timestamp timelaterTimestamp = convertTimeStringToTimestamp(time);
+
+            final String labelSelector = s.toString();
             // Query the list of jobs from Kubernetes and return the list to the caller.
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
 
             if (Logger.isDebugEnabled()) {
-                Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                    "GLOBAL_NAMESPACE=" + GLOBAL_NAMESPACE + " ,labelSelector=" + labelSelector);
+                Logger.log(className, methodName, Logger.LogType.DEBUG,
+                        "GLOBAL_NAMESPACE=" + GLOBAL_NAMESPACE + " ,labelSelector=" + labelSelector);
             }
 
-            List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, null, null, null, labelSelector, null, null, null, null));           
-            final CommandsResponse response = new CommandsResponse();           
-            
+            final List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null,
+                    null, null, null, labelSelector, null, null, null, null));
+            final CommandsResponse response = new CommandsResponse();
+
             commands.forEach(v -> {
                 if (v.get(KIND_PROPERTY_NAME) == null) {
                     v.addProperty(KIND_PROPERTY_NAME, JOB_KIND);
                 }
 
-                if(user != null && !user.isEmpty()) {
+                if (user != null && !user.isEmpty()) {
                     // Only return jobs belonging to the user
                     final String job_username = getCommandActionUserName(v);
-                    if(! user.equals(job_username)) {
+                    if (!user.equals(job_username)) {
                         // Completely skip this command because it does
                         // not belong to the user requested by the API caller
                         return;
                     }
                 }
 
-                if (time == null || time.isEmpty()) {   
-                    //no time specified, return all jobs
+                if (time == null || time.isEmpty()) {
+                    // no time specified, return all jobs
                     response.add(v);
-                }  else {  
-                    JsonObject status = v.getAsJsonObject(STATUS_PROPERTY_NAME);
+                } else {
+                    final JsonObject status = v.getAsJsonObject(STATUS_PROPERTY_NAME);
                     if (status != null) {
-                        JsonElement e = status.get(COMPLETION_TIME_PROPERTY_NAME);
+                        final JsonElement e = status.get(COMPLETION_TIME_PROPERTY_NAME);
                         if (e != null && e.isJsonPrimitive()) {
-                            String completionTime = e.getAsString();
+                            final String completionTime = e.getAsString();
                             if (completionTime != null) {
                                 // convert job completion time to timestamp in yyyy-MM-dd'T'HH:mm:sss format
                                 try {
-                                    Timestamp completionTimestamp = convertTimeStringToTimestamp(completionTime);
-                                    // Only jobs with completion time stamp newer than specified time stamp are returned or no timestamp specified. 
-                                    if (completionTimestamp.after(timelaterTimestamp)) {                                    
+                                    final Timestamp completionTimestamp = convertTimeStringToTimestamp(completionTime);
+                                    // Only jobs with completion time stamp newer than specified time stamp are
+                                    // returned or no timestamp specified.
+                                    if (completionTimestamp.after(timelaterTimestamp)) {
                                         response.add(v);
-                                    }       
-                                } catch (Exception ex)  {
-                                    if (Logger.isDebugEnabled()) {
-                                        Logger.log(className, methodName, Logger.LogType.DEBUG, "Caught an exception " + ex.toString());
                                     }
-                                }                                        
+                                } catch (final Exception ex) {
+                                    if (Logger.isDebugEnabled()) {
+                                        Logger.log(className, methodName, Logger.LogType.DEBUG,
+                                                "Caught an exception " + ex.toString());
+                                    }
+                                }
                             }
                         }
                     }
                 }
             });
 
-            // If there are jobs, get actions available for jobs and add to response 
-            if ( ! commands.isEmpty() && response.size() > 0) { 
-                JsonObject job= commands.get(0); // get first job, any job, so we can retrieve actions 
+            // If there are jobs, get actions available for jobs and add to response
+            if (!commands.isEmpty() && response.size() > 0) {
+                final JsonObject job = commands.get(0); // get first job, any job, so we can retrieve actions
                 final ConfigMapProcessor processor = new ConfigMapProcessor(KAPPNAV_JOB_RESOURCE_KIND);
-                JsonObject actionsMap = processor.getConfigMap(client, job, ConfigMapProcessor.ConfigMapType.ACTION);
+                final JsonObject actionsMap = processor.getConfigMap(client, job,
+                        ConfigMapProcessor.ConfigMapType.ACTION);
                 response.addActions(actionsMap);
             }
 
@@ -372,176 +374,183 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             if (Logger.isExitEnabled()) {
                 Logger.log(className, methodName, Logger.LogType.EXIT, "responseJSON=" + responseJSON);
             }
-            return Response.ok(responseJSON).build(); 
-        }
-        catch (IOException | ApiException e ) {
-            String msg = null;          
-            if (e instanceof ApiException)  {              
-                msg = "input-error: " + e.getMessage(); 
+            return Response.ok(responseJSON).build();
+        } catch (IOException | ApiException e) {
+            String msg = null;
+            if (e instanceof ApiException) {
+                msg = "input-error: " + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg); 
+                    Logger.log(className, methodName, Logger.LogType.ERROR,
+                            "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
                 }
             } else {
-                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: " + e.getMessage();  
+                msg = "internal-error: An internal error occurred in retrieving list of kubernetes jobs. error: "
+                        + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, methodName, Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);   
-                }          
+                    Logger.log(className, methodName, Logger.LogType.ERROR,
+                            "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
-        } 
+        }
     }
-    
+
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/command/{job-name}")
-    @Operation(
-            summary = "Deletes a command action job.",
-            description = "Delete the specified command action job. The namespace of the job is assumed to be 'kappnav'."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response deleteCommand(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("job-name") @Parameter(description = "The name of the command action job") String jobName) {
+    @Operation(summary = "Deletes a command action job.", description = "Delete the specified command action job. The namespace of the job is assumed to be 'kappnav'.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
+    public Response deleteCommand(
+            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("job-name") @Parameter(description = "The name of the command action job") final String jobName) {
         try {
-            final ApiClient client = getApiClient();            
+            final ApiClient client = getApiClient();
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
-            
+
             // Check that the specified job exists and is a command action.
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
-            JsonObject job = getItemAsObject(client, batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
+            final JsonObject job = getItemAsObject(client,
+                    batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
             if (!s.matches(job)) {
-                String msg = "input-error: Job " + jobName + " is not found in command action.";
+                final String msg = "input-error: Job " + jobName + " is not found in command action.";
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, msg); 
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, msg);
                 }
                 throw new ApiException(404, msg);
             }
-            
+
             // Delete the specified job.
             final V1DeleteOptions options = new V1DeleteOptions();
             batch.deleteNamespacedJob(jobName, GLOBAL_NAMESPACE, options, null, 0, true, "");
             return Response.ok(getStatusMessageAsJSON("OK")).build();
-        }
-        catch (JsonSyntaxException e) {
+        } catch (final JsonSyntaxException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IllegalStateException) {
                 final IllegalStateException _cause = (IllegalStateException) e.getCause();
                 final String message = _cause.getMessage();
                 if (message != null && message.contains("Expected a string but was BEGIN_OBJECT")) {
                     // Workaround for an issue in the Kubernetes API client. The job was deleted,
-                    // but due to a defect in the client an error occurs in constructing the V1Status
-                    // object return value. See "https://github.com/kubernetes-client/java/issues/86"
+                    // but due to a defect in the client an error occurs in constructing the
+                    // V1Status
+                    // object return value. See
+                    // "https://github.com/kubernetes-client/java/issues/86"
                     // for more details.
                     return Response.ok(getStatusMessageAsJSON("OK")).build();
                 }
             }
-            String msg = "syntax-error: " + e.getMessage();
+            final String msg = "syntax-error: " + e.getMessage();
             if (Logger.isErrorEnabled()) {
-                Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught JsonSyntaxException returning status: " + getResponseCode(e) + " " + msg);
+                Logger.log(className, "deleteCommand", Logger.LogType.ERROR,
+                        "Caught JsonSyntaxException returning status: " + getResponseCode(e) + " " + msg);
+            }
+            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
+        } catch (IOException | ApiException e) {
+            String msg = null;
+            if (e instanceof ApiException) {
+                msg = "input-error: " + e.getMessage();
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR,
+                            "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                }
+            } else {
+                msg = "internal-error: " + "An internal error occurred in deleting a command action job. error:"
+                        + e.getMessage();
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR,
+                            "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
-        catch (IOException | ApiException e) {
-            String msg = null;           
-            if (e instanceof ApiException) {
-                msg = "input-error: " + e.getMessage(); 
-                if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
-                }
-            }
-            else {
-                msg = "internal-error: " + "An internal error occurred in deleting a command action job. error:" + e.getMessage(); 
-                if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "deleteCommand", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
-                }
-            }
-            return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
-        } 
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{resource-name}/{resource-kind}/actions")
-    @Operation(
-            summary = "Retrieves an action config map for the specified Kubernetes resource.",
-            description = "Returns the action config map for the specified Kubernetes resource."
-            )
-    @APIResponses({@APIResponse(responseCode = "200", description = "OK"),
-        @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
-        @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")})
-    public Response getActionMap(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") String name,
-            @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
-            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
+    @Operation(summary = "Retrieves an action config map for the specified Kubernetes resource.", description = "Returns the action config map for the specified Kubernetes resource.")
+    @APIResponses({ @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "207", description = "Multi-Status (Error from Kubernetes API)"),
+            @APIResponse(responseCode = "400", description = "Bad Request (Malformed input)"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error") })
+    public Response getActionMap(
+            @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("resource-name") @Parameter(description = "The name of the resource") final String name,
+            @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") final String kind,
+            @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiVersion") @Parameter(description = "The apiVersion of the resource") final String apiVersion,
+            @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") final String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final JsonObject resource = getResource(client, name, kind, "", namespace);
+            final JsonObject resource = getResource(client, name, kind, apiVersion, namespace);
             final JsonObject map;
-                
+
             if (resource != null) {
-                ConfigMapProcessor processor = new ConfigMapProcessor(kind);
+                final ConfigMapProcessor processor = new ConfigMapProcessor(kind);
                 map = processor.getConfigMap(client, resource, ConfigMapProcessor.ConfigMapType.ACTION);
-            }
-            else {
+            } else {
                 map = new JsonObject();
             }
             return Response.ok(map.toString()).build();
-        }
-        catch (IOException | ApiException e) {
-            String msg = null;           
+        } catch (IOException | ApiException e) {
+            String msg = null;
             if (e instanceof ApiException) {
-                msg = "input-error: " + e.getMessage(); 
+                msg = "input-error: " + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
+                    Logger.log(className, "getActionMap", Logger.LogType.ERROR,
+                            "Caught ApiException returning status: " + getResponseCode(e) + " " + msg);
                 }
-            } else {   
-                msg = "internal-error: An internal error occurred in retrieving an action config map. error: " + e.getMessage();
+            } else {
+                msg = "internal-error: An internal error occurred in retrieving an action config map. error: "
+                        + e.getMessage();
                 if (Logger.isErrorEnabled()) {
-                    Logger.log(className, "getActionMap", Logger.LogType.ERROR, "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
+                    Logger.log(className, "getActionMap", Logger.LogType.ERROR,
+                            "Caught IOException returning status: " + getResponseCode(e) + " " + msg);
                 }
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
-        }                  
+        }
     }
-    
-    private String resolve(ApiClient client, String name, String kind, String apiVersion, String namespace, String pattern) throws ApiException {
-        String methodName = "resolve";
+
+    private String resolve(final ApiClient client, final String name, final String kind, final String apiVersion,
+            final String namespace, final String pattern) throws ApiException {
+        final String methodName = "resolve";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind="+ kind + ", apiVersion="+apiVersion + ", namespace="+namespace + ", pattern="+pattern);
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind=" + kind + ", apiVersion="
+                    + apiVersion + ", namespace=" + namespace + ", pattern=" + pattern);
         }
 
-        final JsonObject resource; 
+        final JsonObject resource;
         final ResolvedValue resolvedValue;
-        try { 
-            resource = getResource(client, name, kind, apiVersion, namespace);      
+        try {
+            resource = getResource(client, name, kind, apiVersion, namespace);
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
-            }           
+            }
             final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
             resolvedValue = context.resolve(pattern);
-        } catch (ApiException e) {
-            String msg = e.getMessage();
+        } catch (final ApiException e) {
+            final String msg = e.getMessage();
             if (Logger.isErrorEnabled()) {
                 Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
             }
-            throw new ApiException(404, msg);           
-        } catch (PatternException e) {
-            String msg = e.getMessage();
+            throw new ApiException(404, msg);
+        } catch (final PatternException e) {
+            final String msg = e.getMessage();
             if (Logger.isErrorEnabled()) {
                 Logger.log(className, methodName, Logger.LogType.ERROR, "Caught PatternException " + msg);
             }
             throw new ApiException(207, msg);
-        } 
-        if (Logger.isExitEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.EXIT, "ResolvedValue="+resolvedValue.getValue());
         }
-        return resolvedValue.getValue();     
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "ResolvedValue=" + resolvedValue.getValue());
+        }
+        return resolvedValue.getValue();
     }
-    
-    private Response executeCommand(String jsonstr, String name, String kind, String apiVersion, String namespace,
-            String commandName, String appName, String appNamespace, String user) {
+
+    private Response executeCommand(final String jsonstr, final String name, final String kind, final String apiVersion,
+            final String namespace, final String commandName, final String appName, final String appNamespace,
+            final String user) {
 
         final String methodName = "executeCommand";
         if (Logger.isErrorEnabled()) {
@@ -554,67 +563,68 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource;
-            try { 
+            try {
                 resource = getResource(client, name, kind, apiVersion, namespace);
-            } catch (ApiException e) {
-                String msg = e.getMessage();
+            } catch (final ApiException e) {
+                final String msg = e.getMessage();
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, "Caught ApiException " + msg);
                 }
-                throw new ApiException (404, msg);
+                throw new ApiException(404, msg);
             }
-            
+
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
             }
             final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
-            
-            // Retrieve the command action from the config map.   
-            final JsonObject cmdAction = context.getCommandAction(commandName);  
+
+            // Retrieve the command action from the config map.
+            final JsonObject cmdAction = context.getCommandAction(commandName);
             if (cmdAction == null) {
-                String msg = "Command action " + commandName + " is not found in config map.";
+                final String msg = "Command action " + commandName + " is not found in config map.";
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                 }
                 throw new ApiException(404, msg);
             }
-                        
+
             // Process user input if required.
             processUserInput(jsonstr, cmdAction, context);
-            
+
             // Retrieve the image name.
             final JsonElement imageProp = cmdAction.get(IMAGE_PROPERTY_NAME);
             if (imageProp == null || !imageProp.isJsonPrimitive()) {
-                String msg = "Image was not specified in the command action.";
+                final String msg = "Image was not specified in the command action.";
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                 }
                 throw new ApiException(404, msg);
             }
             final String imageName = imageProp.getAsString();
-            
+
             // Retrieve the command pattern.
             final JsonElement cmdPatternProp = cmdAction.get(CMD_PATTERN_PROPERTY_NAME);
             if (cmdPatternProp == null || !cmdPatternProp.isJsonPrimitive()) {
-                String msg = "cmd-pattern was not specified in the command action.";
+                final String msg = "cmd-pattern was not specified in the command action.";
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                 }
                 throw new ApiException(404, msg);
             }
             final String cmdPattern = cmdPatternProp.getAsString();
-            
+
             // Retrieve the display text.
             final JsonElement textProp = cmdAction.get(TEXT_PROPERTY_NAME);
             final String text = (textProp != null && textProp.isJsonPrimitive()) ? textProp.getAsString() : null;
-            
+
             // Resolve the command pattern.
             final ResolvedValue resolvedValue = context.resolve(cmdPattern);
             if (!resolvedValue.isFullyResolved()) {
                 // If the resolution failed we should stop here instead of generating a bad job.
                 // REVISIT: Message translation required.
-                String msg = "An internal error occurred in the resolution of the command action pattern" + cmdPattern;
+                final String msg = "An internal error occurred in the resolution of the command action pattern"
+                        + cmdPattern;
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                 }
@@ -622,7 +632,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
             final String resolvedPattern = resolvedValue.getValue();
             final CommandLineTokenizer tokenizer = new CommandLineTokenizer(resolvedPattern);
-            
+
             // Construct the pod template / container from the request.
             final V1Container container = new V1Container();
             container.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
@@ -632,38 +642,38 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 command.add(parameter);
             });
             container.setCommand(command);
-            
+
             final V1PodSpec spec = new V1PodSpec();
             spec.setContainers(Collections.singletonList(container));
             spec.setRestartPolicy("Never");
             setSecurityContextAndServiceAccountName(client, spec);
-            
+
             final V1PodTemplateSpec podTemplate = new V1PodTemplateSpec();
             podTemplate.setSpec(spec);
-            
+
             // Create and populate the job object.
             final V1Job job = new V1Job();
             job.setApiVersion("batch/v1");
             job.setKind("Job");
             final V1ObjectMeta meta = new V1ObjectMeta();
             meta.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
-            
+
             // Add context labels to the job, allowing for queries using selectors.
-            final Map<String,String> labels = createJobLabels(client, resource, name, kind, 
-                    namespace, appName, appNamespace, commandName);
+            final Map<String, String> labels = createJobLabels(client, resource, name, kind, namespace, appName,
+                    appNamespace, commandName);
             meta.setLabels(labels);
-            
-            final Map<String,String> annotations = createJobAnnotations(text, user);
+
+            final Map<String, String> annotations = createJobAnnotations(text, user);
             if (annotations != null) {
                 meta.setAnnotations(annotations);
-            } 
-            
+            }
+
             job.setMetadata(meta);
             final V1JobSpec jobSpec = new V1JobSpec();
             job.setSpec(jobSpec);
             jobSpec.setBackoffLimit(4);
             jobSpec.setTemplate(podTemplate);
-            
+
             // Submit the job to Kubernetes and return the job object to the caller.
             final BatchV1Api batch = new BatchV1Api();
             batch.setApiClient(client);
@@ -672,32 +682,33 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 Logger.log(className, methodName, Logger.LogType.EXIT, response.toString());
             }
             return Response.ok(response.toString()).build();
-        }
-        catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException | PatternException e) {
+        } catch (IOException | JsonSyntaxException | ApiException | KAppNavException | ValidationException
+                | PatternException e) {
             String msg = null;
             if (e instanceof JsonSyntaxException)
                 msg = "syntax-error: ";
-            if (e instanceof ApiException)               
+            if (e instanceof ApiException)
                 msg = "input-error: ";
             if (e instanceof IOException || e instanceof KAppNavException)
                 msg = "internal-error: ";
-            if (e instanceof ValidationException) 
+            if (e instanceof ValidationException)
                 msg = "validation-error: ";
-            if (e instanceof PatternException) 
-                msg = "pattern-error: ";       
-            msg = msg + e.getMessage();     
+            if (e instanceof PatternException)
+                msg = "pattern-error: ";
+            msg = msg + e.getMessage();
             if (Logger.isErrorEnabled()) {
                 Logger.log(className, methodName, Logger.LogType.ERROR, "Caught Exception " + msg);
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
-        } 
+        }
     }
-    
-    private void processUserInput(String jsonstr, JsonObject action, ResolutionContext context) throws JsonSyntaxException, 
-        ValidationException, KAppNavException {
-        String methodName = "processUserInput";
+
+    private void processUserInput(final String jsonstr, final JsonObject action, final ResolutionContext context)
+            throws JsonSyntaxException, ValidationException, KAppNavException {
+        final String methodName = "processUserInput";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "JsonStr=" + jsonstr + ", action= " + action.toString() + ", context=" + context.toString());
+            Logger.log(className, methodName, Logger.LogType.ENTRY,
+                    "JsonStr=" + jsonstr + ", action= " + action.toString() + ", context=" + context.toString());
         }
 
         final JsonElement requiresInputProp = action.get(REQUIRES_INPUT_PROPERTY_NAME);
@@ -707,31 +718,30 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             if (fields != null) {
                 final JsonObject userInput;
                 if (jsonstr != null && !jsonstr.trim().isEmpty()) {
-                    JsonParser parser = new JsonParser(); 
-                    JsonElement element = parser.parse(jsonstr);
+                    final JsonParser parser = new JsonParser();
+                    final JsonElement element = parser.parse(jsonstr);
                     if (element.isJsonObject()) {
                         userInput = element.getAsJsonObject();
-                    }
-                    else {
+                    } else {
                         // REVISIT: Message translation required.
-                        String msg = "The inputs " + jsonstr + " specified was in the wrong format. It is expected to be a map.";
+                        final String msg = "The inputs " + jsonstr
+                                + " specified was in the wrong format. It is expected to be a map.";
                         if (Logger.isErrorEnabled()) {
                             Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                         }
                         throw new ValidationException(msg);
                     }
-                }
-                else {
+                } else {
                     userInput = null;
                 }
                 if (Logger.isExitEnabled()) {
-                    Logger.log(className, methodName, Logger.LogType.EXIT, "userInput="+userInput);
+                    Logger.log(className, methodName, Logger.LogType.EXIT, "userInput=" + userInput);
                 }
                 context.setUserInput(userInput, fields);
-            }
-            else {
+            } else {
                 // REVISIT: Message translation required.
-                String msg = "An error occurred in the resolution of the field definitions for input \"" + requiresInput + "\"." ;
+                final String msg = "An error occurred in the resolution of the field definitions for input \""
+                        + requiresInput + "\".";
                 if (Logger.isErrorEnabled()) {
                     Logger.log(className, methodName, Logger.LogType.ERROR, msg);
                 }
@@ -739,9 +749,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
         }
     }
-      
+
     // REVISIT: Should re-think how we set this for user provided command actions.
-    private void setSecurityContextAndServiceAccountName(ApiClient client, V1PodSpec spec) {
+    private void setSecurityContextAndServiceAccountName(final ApiClient client, final V1PodSpec spec) {
         final V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
         podSecurityContext.setRunAsNonRoot(true);
         podSecurityContext.setRunAsUser(1001L);
@@ -750,43 +760,46 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             // Initialize the config here if CDI failed to do it.
             config = new KAppNavConfig(client);
         }
-        spec.setServiceAccountName(config.getkAppNavServiceAccountName()); 
+        spec.setServiceAccountName(config.getkAppNavServiceAccountName());
     }
-    
-    private Map<String,String> createJobAnnotations(String text, String user) {
-        Map<String, String> annotations = new HashMap<String, String>();
+
+    private Map<String, String> createJobAnnotations(final String text, final String user) {
+        final Map<String, String> annotations = new HashMap<String, String>();
 
         if (text != null && !text.isEmpty()) {
             annotations.put(KAPPNAV_JOB_ACTION_TEXT, text);
         }
-        if(user != null && !user.isEmpty()) {
+        if (user != null && !user.isEmpty()) {
             annotations.put(KAPPNAV_JOB_USER_ID, user);
         }
 
-        if(! annotations.isEmpty()) {
+        if (!annotations.isEmpty()) {
             return Collections.unmodifiableMap(annotations);
         }
         return null;
     }
-    
-    private Map<String,String> createJobLabels(ApiClient client, JsonObject resource, String name, String kind, 
-            String namespace, String appName, String appNamespace, String actionName) {
-        String methodName = "createJobLabels";
+
+    private Map<String, String> createJobLabels(final ApiClient client, final JsonObject resource, final String name,
+            final String kind, final String namespace, final String appName, final String appNamespace,
+            final String actionName) {
+        final String methodName = "createJobLabels";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "Resource=" + resource.toString() + ", name="+ name + ", kind=" + kind + ", namespace="+namespace + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName);
+            Logger.log(className, methodName, Logger.LogType.ENTRY,
+                    "Resource=" + resource.toString() + ", name=" + name + ", kind=" + kind + ", namespace=" + namespace
+                            + ", appName=" + appName + ", appNamespace=" + appNamespace + ", actionName=" + actionName);
         }
 
-        final Map<String,String> labels = new HashMap<>();
+        final Map<String, String> labels = new HashMap<>();
         labels.put(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
         labels.put(KAPPNAV_JOB_ACTION_NAME, actionName);
 
-        // If appName is not set this resource is an application. Only set the application labels.
+        // If appName is not set this resource is an application. Only set the
+        // application labels.
         if (appName == null || appName.isEmpty()) {
             labels.put(KAPPNAV_JOB_APPLICATION_NAME, name);
             labels.put(KAPPNAV_JOB_APPLICATION_NAMESPACE, namespace);
             labels.put(KAPPNAV_JOB_APPLICATION_SCOPE, "true");
-        }
-        else {
+        } else {
             // Set application labels.
             labels.put(KAPPNAV_JOB_APPLICATION_NAME, appName);
             labels.put(KAPPNAV_JOB_APPLICATION_NAMESPACE, appNamespace);
@@ -805,18 +818,20 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         return labels;
     }
-    
-    private JsonObject getResource(ApiClient client, String name, String kind, String apiVersion, String namespace) throws ApiException {
-        String methodName = "resolve";
+
+    private JsonObject getResource(final ApiClient client, final String name, final String kind, String apiVersion,
+            final String namespace) throws ApiException {
+        final String methodName = "getResource";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "Name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace);
+            Logger.log(className, methodName, Logger.LogType.ENTRY,
+                    "Name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace);
         }
 
         if (registry == null) {
             // Initialize the registry here if CDI failed to do it.
             registry = new ComponentInfoRegistry(client);
         }
-    
+
         if (apiVersion == null || apiVersion.trim().length() == 0) {
             apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
             if (apiVersion == null) {
@@ -832,68 +847,76 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         }
         return getItemAsObject(client, o);
     }
-    
+
     static final class ActionSubstitutionResolverResponse {
         private final JsonObject o;
-        public ActionSubstitutionResolverResponse(String resolvedAction) {
+
+        public ActionSubstitutionResolverResponse(final String resolvedAction) {
             o = new JsonObject();
             o.addProperty(ACTION_PROPERTY_NAME, resolvedAction);
         }
-        public String getJSON() {
-            return o.toString();
-        }
-    }
-    
-    static final class CommandsResponse {
-        private final JsonObject o;
-        private final JsonArray commands;
-        // Constructs:
-        // {
-        //   commands: [ {...}, {...}, ... ]
-        // }
-        public CommandsResponse() {
-            o = new JsonObject();
-            o.add(COMMANDS_PROPERTY_NAME, commands = new JsonArray());
-        }
-        public void add(final JsonObject command) {
-            commands.add(command);
-        }
-        public void addActions(final JsonObject actions) { 
-            o.add(ACTION_MAP_PROPERTY_NAME, actions); 
-        }  
-        public int size() {
-            return commands.size();
-        }
+
         public String getJSON() {
             return o.toString();
         }
     }
 
-    private Timestamp convertTimeStringToTimestamp(String time) throws ApiException {
+    static final class CommandsResponse {
+        private final JsonObject o;
+        private final JsonArray commands;
+
+        // Constructs:
+        // {
+        // commands: [ {...}, {...}, ... ]
+        // }
+        public CommandsResponse() {
+            o = new JsonObject();
+            o.add(COMMANDS_PROPERTY_NAME, commands = new JsonArray());
+        }
+
+        public void add(final JsonObject command) {
+            commands.add(command);
+        }
+
+        public void addActions(final JsonObject actions) {
+            o.add(ACTION_MAP_PROPERTY_NAME, actions);
+        }
+
+        public int size() {
+            return commands.size();
+        }
+
+        public String getJSON() {
+            return o.toString();
+        }
+    }
+
+    private Timestamp convertTimeStringToTimestamp(final String time) throws ApiException {
         Timestamp timestamp = null;
         try {
             if (time != null && !time.isEmpty()) {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:sss");
-                Date parsedDate = dateFormat.parse(time);
+                final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:sss");
+                final Date parsedDate = dateFormat.parse(time);
                 timestamp = new java.sql.Timestamp(parsedDate.getTime());
             }
-        } catch (Exception e) { 
-            String msg = e.getMessage() + ". The correct format is yyyy-MM-dd'T'HH:mm:sss";
+        } catch (final Exception e) {
+            final String msg = e.getMessage() + ". The correct format is yyyy-MM-dd'T'HH:mm:sss";
             if (Logger.isErrorEnabled()) {
                 Logger.log(className, "convertTimeStringToTimestamp", Logger.LogType.ERROR, "Caught exception " + msg);
             }
             throw new ApiException(msg);
-        } 
+        }
         return timestamp;
     }
-   
+
     // Decodes a URL encoded string using `UTF-8`
-    private static String urlDecode(String value) {
+    private static String urlDecode(final String value) {
         try {
             return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException ex) {
+        } catch (final UnsupportedEncodingException ex) {
             if (Logger.isErrorEnabled()) {
-                Logger.log(className, "urlDecode", Logger.LogType.ERROR, "Caught UnsupportedEncodingException " + ex.toString());
+                Logger.log(className, "urlDecode", Logger.LogType.ERROR,
+                        "Caught UnsupportedEncodingException " + ex.toString());
             }
             throw new RuntimeException(ex.getCause());
         }
@@ -901,10 +924,11 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
     /**
      * Return the username associated with the command action
+     * 
      * @param commandAction - JsonObject of the command action details
      * @return String - username who created the command action, else empty String
      */
-    private String getCommandActionUserName(JsonObject commandAction) {
+    private String getCommandActionUserName(final JsonObject commandAction) {
         final String methodName = "getCommandUserName";
         if (Logger.isEntryEnabled()) {
             Logger.log(className, methodName, Logger.LogType.ENTRY, "job=" + commandAction);

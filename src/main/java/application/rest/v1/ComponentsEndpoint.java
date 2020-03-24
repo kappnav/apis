@@ -58,6 +58,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
     private static final String ACTION_MAP_PROPERTY_NAME = "action-map";
     private static final String SECTION_MAP_PROPERTY_NAME = "section-map";
     private static final String KIND_PROPERTY_NAME = "kind";
+    private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     
     @Inject
     private ComponentInfoRegistry registry;
@@ -110,14 +111,14 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                             System.out.println("processComponentKinds using apiVersion: " + apiVersion + " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
                             if (!registry.isNamespaced(client, v.kind, apiVersion)) {
                                 Object o = registry.listClusterObject(client, v.kind, apiVersion, null, labelSelector, null, null);
-                                processComponents(client, response, v, getItemsAsList(client, o));
+                                processComponents(client, response, v, apiVersion, getItemsAsList(client, o));
                             } else {
                                 // If the component kind is namespaced, query components for each of the specified namespaces.
                                 final String apiVersion1 = apiVersion;    // to avoid compiler error
                                 namespaces.forEach(n -> {
                                     try {
                                         Object o = registry.listNamespacedObject(client, v.kind, apiVersion1, n, null, labelSelector, null, null);
-                                        processComponents(client, response, v, getItemsAsList(client, o), appNamespace, appName);
+                                        processComponents(client, response, v, apiVersion, getItemsAsList(client, o), appNamespace, appName);
                                     } catch (ApiException e) {
                                     }
                                 });
@@ -139,19 +140,27 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
         return Response.ok(response.getJSON()).build();
     }
     
-    private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, List<JsonObject> components) {
+    private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, 
+                                   String apiVersion, List<JsonObject> components) {
         final ConfigMapProcessor processor = new ConfigMapProcessor(componentKind.kind);
         final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(componentKind.kind);
         components.forEach(v -> {
             // Add 'kind' property to components that are missing it.
             if (v.get(KIND_PROPERTY_NAME) == null) {
                 v.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
-            }   
+            }  
+            
+            // Add 'apiVersion' property to components that are missing it.
+            if (v.get(APIVERSION_PROPERTY_NAME) == null) {
+                v.addProperty(APIVERSION_PROPERTY_NAME, apiVersion);
+            }
+
             response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
         });
     }
 
-    private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, List<JsonObject> components, String appNamespace, String appName) {
+    private void processComponents(ApiClient client, ComponentResponse response, ComponentKind componentKind, 
+                                   String apiVersion, List<JsonObject> components, String appNamespace, String appName) {
         final ConfigMapProcessor processor = new ConfigMapProcessor(componentKind.kind);
         final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(componentKind.kind);
         components.forEach(v -> {
@@ -159,7 +168,12 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             if (v.get(KIND_PROPERTY_NAME) == null) {
                 v.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
             }
-                       
+            
+            // Add 'apiVersion' property to components that are missing it.
+            if (v.get(APIVERSION_PROPERTY_NAME) == null) {
+                v.addProperty(APIVERSION_PROPERTY_NAME, apiVersion);
+            }
+
             // filter out recursive app from component list
             if (!(componentKind.kind.equals("Application") &&
                    getComponentName(v).equals(appName) &&

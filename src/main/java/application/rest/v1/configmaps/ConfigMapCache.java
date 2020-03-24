@@ -18,6 +18,7 @@ package application.rest.v1.configmaps;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ import javax.xml.namespace.QName;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
 
@@ -122,6 +124,29 @@ public class ConfigMapCache {
         });
     }
 
+    public static ArrayList <JsonObject> getConfigMapsAsJSON(ApiClient client, ArrayList<String> configMapsList) {
+        ArrayList<JsonObject> configMaps = new ArrayList<JsonObject>();
+        for (int i=0; i<configMapsList.size(); i++) { 
+            if (Logger.isDebugEnabled()) {
+                Logger.log(CLASS_NAME, "getConfigMapsAsJSON", Logger.LogType.DEBUG, 
+                    "configMapsList["+i+"]="+configMapsList.get(i));
+            }                                                   
+            String[] mapName = configMapsList.get(i).split("@");  // list entry format: mapname@namespace
+
+            // Configmap lookup in either the resource's namespace for an instance specfic configmaps
+            // or in the KindActionMapping resource's namespace for others.
+            V1ConfigMap map = getConfigMap(client, mapName[1], mapName[0]);
+            if (map != null) {
+                final JsonElement element = client.getJSON().getGson().toJsonTree(map);
+                if (element != null && element.isJsonObject()) {
+                    JsonObject mapJson = element.getAsJsonObject();
+                    configMaps.add(mapJson);
+                }
+            }
+        } // for loop
+        return configMaps;
+    }
+
     public static JsonElement getConfigMapAsJSON(ApiClient client, String namespace, String name) {
         V1ConfigMap map = getConfigMap(client, namespace, name);
         if (map != null) {
@@ -131,6 +156,10 @@ public class ConfigMapCache {
     }
 
     public static V1ConfigMap getConfigMap(ApiClient client, String namespace, String name) {
+        if (Logger.isEntryEnabled()) 
+        Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.ENTRY, 
+                   "name = " + name + ", namespace = " + namespace);
+
         QName tuple = new QName(namespace, name);
         Map<QName,SoftReference<V1ConfigMap>> mapCache = MAP_CACHE_REF.get();
         if (mapCache != null) {
@@ -138,6 +167,10 @@ public class ConfigMapCache {
                 SoftReference<V1ConfigMap> ref = mapCache.get(tuple);
                 V1ConfigMap map = ref.get();
                 if (map != null || ref == NULL_REFERENCE) {
+                    if (Logger.isExitEnabled()) 
+                    Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.EXIT, 
+                               "name = " + name + " in namespace " + namespace + " is found in the cache.");
+
                     return map;
                 }
                 if (Logger.isDebugEnabled()) {
@@ -152,10 +185,9 @@ public class ConfigMapCache {
             synchronized (LOCK) {
                 LOCK.notify();
             }
-            if (Logger.isDebugEnabled()) {
+            if (Logger.isDebugEnabled())
                 Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, 
                         "No ConfigMap cache available. Notify thread (" + WATCHER_THREAD_NAME + ") to awaken and re-establish the cache.");
-            }
         }
         try {
             CoreV1Api api = new CoreV1Api();
@@ -164,28 +196,33 @@ public class ConfigMapCache {
             V1ConfigMap map = api.readNamespacedConfigMap(name, namespace, null, null, null);
             if (mapCache != null) {
                 mapCache.put(tuple, new SoftReference<>(map));
-                if (Logger.isDebugEnabled()) {
+                if (Logger.isDebugEnabled()) 
                     Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, 
                             "Found ConfigMap, Name: " + name + ", Namespace: " 
                                     + namespace + ". Storing it in the cache.");
-                }
             }
+            if (Logger.isExitEnabled()) 
+                        Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.EXIT, 
+                                   "name = " + name + " is found in namespace " + namespace);
+
             return map;
         }
         catch (ApiException e) {
-            if (Logger.isDebugEnabled()) {
+            if (Logger.isDebugEnabled()) 
                 Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException: " + e.toString());
-            }
         }
         // No ConfigMap. Store null reference in the cache.
         if (mapCache != null) {
             mapCache.put(tuple, NULL_REFERENCE);
-            if (Logger.isDebugEnabled()) {
+            if (Logger.isDebugEnabled()) 
                 Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, 
                         "ConfigMap, Name: " + name + ", Namespace: " 
-                                + namespace + " not found. Storing a null reference in the cache.");
-            }
-        }
+                        + namespace + " not found. Storing a null reference in the cache.");
+        }      
+        if (Logger.isExitEnabled())
+            Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.EXIT, 
+                       "Return null as the confignmap " + name + " is not found in " + namespace);
+
         return null;
     }
 }

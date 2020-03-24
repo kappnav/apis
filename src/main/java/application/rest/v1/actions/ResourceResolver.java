@@ -31,8 +31,8 @@ public final class ResourceResolver implements Resolver {
     
     @Override
     public String resolve(ResolutionContext context, String suffix) throws PatternException {
-        if (Logger.isErrorEnabled()) {
-            Logger.log(ResourceResolver.class.getName(), "resolve", Logger.LogType.ERROR, "For suffix=" + suffix);
+        if (Logger.isDebugEnabled()) {
+            Logger.log(ResourceResolver.class.getName(), "resolve", Logger.LogType.DEBUG, "For suffix=" + suffix);
         }
         final JSONPathParser parser = new JSONPathParser();
         final JSONPath path = parser.parse(suffix);
