@@ -108,7 +108,10 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                     Set<String> apiVersions = registry.getComponentGroupApiVersions(v);
                     for (String apiVersion : apiVersions) {
                         if (apiVersion != null) {
-                            System.out.println("processComponentKinds using apiVersion: " + apiVersion + " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
+                            if (Logger.isDebugEnabled()) {
+                                Logger.log(className, "processComponentKinds", Logger.LogType.DEBUG, "Using apiVersion: " + apiVersion + 
+                                           " for Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind);
+                            }
                             if (!registry.isNamespaced(client, v.kind, apiVersion)) {
                                 Object o = registry.listClusterObject(client, v.kind, apiVersion, null, labelSelector, null, null);
                                 processComponents(client, response, v, apiVersion, getItemsAsList(client, o));
@@ -125,7 +128,7 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                             }
                         } else {
                             if (Logger.isWarningEnabled()) {
-                                Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, " Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
+                                Logger.log(className, "processComponentKinds", Logger.LogType.WARNING, "Application: " + appName +" componentKind group: " + v.group + " kind: " + v.kind + " not recognized. skipping");
                             }
                         }
                     }

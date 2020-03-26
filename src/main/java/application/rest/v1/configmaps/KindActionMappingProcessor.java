@@ -42,7 +42,7 @@ public class KindActionMappingProcessor {
     // KindActionMapping/KAM definitions
     private static final String KAM_PLURAL = "kindactionmappings";
     private static final String KAM_GROUP = "actions.kappnav.io";
-    private static final String KAM_VERSION = "v1beta1";
+    private static final String KAM_VERSION = "v1";
     private static final String WILDCARD = "*";
 
     private static final int MAX_PRECEDENCE = 9;
@@ -191,7 +191,7 @@ public class KindActionMappingProcessor {
         } catch  (ApiException e) {
             if (Logger.isErrorEnabled()) {
                 Logger.log(className, "getQualifiedKindActionMappings", Logger.LogType.ERROR, 
-                 "Caught PatternException returning status: " + e.toString());}
+                 "Caught ApiException: " + e.toString());}
         }
 
         if (Logger.isExitEnabled()) 

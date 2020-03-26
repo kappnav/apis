@@ -60,6 +60,9 @@ public class ConfigMapProcessor {
     }
 
     public JsonObject getConfigMap(ApiClient client, JsonObject component, ConfigMapType type) {
+        if (Logger.isEntryEnabled()) 
+            Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "ConfigMapType = " + type.toString());
+
         final ConfigMapBuilder builder = type == ConfigMapType.ACTION ? new ActionConfigMapBuilder() : new StatusMappingConfigMapBuilder();   
         final String namespace = KAppNavEndpoint.getComponentNamespace(component);        
         final String kind = KAppNavEndpoint.getComponentKind(component);
@@ -70,7 +73,6 @@ public class ConfigMapProcessor {
 
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.DEBUG,
-                       "\n type = " + type +
                        "\n component namespace = " + namespace +
                        "\n component apiVersion = " + apiVersion +
                        "\n component name= " + name +
@@ -101,8 +103,10 @@ public class ConfigMapProcessor {
             }
         }
 
-        System.out.println("EXIT: builder.getConfigMap()" + builder.getConfigMap());
-        return builder.getConfigMap();
+        JsonObject configMapFound = builder.getConfigMap();
+        if (Logger.isExitEnabled()) 
+            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "configMap found = " + configMapFound);
+        return configMapFound;
     }
 
     private String getConfigMapName(ConfigMapType type, String name, String subkind, String kind) {
