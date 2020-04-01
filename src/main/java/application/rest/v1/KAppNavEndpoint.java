@@ -53,7 +53,7 @@ public abstract class KAppNavEndpoint {
 
     protected static final String NAME_PATTERN_ONE_OR_MORE = "^[a-z0-9-.:]+$";
     protected static final String NAME_PATTERN_ZERO_OR_MORE = "^[a-z0-9-.:]*$";
-    protected static final String API_VERSION_PATTERN_ZERO_OR_MORE = "^[a-z0-9-.:/]*$";
+    protected static final String API_VERSION_PATTERN_ZERO_OR_MORE = "^[a-z0-9-.:/%]*$";
     
     private static final boolean DISABLE_TRUST_ALL_CERTS;
     private static final String DISABLE_TRUST_ALL_CERTS_PROPERTY = "kappnav.disable.trust.all.certs";
