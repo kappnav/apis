@@ -124,18 +124,18 @@ public class ConfigMapCache {
         });
     }
 
-    public static ArrayList <JsonObject> getConfigMapsAsJSON(ApiClient client, ArrayList<String> configMapsList) {
+    public static ArrayList <JsonObject> getConfigMapsAsJSON(ApiClient client, ArrayList<QName> configMapsList) {
         ArrayList<JsonObject> configMaps = new ArrayList<JsonObject>();
         for (int i=0; i<configMapsList.size(); i++) { 
             if (Logger.isDebugEnabled()) {
                 Logger.log(CLASS_NAME, "getConfigMapsAsJSON", Logger.LogType.DEBUG, 
                     "configMapsList["+i+"]="+configMapsList.get(i));
             }                                                   
-            String[] mapName = configMapsList.get(i).split("@");  // list entry format: mapname@namespace
+            QName mapName = configMapsList.get(i);  // list entry format: mapname@namespace
 
             // Configmap lookup in either the resource's namespace for an instance specfic configmaps
             // or in the KindActionMapping resource's namespace for others.
-            V1ConfigMap map = getConfigMap(client, mapName[1], mapName[0]);
+            V1ConfigMap map = getConfigMap(client, mapName.getNamespaceURI() , mapName.getLocalPart());
             if (map != null) {
                 final JsonElement element = client.getJSON().getGson().toJsonTree(map);
                 if (element != null && element.isJsonObject()) {
@@ -157,8 +157,7 @@ public class ConfigMapCache {
 
     public static V1ConfigMap getConfigMap(ApiClient client, String namespace, String name) {
         if (Logger.isEntryEnabled()) 
-        Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.ENTRY, 
-                   "name = " + name + ", namespace = " + namespace);
+            Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.ENTRY, "name = " + name + ", namespace = " + namespace);
 
         QName tuple = new QName(namespace, name);
         Map<QName,SoftReference<V1ConfigMap>> mapCache = MAP_CACHE_REF.get();

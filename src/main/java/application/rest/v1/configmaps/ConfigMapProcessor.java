@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.xml.namespace.QName;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
@@ -89,7 +91,51 @@ public class ConfigMapProcessor {
                     new KindActionMappingProcessor(namespace, apiVersion, name, subkind, kind);
                 String configMapName = getConfigMapName(type, name, subkind, kind);
                 map = getConfigMap(client, kam, namespace, configMapName, builder);
-            } else { // status mapping configmap       
+            } else { // status mapping configmap
+                // Map: kappnav.actions.{kind}[-{subkind}].{name}
+                if (name != null && !name.isEmpty()) {
+                    map = getConfigMap(client, null, namespace, 
+                                       getConfigMapName(type, (subkind != null && !subkind.isEmpty()) ? '-' + subkind + '.' + name : '.' + name),
+                                       null);
+                    if (map != null) {
+                        builder.merge(map);
+                        // Stop here if the action is replace.
+                        if (getConflictAction(map) == ConflictAction.REPLACE) {
+                            return builder.getConfigMap();
+                        }
+                    } else {
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-1 is null.");
+                        }
+                    }
+                }
+
+                // Map: kappnav.actions.{kind}-{subkind}
+                if (subkind != null && !subkind.isEmpty()) {
+                    map = getConfigMap(client, null, GLOBAL_NAMESPACE, getConfigMapName(type, '-' + subkind), null);
+                    if (map != null) {
+                        builder.merge(map);
+                        // Stop here if the action is replace.
+                        if (getConflictAction(map) == ConflictAction.REPLACE) {
+                            return builder.getConfigMap();
+                        }
+                    } else {
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-2 is null.");
+                         }
+                    }
+                 }
+
+                // Map: kappnav.actions.{kind}
+                map = getConfigMap(client, null, GLOBAL_NAMESPACE, getConfigMapName(type, ""), null);
+                if (map != null) {
+                    builder.merge(map);
+                } else {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-3 is null.");
+                    }
+                }
+
                 if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
                     // unregistered, try the unregistered configmap
                     map = getConfigMap(client, null, GLOBAL_NAMESPACE, getUnregisteredConfigMapName(), builder);
@@ -107,6 +153,10 @@ public class ConfigMapProcessor {
         if (Logger.isExitEnabled()) 
             Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "configMap found = " + configMapFound);
         return configMapFound;
+    }
+
+    private String getConfigMapName(ConfigMapType type, String suffix) {
+        return (type == ConfigMapType.ACTION ? actionNameWithKind : statusMappingNameWithKind) + suffix;
     }
 
     private String getConfigMapName(ConfigMapType type, String name, String subkind, String kind) {
@@ -141,7 +191,7 @@ public class ConfigMapProcessor {
         
         if (kam != null) {
             // get Configmaps declared in the KindActionMapping custom resources
-            ArrayList <String> configMapsList = kam.getConfigMapsFromKAMs(client);
+            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client);
 
             if (configMapsList != null) {
                 // look up the configmaps in a cluster
@@ -203,13 +253,9 @@ public class ConfigMapProcessor {
                 if (e != null && e.isJsonPrimitive()) {
                     String s = e.getAsString();
                     if ("merge".equals(s)) {
-                        if (Logger.isDebugEnabled()) 
-                            Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, "MERGE");
                         return ConflictAction.MERGE;
                     }
                     else if ("replace".equals(s)) {
-                        if (Logger.isDebugEnabled()) 
-                            Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, "REPLACE");
                         return ConflictAction.REPLACE;
                     }
                 }   
@@ -217,8 +263,6 @@ public class ConfigMapProcessor {
         }
 
         // Default value
-        if (Logger.isDebugEnabled()) 
-            Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, "MERGE");
         return ConflictAction.MERGE;
     }
 
@@ -240,7 +284,7 @@ public class ConfigMapProcessor {
                 if (getConflictAction(cMap) == ConflictAction.REPLACE) {
                     if (Logger.isDebugEnabled()) 
                         Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, 
-                                   "Stop merging with a REPLACE conflicit action");
+                                   "Stop merging with a REPLACE conflict action");
                     return;
                 }
             } else {
