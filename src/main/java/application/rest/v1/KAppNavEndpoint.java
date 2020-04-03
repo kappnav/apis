@@ -89,7 +89,7 @@ public abstract class KAppNavEndpoint {
     
     // Kind actions mapping properties
     private static final String API_VERSION_PROPERTY_NAME = "apiVersion";
-    private static final String KIND_PROPRETY_NAME = "kind";
+    private static final String KIND_PROPERTY_NAME = "kind";
 
      // Status object properties.
     private static final String VALUE_PROPERTY_NAME = "value";
@@ -193,7 +193,7 @@ public abstract class KAppNavEndpoint {
         if (Logger.isEntryEnabled())
             Logger.log(className, "getComponentKind", Logger.LogType.ENTRY,"");
 
-        final JsonElement kind_e = component.get(KIND_PROPRETY_NAME);
+        final JsonElement kind_e = component.get(KIND_PROPERTY_NAME);
         String kind = null;
         if (kind_e != null)
             kind = kind_e.getAsString();
