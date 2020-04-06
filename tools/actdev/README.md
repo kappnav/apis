@@ -51,7 +51,7 @@ In this mini tutorial, we will create an action to open the stock-trader applica
 1. create, with command: 
 
 ```
-kubectl apply -f loyalty_route.md
+kubectl apply -f loyalty_route.yaml
 ```
 
 ### 2. Design URL action
@@ -99,7 +99,7 @@ http://${snippet.get_route_host(${func.kubectlGet(Route,${resource.$.metadata.na
 Download [loyalty_action.md](https://github.com/kappnav/apis/blob/master/tools/actdev/doc/loyalty_actions.yaml) and install with command: 
 
 ```
-kubectl apply -f loyalty_action.md
+kubectl apply -f loyalty_action.yaml
 ```
 
 ### 4. Test URl action substitution
