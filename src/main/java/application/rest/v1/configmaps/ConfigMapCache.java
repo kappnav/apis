@@ -105,9 +105,8 @@ public class ConfigMapCache {
             public void processResponse(ApiClient client, String type, V1ConfigMap object) {
                 // Invalidate the cache if any changes are made to the ConfigMaps under watch.
                 MAP_CACHE_REF.set(new ConcurrentHashMap<>());
-                V1ObjectMeta meta = object.getMetadata();
                 if (Logger.isDebugEnabled()) {
-                    //V1ObjectMeta meta = object.getMetadata();
+                    V1ObjectMeta meta = object.getMetadata();
                     Logger.log(getClass().getName(), "processResponse", Logger.LogType.DEBUG, "ConfigMap Cache invalidated due to ConfigMap change event :: Type: " 
                             + type + " :: Name: " + meta.getName() + " :: Namespace: " + meta.getNamespace());
                 }
