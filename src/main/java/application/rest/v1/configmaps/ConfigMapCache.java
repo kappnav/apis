@@ -196,24 +196,22 @@ public class ConfigMapCache {
             V1ConfigMap map = api.readNamespacedConfigMap(name, namespace, null, null, null);
 
             // issue warning if kappnav.io/map-type label is not set
-            V1ObjectMeta metadata = map.getMetadata();
-            if (metadata != null) {
-                Map labels = metadata.getLabels();
-                if (labels != null) {
-                    String mapType = (String) labels.get("kappnav.io/map-type");
-                    if (mapType == null) {
-                        if (Logger.isWarningEnabled()) {
+            if (Logger.isWarningEnabled()) {
+                V1ObjectMeta metadata = map.getMetadata();
+                if (metadata != null) {
+                    Map labels = metadata.getLabels();
+                    if (labels != null) {
+                        String mapType = (String) labels.get("kappnav.io/map-type");
+                        if (mapType == null) {
                             Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.WARNING, 
-                                "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " 
-                                    + namespace + " is not set.");
+                                "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " + namespace + 
+                                    " is not set. This ConfigMap is not being watched so it's cache entry may become stale and not contain the current resource from the cluster.");
                         }
                     }
                 } else {
-                    if (Logger.isWarningEnabled()) {
-                        Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.WARNING, 
-                            "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " 
-                                + namespace + " is not set.");
-                    }
+                    Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.WARNING, 
+                        "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " + namespace + 
+                        " is not set. This ConfigMap is not being watched so it's cache entry may become stale and not contain the current resource from the cluster.");
                 }
             }
 
