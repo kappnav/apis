@@ -51,7 +51,7 @@ public class KindActionMappingProcessor {
     private static final String WILDCARD = "*";
 
     private static final int MAX_PRECEDENCE = 9;
-    private static final int TOTAL_INDIVIDUAL_MAPPINGS = 4;
+    private static final int TOTAL_KSN_VALUES = 4;
     private static final int KAM_N = 10;
 
     private static final int KSN = 3; // Kind, Subkind, name - instance specific
@@ -130,7 +130,7 @@ public class KindActionMappingProcessor {
         if (Logger.isEntryEnabled()) 
                 Logger.log(className, methodName, Logger.LogType.ENTRY,"");
 
-        QName[][][] mapNamesFound = new QName[MAX_PRECEDENCE][KAM_N][TOTAL_INDIVIDUAL_MAPPINGS];
+        QName[][][] mapNamesFound = new QName[MAX_PRECEDENCE][KAM_N][TOTAL_KSN_VALUES];
         ArrayList<QName> configMapsList = null;
         List <JsonObject> kamList = null;
 
@@ -218,8 +218,8 @@ public class KindActionMappingProcessor {
                                                                 new QName(kamNamespace, mapname);
                                                         if (Logger.isDebugEnabled()) 
                                                             Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                                                               "mapName " + mapname + " is stored in configMapsFound["+precedenceIndex+"]["+
-                                                               kamNIndex+"][" + kamMappingPropIdx+"]");
+                                                               "mapName " + mapname + " is stored in configMapsFound["+kamMappingPropIdx+"]["+
+                                                               precedenceIndex+"][" + kamNIndex+"]");
                                                     } else {
                                                         if (Logger.isWarningEnabled()) 
                                                             Logger.log(className, methodName, Logger.LogType.WARNING, 
@@ -248,7 +248,11 @@ public class KindActionMappingProcessor {
             });  // kamList.forEach
              
             // process candidate mapnames including a string substitution as needed and then store 
-            // them to a list according the configmap hierarchy and (high to low) precedence 
+            // them to a list according the configmap hierarchy and (high to low) precedence
+            // 
+            // The symbols ${namespace}, ${kind}, ${subkind}, and ${name} can specified in the mapname 
+            // value to be substituted at time of use with the matching resource's namespace, kind, 
+            // subkind, or name value, respectively. 
             configMapsList = processCandidateMapnames(mapNamesFound, compNamespace);
         } catch  (ApiException e) {
             if (Logger.isErrorEnabled()) {
@@ -472,11 +476,11 @@ public class KindActionMappingProcessor {
 
     /**
      * Process mapnames with variable substitution if applies and store the mapnames along with their
-     * namespaces in a list according to the configmap hierarchy and precedence in decedending order
+     * namespaces in a list according to the configmap hierarchy and precedence in descending order 
+     * (the kams has the same precedence in ascending order)
      * 
      * @param configMapsFound configmaps found
-     * @param namespace resource's namespace if this is a instance specific configmaps;
-     *                  kam's namespace for all other configmaps.
+     * @param namespace resource's namespace
      * @return processed configmap list
      */
     private ArrayList<QName> processCandidateMapnames(QName[][][] configMapsFound, String namespace) {
