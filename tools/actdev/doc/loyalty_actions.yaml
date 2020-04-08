@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kappnav.actions.deployment-liberty.loyalty-level
+  name: stock-trader.actions.deployment-liberty.loyalty-level
   namespace: stock-trader
 data:
   url-actions: |
