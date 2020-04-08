@@ -33,8 +33,10 @@ import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
 
 import application.rest.v1.KAppNavConfig;
+import application.rest.v1.MatchExpression;
 import application.rest.v1.Selector;
 import application.rest.v1.Watcher;
+import application.rest.v1.MatchExpression.Operator;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
@@ -80,7 +82,7 @@ public class ConfigMapCache {
                 final CoreV1Api api = new CoreV1Api();
                 api.setApiClient(client);
                 final Selector selector = getSelector();
-                final V1ConfigMapList list = api.listNamespacedConfigMap(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, null, null, null);
+                final V1ConfigMapList list = api.listConfigMapForAllNamespaces(null, null, null, selector.toString(), null, null, null, null, null);
                 resourceVersion.set(list.getMetadata().getResourceVersion());
                 return list.getItems();
             }
@@ -90,7 +92,7 @@ public class ConfigMapCache {
                 final CoreV1Api api = new CoreV1Api();
                 api.setApiClient(client);
                 final Selector selector = getSelector();
-                return api.listNamespacedConfigMapCall(KAPPNAV_NAMESPACE, null, null, null, null, selector.toString(), null, resourceVersion, null, Boolean.TRUE, null, null);
+                return api.listConfigMapForAllNamespacesCall(null, null, null, selector.toString(), null, null, resourceVersion, null, Boolean.TRUE, null, null);
             }
             
             @SuppressWarnings("serial")
@@ -118,7 +120,8 @@ public class ConfigMapCache {
             
             private Selector getSelector() {
                 final Selector selector = new Selector();
-                selector.addMatchLabel("app.kubernetes.io/managed-by", "kappnav-operator");
+                MatchExpression me = new MatchExpression("kappnav.io/map-type", Operator.EXISTS);
+                selector.addMatchExpression(me);
                 return selector;
             }
         });
@@ -158,7 +161,6 @@ public class ConfigMapCache {
     public static V1ConfigMap getConfigMap(ApiClient client, String namespace, String name) {
         if (Logger.isEntryEnabled()) 
             Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.ENTRY, "name = " + name + ", namespace = " + namespace);
-
         QName tuple = new QName(namespace, name);
         Map<QName,SoftReference<V1ConfigMap>> mapCache = MAP_CACHE_REF.get();
         if (mapCache != null) {
@@ -191,8 +193,28 @@ public class ConfigMapCache {
         try {
             CoreV1Api api = new CoreV1Api();
             api.setApiClient(client);
-
             V1ConfigMap map = api.readNamespacedConfigMap(name, namespace, null, null, null);
+
+            // issue warning if kappnav.io/map-type label is not set
+            if (Logger.isWarningEnabled()) {
+                V1ObjectMeta metadata = map.getMetadata();
+                if (metadata != null) {
+                    Map labels = metadata.getLabels();
+                    if (labels != null) {
+                        String mapType = (String) labels.get("kappnav.io/map-type");
+                        if (mapType == null) {
+                            Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.WARNING, 
+                                "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " + namespace + 
+                                    " is not set. This ConfigMap is not being watched so it's cache entry may become stale and not contain the current resource from the cluster.");
+                        }
+                    }
+                } else {
+                    Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.WARNING, 
+                        "Label kappnav.io/map-type on ConfigMap Name: " + name + ", Namespace: " + namespace + 
+                        " is not set. This ConfigMap is not being watched so it's cache entry may become stale and not contain the current resource from the cluster.");
+                }
+            }
+
             if (mapCache != null) {
                 mapCache.put(tuple, new SoftReference<>(map));
                 if (Logger.isDebugEnabled()) 
@@ -210,6 +232,7 @@ public class ConfigMapCache {
             if (Logger.isDebugEnabled()) 
                 Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, "Caught ApiException: " + e.toString());
         }
+
         // No ConfigMap. Store null reference in the cache.
         if (mapCache != null) {
             mapCache.put(tuple, NULL_REFERENCE);
