@@ -82,7 +82,7 @@ public class KindActionMappingProcessor {
     public KindActionMappingProcessor(String namespace, String apiVersion, String name,
                                       String subkind, String kind) {
         this.compNamespace = namespace;
-        this.compApiVersion = apiVersion;
+        this.compApiVersion = normalizeApiVersion(apiVersion);
         this.compName = name;
         this.compSubkind = subkind;
         this.compKind = kind;
@@ -185,7 +185,8 @@ public class KindActionMappingProcessor {
                                                        "\nkind = " + kind + 
                                                        "\nmapname = " + mapname);
 
-                                            if (isApiVersionMatch(apiVersion, compApiVersion)) {
+                                            String normalizedApiVersion = normalizeApiVersion(apiVersion);
+                                            if (isApiVersionMatch(normalizedApiVersion, compApiVersion)) {
                                                 int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
                                                 int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
@@ -287,6 +288,22 @@ public class KindActionMappingProcessor {
         Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, 
                              null, null, null);
         return KAppNavEndpoint.getItemAsList(client, kamResource);
+    }
+
+    /**
+     * Normalize the apiVersion given with removing leading "/"
+     * 
+     * @param apiVersion
+     * @return apiVersion normalized
+     */
+    private String normalizeApiVersion(String apiVersion) {
+        String methodName = "normalizeApiVersion";
+        if (apiVersion.startsWith("/") && (apiVersion.length() > 1) ) {
+            apiVersion = apiVersion.substring(1);
+            if (Logger.isDebugEnabled())
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "apiVersion normalized = " + apiVersion);
+        }
+        return apiVersion;
     }
 
     /**

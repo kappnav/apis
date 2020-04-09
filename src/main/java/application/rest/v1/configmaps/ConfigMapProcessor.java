@@ -77,7 +77,7 @@ public class ConfigMapProcessor {
             Logger.log(className, "getConfigMap", Logger.LogType.DEBUG,
                        "\n component namespace = " + namespace +
                        "\n component apiVersion = " + apiVersion +
-                       "\n component name= " + name +
+                       "\n component name = " + name +
                        "\n component subkind= " + subkind +
                        "\n component kind = " + kind);
         }
