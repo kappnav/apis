@@ -249,11 +249,7 @@ public class KindActionMappingProcessor {
             });  // kamList.forEach
              
             // process candidate mapnames including a string substitution as needed and then store 
-            // them to a list according the configmap hierarchy and (high to low) precedence
-            // 
-            // The symbols ${namespace}, ${kind}, ${subkind}, and ${name} can specified in the mapname 
-            // value to be substituted at time of use with the matching resource's namespace, kind, 
-            // subkind, or name value, respectively. 
+            // them to a list according the configmap hierarchy and (high to low) precedence 
             configMapsList = processCandidateMapnames(mapNamesFound, compNamespace);
         } catch  (ApiException e) {
             if (Logger.isErrorEnabled()) {
@@ -497,7 +493,7 @@ public class KindActionMappingProcessor {
      * (the kams has the same precedence in ascending order)
      * 
      * @param configMapsFound configmaps found
-     * @param namespace resource's namespace
+     * @param namespace matching resource's namespace
      * @return processed configmap list
      */
     private ArrayList<QName> processCandidateMapnames(QName[][][] configMapsFound, String namespace) {
@@ -526,11 +522,11 @@ public class KindActionMappingProcessor {
     }
 
     /**
-     * Substitute the string variables like namespace, name, subkind, kind with actual values passed in
-     * For example,  mapname: ${namespace}.actions.${kind}.${name} 
+     * Substitute the string variables ${namespace}, ${kind}, %{subkind}, and ${name}
+     * in a mapname with the namespace, kind, subkind, and name of a matching resouce
      * 
      * @param rawMapName mapName without the string substitute
-     * @param namespace namespace of a configmap being looked up
+     * @param namespace matching resource's namespace
      * @return substituted mapName
      */
     private String mapNameSubstitute(String rawMapName, String namespace) {
