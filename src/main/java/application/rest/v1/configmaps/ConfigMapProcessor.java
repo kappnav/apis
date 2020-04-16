@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
@@ -71,6 +70,7 @@ public class ConfigMapProcessor {
         final String apiVersion = KAppNavEndpoint.getComponentApiVersion(component, kind);
         final String subkind = KAppNavEndpoint.getComponentSubKind(component);
         final String name = KAppNavEndpoint.getComponentName(component);
+        final OwnerRef[] owners = KAppNavEndpoint.getOwners(component);
         JsonObject map = null;
 
         if (Logger.isDebugEnabled()) {
@@ -79,7 +79,8 @@ public class ConfigMapProcessor {
                        "\n component apiVersion = " + apiVersion +
                        "\n component name = " + name +
                        "\n component subkind= " + subkind +
-                       "\n component kind = " + kind);
+                       "\n component kind = " + kind + 
+                       "\n component ownerReferences = " + ownerRefArrayToString(owners));
         }
 
         if ((apiVersion == null) || (apiVersion.isEmpty())) {
@@ -88,7 +89,7 @@ public class ConfigMapProcessor {
         } else {            
             if (type == ConfigMapType.ACTION) {  // using KAM CRs for action configmaps
                 KindActionMappingProcessor kam =
-                    new KindActionMappingProcessor(namespace, apiVersion, name, subkind, kind);
+                    new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
                 String configMapName = getConfigMapName(type, name, subkind, kind);
                 map = getConfigMap(client, kam, namespace, configMapName, builder);
             } else { // status mapping configmap
@@ -153,6 +154,29 @@ public class ConfigMapProcessor {
         if (Logger.isExitEnabled()) 
             Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "configMap found = " + configMapFound);
         return configMapFound;
+    }
+
+    /**
+     * Return printable version of ownerRef array in this format: 
+     * 
+     * Return string "null" if input array is null 
+     * Return string "empty" if input array is empty 
+     * Otherwise return array as string "[ element1 ][elemnt 2] ..."
+     * */ 
+    private String ownerRefArrayToString(OwnerRef[] array) { 
+        String string= null;
+        if ( array == null ) { 
+            string= "null";
+        }
+        else if ( array.length == 0 ) { 
+            string= "empty";
+        }
+        else { 
+            for (int i=0; i < array.length; i++) { 
+                string= (string == null) ? "[" + array[i] + "]" : string + "[" + array[i] + "]"; 
+            } 
+        }
+        return string; 
     }
 
     private String getConfigMapName(ConfigMapType type, String suffix) {
