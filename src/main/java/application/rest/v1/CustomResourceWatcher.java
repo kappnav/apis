@@ -20,6 +20,13 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+
 import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -116,7 +123,7 @@ public class CustomResourceWatcher {
                 if (loggingE != null && loggingE.isJsonObject()) {
                     JsonObject loggingObj = loggingE.getAsJsonObject();        
                     if (loggingObj != null) { 
-                        // only check for apis setting for now                                                               
+                        // check for apis setting                                                        
                         JsonElement levelE  = loggingObj.get("apis"); 
                         if (levelE != null && levelE.isJsonPrimitive())  {               
                             String level = levelE.getAsString();
@@ -137,9 +144,48 @@ public class CustomResourceWatcher {
                             if (level.equals("all"))
                                 Logger.setLogLevel(Logger.LogLevel.ALL);    
                         }
+                        
+                        //check for ui setting
+                        JsonElement levelUi  = loggingObj.get("ui"); 
+                        if (levelUi != null && levelUi.isJsonPrimitive())  {               
+                            String level = levelUi.getAsString();
+                            setUILogLevel(level);   
+                        }
                     }
                 } 
             }
         }                                                    
     }
- }
+
+    public static void setUILogLevel(String level) {
+        String methodName = "setUILogLevel";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, level);
+        }
+
+        if (level.equals("warning")) {
+            level = "warn";
+        } else if (level.equals("none")) {
+            level = "off";
+        } else if (level.equals("entry")) {
+            level = "trace";
+        }
+
+        String url = "http://localhost:3000/extensions/logLevel";
+        String requestString = "{\"level\": \"" + level + "\"}";
+        UriBuilder uriBuilder = UriBuilder.fromPath(url);
+        Client client = ClientBuilder.newClient();
+        Response response = client.target(uriBuilder).request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(requestString));
+        int status = response.getStatus();
+        client.close();
+        if (status != 200 && Logger.isErrorEnabled()) {
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR,
+                    "Failed to set UI log level to " + level + ". Response status was: " + status);
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "Response status: " + status);
+        }
+    }
+
+}
