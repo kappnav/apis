@@ -136,6 +136,13 @@ public class KindActionMappingProcessor {
 
         try {
             kamList = listKAMCustomResources(client);
+
+            if ( (kamList == null) || (kamList.isEmpty()) ){
+                if (Logger.isExitEnabled()) 
+                    Logger.log(className, methodName, Logger.LogType.EXIT, "No KindActionMapping CR instance found.");
+                return configMapsList;
+            }
+
             kamList.forEach (v -> {
                 JsonElement items = v.get(ITEMS_PROPERTY_NAME);
                 if ((items != null) && (items.isJsonArray())) {
@@ -163,21 +170,22 @@ public class KindActionMappingProcessor {
                                 JsonArray mappings = spec.getAsJsonArray(MAPPINGS_PROPERTY_NAME);
 
                                 // iterate through each mapping within a KAM custom resource
-                                mappings.forEach(mapItem-> {
-                                    if (mapItem != null) {
-                                        JsonObject props = mapItem.getAsJsonObject();
-                                        if (props != null) {
-                                            JsonElement prop = props.get(APIVERSION_PROPERTY_NAME);
-                                            String apiVersion = (prop != null) ? prop.getAsString():null;
-                                            prop = props.get(NAME_PROPERTY_NAME);
-                                            String name = (prop != null) ? prop.getAsString():null;
-                                            prop = props.get(SUBKIND_PROPERTY_NAME);
-                                            String subkind = (prop != null) ? prop.getAsString():null;
-                                            prop = props.get(KIND_PROPERTY_NAME);
-                                            String kind = (prop != null) ? prop.getAsString():null;
-                                            prop = props.get(MAPNAME_PROPERTY_NAME);
-                                            String mapname = (prop != null) ? prop.getAsString():null;
-                                            Logger.log(className, methodName, Logger.LogType.DEBUG,
+                                if (mappings != null) {
+                                    mappings.forEach(mapItem-> {
+                                        if (mapItem != null) {
+                                            JsonObject props = mapItem.getAsJsonObject();
+                                            if (props != null) {
+                                                JsonElement prop = props.get(APIVERSION_PROPERTY_NAME);
+                                                String apiVersion = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(NAME_PROPERTY_NAME);
+                                                String name = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(SUBKIND_PROPERTY_NAME);
+                                                String subkind = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(KIND_PROPERTY_NAME);
+                                                String kind = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(MAPNAME_PROPERTY_NAME);
+                                                String mapname = (prop != null) ? prop.getAsString():null;
+                                                Logger.log(className, methodName, Logger.LogType.DEBUG,
                                                        "\nmapping info: " + 
                                                        "\napiVersion = " + apiVersion +
                                                        "\nname = " + name +
@@ -185,63 +193,69 @@ public class KindActionMappingProcessor {
                                                        "\nkind = " + kind + 
                                                        "\nmapname = " + mapname);
 
-                                            String normalizedApiVersion = normalizeApiVersion(apiVersion);
-                                            if (isApiVersionMatch(normalizedApiVersion, compApiVersion)) {
-                                                int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
-                                                int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
+                                                String normalizedApiVersion = normalizeApiVersion(apiVersion);
+                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion)) {
+                                                    int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
+                                                    int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
-                                                // if the resource given matches the kind action mapping rules?
-                                                boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx, 
-                                                                                        name, subkind, kind);
+                                                    // if the resource given matches the kind action mapping rules?
+                                                    boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx, 
+                                                                                            name, subkind, kind);
 
-                                                if (matches){                                               
-                                                    // find next available slot for a kam in same precedence
-                                                    // currently, we allow 10 kams with the same precedence with this impl.
-                                                    // The kam found after all slots are used are being ignored with a warning.
-                                                    int kamNIndex=-1;
-                                                    for (int i=0; i<KAM_N; i++) {
-                                                        if (mapNamesFound[precedenceIndex][i][kamMappingPropIdx] == null) { 
-                                                            kamNIndex = i;
-                                                            break;
-                                                        }   
-                                                    }
+                                                    if (matches) {                                               
+                                                        // find next available slot for a kam in same precedence
+                                                        // currently, we allow 10 kams with the same precedence with this impl.
+                                                        // The kam found after all slots are used are being ignored with a warning.
+                                                        int kamNIndex=-1;
+                                                        for (int i=0; i<KAM_N; i++) {
+                                                            if (mapNamesFound[precedenceIndex][i][kamMappingPropIdx] == null) { 
+                                                                kamNIndex = i;
+                                                                break;
+                                                            }   
+                                                        }
 
-                                                    // each mapname found is stored in the 3D array as "mapname@namespace"
-                                                    // D1: precedence;
-                                                    // D2: kams-in-same-precedence;
-                                                    // D3: possible combination of kam mapping properties (kind, subkind, and name)
-                                                    if (kamNIndex != -1) {
-                                                        if ((kamMappingPropIdx == KSN) || (kamMappingPropIdx == KN))
-                                                            mapNamesFound[precedenceIndex][kamNIndex][kamMappingPropIdx] = 
-                                                                new QName(compNamespace, mapname);
-                                                        else
-                                                            mapNamesFound[precedenceIndex][kamNIndex][kamMappingPropIdx] = 
-                                                                new QName(kamNamespace, mapname);
-                                                        if (Logger.isDebugEnabled()) 
-                                                            Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                                                               "mapName " + mapname + " is stored in configMapsFound["+kamMappingPropIdx+"]["+
-                                                               precedenceIndex+"][" + kamNIndex+"]");
-                                                    } else {
-                                                        if (Logger.isWarningEnabled()) 
-                                                            Logger.log(className, methodName, Logger.LogType.WARNING, 
+                                                        // each mapname found is stored in the 3D array as "mapname@namespace"
+                                                        // D1: precedence;
+                                                        // D2: kams-in-same-precedence;
+                                                        // D3: possible combination of kam mapping properties (kind, subkind, and name)
+                                                        if (kamNIndex != -1) {
+                                                            if ((kamMappingPropIdx == KSN) || (kamMappingPropIdx == KN))
+                                                                mapNamesFound[precedenceIndex][kamNIndex][kamMappingPropIdx] = 
+                                                                    new QName(compNamespace, mapname);
+                                                            else
+                                                                mapNamesFound[precedenceIndex][kamNIndex][kamMappingPropIdx] = 
+                                                                    new QName(kamNamespace, mapname);
+                                                            if (Logger.isDebugEnabled()) 
+                                                                Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                                                                           "mapName " + mapname + " is stored in configMapsFound["+kamMappingPropIdx+"]["
+                                                                           + precedenceIndex+"][" + kamNIndex+"]");
+                                                        } else {
+                                                            if (Logger.isWarningEnabled()) 
+                                                                Logger.log(className, methodName, Logger.LogType.WARNING, 
                                                                        "The number of kams with the precedence " + precedenceIndex+1 + 
                                                                        " passes the limit of " + KAM_N);
-                                                    }
+                                                        }
+                                                    } else {
+                                                        if (Logger.isDebugEnabled()) 
+                                                            Logger.log(className, methodName, Logger.LogType.DEBUG, "no match!!!");
+                                                    }                                                
                                                 } else {
-                                                    if (Logger.isDebugEnabled()) 
-                                                        Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                                                        "no match!!!");
-                                                }                                                
-                                             } else {
-                                                if (apiVersion == null) {
-                                                    if (Logger.isErrorEnabled()) 
-                                                        Logger.log(className, methodName, Logger.LogType.ERROR, 
+                                                    if (apiVersion == null) {
+                                                        if (Logger.isErrorEnabled()) 
+                                                            Logger.log(className, methodName, Logger.LogType.ERROR, 
                                                                    "apiVersion of the KindActionMapping resource " + name + " is null.");
+                                                    }
                                                 }
-                                             }
+                                            }
                                         }
+                                    });  // mappings.forEach
+                                } else {
+                                    String kamName = getKAMName(item);
+                                    if (Logger.isErrorEnabled()) {
+                                        Logger.log(className, methodName, Logger.LogType.ERROR, 
+                                                   "There is no mappings properties found for the KAM: " + kamName);
                                     }
-                                });  // mappings.forEach
+                                }
                             }   
                         }
                     }); // itemsArray.forEach
@@ -330,6 +344,33 @@ public class KindActionMappingProcessor {
         return namespaceStr;
     }
 
+    /**
+     * Get the name for the given KindActionMapping resource
+     * 
+     * @param kam
+     * @return the name for the given kam resource
+     */
+    private String getKAMName(JsonElement kam) {
+        String methodName = "getKAMName";
+        if (Logger.isEntryEnabled())
+            Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+
+        String nameStr = null;
+        JsonElement metadata = (JsonObject) kam.getAsJsonObject().get(METADATA_PROPERTY_NAME);
+        if (metadata != null) {
+            JsonObject name = metadata.getAsJsonObject();
+            if (name != null) 
+                nameStr = name.get(NAME_PROPERTY_NAME).getAsString();
+        } else {
+            if (Logger.isDebugEnabled()) 
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "kam metadata is null.");
+        }
+
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "kam namespace = " + nameStr);
+        } 
+        return nameStr;
+    }
     private static final int GROUP = 0; 
     private static final int VERSION = 1;
     private static final int GROUPLESS_VERSION = 0;
