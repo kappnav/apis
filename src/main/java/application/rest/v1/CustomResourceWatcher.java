@@ -55,7 +55,7 @@ public class CustomResourceWatcher {
     private static final String WATCHER_THREAD_NAME = "kAppNav Custom Resource Watcher";
     
     //Needed so that we are not making REST calls to update the UI logger level everytime the kappnav CR is updated (which is very frequent)
-    private static String CURRENT_UI_LOG_LEVEL = "";
+    private static String CURRENT_UI_LOG_LEVEL = "info";
 
     public static void startCustomResourceWatcher() {
         Watcher.start(new Watcher.Handler<Object>() {
@@ -149,13 +149,23 @@ public class CustomResourceWatcher {
                                 Logger.setLogLevel(Logger.LogLevel.ALL);    
                         }
                         
-                        //check for ui setting
-                        JsonElement levelUi  = loggingObj.get("ui"); 
-                        if (UI_LOG_LEVEL_API != null && levelUi != null && levelUi.isJsonPrimitive())  {               
-                            String level = levelUi.getAsString();
-                            
-                            if(!CURRENT_UI_LOG_LEVEL.equals(level)) {
-                                setUILogLevel(level); 
+                        // check for ui log setting
+                        if (UI_LOG_LEVEL_API != null) {
+                            JsonElement levelUi = loggingObj.get("ui");
+                            if (levelUi != null && levelUi.isJsonPrimitive()) {
+                                // match levels with levels that the UI supports
+                                String newLevel = levelUi.getAsString();
+                                if (newLevel.equals("warning")) {
+                                    newLevel = "warn";
+                                } else if (newLevel.equals("none")) {
+                                    newLevel = "off";
+                                } else if (newLevel.equals("entry")) {
+                                    newLevel = "trace";
+                                }
+
+                                if (!CURRENT_UI_LOG_LEVEL.equals(newLevel)) {
+                                    setUILogLevel(newLevel);
+                                }
                             }
                         }
                     }
@@ -170,17 +180,7 @@ public class CustomResourceWatcher {
             Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, level);
         }
 
-        //match levels with levels that the UI supports
-        String newLevel = level;
-        if (level.equals("warning")) {
-            newLevel = "warn";
-        } else if (level.equals("none")) {
-            newLevel = "off";
-        } else if (level.equals("entry")) {
-            newLevel = "trace";
-        }
-
-        String requestString = "{\"level\": \"" + newLevel + "\"}";
+        String requestString = "{\"level\": \"" + level + "\"}";
         UriBuilder uriBuilder = UriBuilder.fromPath(UI_LOG_LEVEL_API);
         Client client = ClientBuilder.newClient();
         Response response = client.target(uriBuilder).request(MediaType.APPLICATION_JSON)
@@ -189,11 +189,11 @@ public class CustomResourceWatcher {
         client.close();
         
         if(status == 200)
-            CURRENT_UI_LOG_LEVEL = newLevel;
+            CURRENT_UI_LOG_LEVEL = level;
         
         if (status != 200 && Logger.isErrorEnabled()) {
             Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR,
-                    "Failed to set UI log level to " + newLevel + ". Response status was: " + status);
+                    "Failed to set UI log level to " + level + ". Response status was: " + status);
         }
         if (Logger.isExitEnabled()) {
             Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "Response status: " + status);
