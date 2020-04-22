@@ -45,9 +45,7 @@ public class KindActionMappingProcessor {
     private static final String className = KindActionMappingProcessor.class.getName();
 
     // KindActionMapping/KAM definitions
-    private static final String KAM_PLURAL = "kindactionmappings";
-    private static final String KAM_GROUP = "actions.kappnav.io";
-    private static final String KAM_VERSION = "v1";
+
     private static final String WILDCARD = "*";
 
     private static final int MAX_PRECEDENCE = 9;
@@ -135,7 +133,7 @@ public class KindActionMappingProcessor {
         List <JsonObject> kamList = null;
 
         try {
-            kamList = listKAMCustomResources(client);
+            kamList = KindActionMappingCache.listKAMCustomResources(client);
 
             if ( (kamList == null) || (kamList.isEmpty()) ){
                 if (Logger.isExitEnabled()) 
@@ -276,29 +274,7 @@ public class KindActionMappingProcessor {
         return configMapsList;
     }
 
-    /**
-     * Get all "KindActionMapping" custom resources in a cluster
-     * 
-     * @param client apiVersion
-     * @return a list of KAM CR instances in a cluster
-     * @throws ApiException
-     */
-    protected List<JsonObject> listKAMCustomResources(ApiClient client) 
-        throws ApiException {
-        String methodName = "listKAMCustomResources";
-        final CustomObjectsApi coa = new CustomObjectsApi();
-        coa.setApiClient(client);
-        if (Logger.isDebugEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                "\n List KAM Custom Resources for all namespaces with" +
-                "\n group = " + "actions.kappnav.io" + 
-                "\n namespace = kappnav and name = default");
-        }
 
-        Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, 
-                             null, null, null);
-        return KAppNavEndpoint.getItemAsList(client, kamResource);
-    }
 
     /**
      * Normalize the apiVersion given with removing leading "/"
@@ -350,7 +326,7 @@ public class KindActionMappingProcessor {
      * @param kam
      * @return the name for the given kam resource
      */
-    private String getKAMName(JsonElement kam) {
+    protected static String getKAMName(JsonElement kam) {
         String methodName = "getKAMName";
         if (Logger.isEntryEnabled())
             Logger.log(className, methodName, Logger.LogType.ENTRY,"");
