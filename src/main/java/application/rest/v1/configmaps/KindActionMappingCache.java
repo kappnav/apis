@@ -171,10 +171,18 @@ public class KindActionMappingCache {
         });
     }
 
-    public static long updateModCount() {
+    private static long updateModCount() {
         return MOD_COUNT.incrementAndGet();
     }
 
+    /**
+     * Get all "KindActionMapping" custom resources in the kam cache first; if no kams available
+     * in the kam cahce, get them from a cluster
+     * 
+     * @param client apiVersion
+     * @return a list of KAM CR instances in a cluster
+     * @throws ApiException
+     */
     public static List<JsonObject> listKAMCustomResources(ApiClient client) throws ApiException {
         String methodName = "listKAMCRObjects";
         final Map<String,Map<String,JsonObject>> mapCache = MAP_CACHE_REF.get();
@@ -220,7 +228,7 @@ public class KindActionMappingCache {
      * @return a list of KAM CR instances in a cluster
      * @throws ApiException
      */
-    protected static List<JsonObject> listKAMCustomResourcesFromCluster(ApiClient client) 
+    private static List<JsonObject> listKAMCustomResourcesFromCluster(ApiClient client) 
         throws ApiException {
         String methodName = "listKAMCustomResourcesFromCluster";
         final CustomObjectsApi coa = new CustomObjectsApi();
