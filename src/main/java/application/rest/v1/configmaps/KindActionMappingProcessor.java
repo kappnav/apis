@@ -68,6 +68,9 @@ public class KindActionMappingProcessor {
     private static final String MAPPINGS_PROPERTY_NAME = "mappings";
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
+    private static final String OWNER_PROPERTY_NAME = "owner"; 
+    private static final String OWNER_API_PROPERTY_NAME = "ownerAPI"; 
+    private static final String OWNER_UID_PROPERTY_NAME = "ownerUID"; 
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String SUBKIND_PROPERTY_NAME = "subkind";
     private static final String KIND_PROPERTY_NAME = "kind";
@@ -75,14 +78,16 @@ public class KindActionMappingProcessor {
 
     private String compNamespace;
     private String compApiVersion;
+    private OwnerRef[] compOwners;
     private String compName;
     private String compSubkind;
     private String compKind;
 
-    public KindActionMappingProcessor(String namespace, String apiVersion, String name,
+    public KindActionMappingProcessor(String namespace, OwnerRef[] owners, String apiVersion, String name,
                                       String subkind, String kind) {
         this.compNamespace = namespace;
         this.compApiVersion = normalizeApiVersion(apiVersion);
+        this.compOwners= owners;
         this.compName = name;
         this.compSubkind = subkind;
         this.compKind = kind;
@@ -97,6 +102,7 @@ public class KindActionMappingProcessor {
      * 
      * - apiVersion is the group/version identifier of the resource. Note Kubernetes resources 
      *   with no group value (e.g. Service) specify apiVersion as version only. E.g. apiVersion: v1.
+     * - owner is the kind name of the owner of a resource - e.g. from resource's ownerReferences array.
      * - kind is the resource's kind field
      * - subkind is the resource's metadata.annotations.kappnav.subkind annotation.
      * - name is the resource's metadata.name field
@@ -177,6 +183,12 @@ public class KindActionMappingProcessor {
                                             if (props != null) {
                                                 JsonElement prop = props.get(APIVERSION_PROPERTY_NAME);
                                                 String apiVersion = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(OWNER_API_PROPERTY_NAME);
+                                                String ownerAPI = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(OWNER_PROPERTY_NAME);
+                                                String owner = (prop != null) ? prop.getAsString():null;
+                                                prop = props.get(OWNER_UID_PROPERTY_NAME);
+                                                String ownerUID = (prop != null) ? prop.getAsString():null;
                                                 prop = props.get(NAME_PROPERTY_NAME);
                                                 String name = (prop != null) ? prop.getAsString():null;
                                                 prop = props.get(SUBKIND_PROPERTY_NAME);
@@ -188,13 +200,16 @@ public class KindActionMappingProcessor {
                                                 Logger.log(className, methodName, Logger.LogType.DEBUG,
                                                        "\nmapping info: " + 
                                                        "\napiVersion = " + apiVersion +
+                                                       "\nowner = " + owner +
+                                                       "\nownerAPI = " + ownerAPI +
+                                                       "\nownerUID = " + ownerUID +
                                                        "\nname = " + name +
                                                        "\nsubkind = " + subkind +
                                                        "\nkind = " + kind + 
                                                        "\nmapname = " + mapname);
 
                                                 String normalizedApiVersion = normalizeApiVersion(apiVersion);
-                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion)) {
+                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(owner, ownerAPI, ownerUID, compOwners)) {
                                                     int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
@@ -417,6 +432,102 @@ public class KindActionMappingProcessor {
         if (Logger.isExitEnabled()) 
             Logger.log(className, methodName, Logger.LogType.EXIT, "match = " + match);
         return match;
+    }
+
+    /**
+     * Check if mapping rule has an owner (kind), make sure it matches an owner kind in 
+     * resource's ownerReferences array. 
+     * @param mappingRuleOwner
+     * @param resourceOwnerReferences
+     * @return true if mapping rule does not specify owner
+     *         true if mapping rule specifies owner wildcard ('*') 
+     *         false if mapping rule specifies owner (not wildcard) and resource has no owners 
+     * 
+     *         true if resource has owner (not wildcard) that equals mapping rule owner
+     *              and mapping rule api(Version) and uid match resource owner apiVersion and uid.
+     * 
+     *         false if resource has owner (not wildcard) that equals mapping rule owner
+     *              and mapping rule api(Version) and uid do not match resource owner apiVersion and uid.
+     * 
+     *         false if mapping rule specifies owner (not wildcard) but resource has no matching owner
+     */
+    private boolean ownerMatches(String mappingRuleOwner, String mappingRuleOwnerAPI, String mappingRuleOwnerUID, OwnerRef[] resourceOwnerReferences) {
+
+        // true if mapping rule does not specify owner
+        if ( mappingRuleOwner == null ) { 
+            return true; 
+        }
+        // true if mapping rule specifies owner wildcard ('*')
+        else if ( mappingRuleOwner.equals("*") ) { 
+            return true; 
+        }
+        // false if mapping rule specifies owner and resource has no owners 
+        else if ( resourceOwnerReferences == null ) { 
+            return false; 
+        }
+        else { 
+            for (int i=0; i < resourceOwnerReferences.length; i++ ) { 
+                if ( resourceOwnerReferences[i].kindEquals(mappingRuleOwner) ) { 
+                    // true if resource has owner that equals mapping rule owner
+                    if (( mappingRuleOwnerUID == null ) && ( mappingRuleOwnerAPI == null ))  {  
+                        return true;
+                    }
+                    // (true) and mapping rule api(Version) and uid match resource owner 
+                    //        apiVersion and uid.
+                    // (false) and mapping rule api(Version) and uid do not match resource owner 
+                    //        apiVersion and uid.
+                    else {
+                        return uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI);
+                    }
+                }
+            }
+            // false if mapping rule specifies owner (not wildcard) but resource has no matching owner            
+            return false; 
+        }
+    }
+
+    /**
+     * Determine if specified mapping UID matches ownerRef UID
+     * 
+     * true is mapping rule does not specify UID - i.e. owner UID is not
+     *      part of rule criteria
+     * true if mappingRule specifies wildcard UID ("*") or UIDs actually match! 
+     * false if UIDs do not match
+     **/  
+    private boolean uidMatches(OwnerRef owner, String mappingRuleOwnerUID) { 
+        // 
+        if ( mappingRuleOwnerUID == null ) { 
+            // return true is mapping rule does not specify UID - i.e. owner UID is not 
+            // part of rule criteria 
+            return true; 
+        }
+        else {
+            // return true if mappingRule specifies wildcard UID ("*") or UIDs actually match! 
+            // return false if UIDs do not match
+            return owner.uidMatches(mappingRuleOwnerUID); 
+        }
+    }
+
+    /**
+     * Determine if specified mapping API(Version) matches ownerRef APIVersion
+     *  
+     * true is mapping rule does not specify API(Version) - i.e. owner APIVersion is not
+     *      part of rule criteria
+     * true if mappingRule specifies wildcard API(Version) ("*") or APIVersions actually match! 
+     * false if APIVersions do not match
+     **/  
+    private boolean apiMatches(OwnerRef owner, String mappingRuleOwnerAPI) { 
+        // 
+        if ( mappingRuleOwnerAPI == null ) { 
+            // return true is mapping rule does not specify API(Version) - i.e. owner APIVersio is not 
+            // part of rule criteria 
+            return true; 
+        }
+        else {
+            // return true if mappingRule specifies wildcard API(Version) ("*") or APIVersions actually match! 
+            // return false if APIVersions do not match
+            return owner.apiVersionMatches(mappingRuleOwnerAPI); 
+        }
     }
 
     /**

@@ -42,6 +42,7 @@ import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.ConnectionSpec;
 
 import application.rest.v1.actions.ValidationException;
+import application.rest.v1.configmaps.OwnerRef;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
@@ -78,18 +79,22 @@ public abstract class KAppNavEndpoint {
         DISABLE_TRUST_ALL_CERTS = b;
     }
     
-    // Annotation properties.
+    // Resource properties.
+    private static final String OWNER_REFERENCES_NAME = "ownerReferences";
     private static final String METADATA_PROPERTY_NAME = "metadata";
     private static final String ANNOTATIONS_PROPERTY_NAME = "annotations";
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String NAMESPACE_PROPERTY_NAME = "namespace";
     private static final String RESOURCE_VERSION_PROPERTY_NAME = "resourceVersion";
+
+    // Annotation properties.
     private static final String KAPPNAV_STATUS_PROPERTY_NAME = "kappnav.status";
     private static final String KAPPNAV_SUB_KIND_PROPERTY_NAME = "kappnav.subkind";
     
     // Kind actions mapping properties
     private static final String API_VERSION_PROPERTY_NAME = "apiVersion";
     private static final String KIND_PROPERTY_NAME = "kind";
+    private static final String UID_PROPERTY_NAME = "uid";
 
      // Status object properties.
     private static final String VALUE_PROPERTY_NAME = "value";
@@ -102,7 +107,7 @@ public abstract class KAppNavEndpoint {
     private static final String APP_PLURAL = "applications";
 
     private static final String DEFAULT_NAMESPACE = "default";
-    
+  
     protected Object listApplicationObject(ApiClient client) throws ApiException {
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
@@ -251,6 +256,23 @@ public abstract class KAppNavEndpoint {
         return null;
     }
 
+    public static OwnerRef[] getOwners(JsonObject component) {
+        final JsonObject metadata = component.getAsJsonObject(METADATA_PROPERTY_NAME);
+        if (metadata != null) {
+            JsonElement ownerReferences = metadata.get(OWNER_REFERENCES_NAME);
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getOwnerReferences", Logger.LogType.DEBUG, "ownerReferences= "+ownerReferences);
+            }
+            return toOwnersArray((JsonArray) ownerReferences);
+        }
+        else {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getOwnerReferences", Logger.LogType.DEBUG, "Metadata is null.");
+            }
+        }
+        return null;
+    }
+
     public static String getComponentNamespace(JsonObject component) {
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getComponentNamespace", Logger.LogType.ENTRY,"");
@@ -391,6 +413,82 @@ public abstract class KAppNavEndpoint {
     protected static JsonObject createUnknownStatusObject(KAppNavConfig config) {
         final String statusUnknown = config.getStatusUnknown();
         return createStatusObject(statusUnknown, statusUnknown);
+    }
+
+    final 
+    // Return Java array of owner references from JSON ownerReferences array
+    private static OwnerRef[] toOwnersArray(JsonArray ownerRefs) { 
+        OwnerRef[] owners= null; 
+        if ( ownerRefs != null ) { 
+            if ( ownerRefs.isJsonArray()) { 
+                owners= new OwnerRef[ownerRefs.size()];
+                for (int i=0; i < owners.length; i++) { 
+                    JsonElement e= ownerRefs.get(i); 
+                    if ( e.isJsonObject() ) { 
+                        owners[i]= new OwnerRef(toOwnerApiVersion((JsonObject)e),toOwnerKind((JsonObject)e),toOwnerUID((JsonObject)e));
+                    }
+                    else { 
+                        if ( Logger.isErrorEnabled()) { 
+                            Logger.log(className, "toOwnersArray", Logger.LogType.ERROR, "ownerReferences array container elements that are not objects.");
+                        } 
+                    }
+                }    
+            }
+            else { 
+                if ( Logger.isErrorEnabled()) { 
+                    Logger.log(className, "toOwnersArray", Logger.LogType.ERROR, "ownerReferences is not an array.");
+                } 
+            }
+        }
+        return owners; 
+    }
+
+    // return "apiVersion" value from owner object from ownerReferences array  
+    private static String toOwnerApiVersion(JsonObject ownerObj) { 
+        if ( ownerObj != null ) { 
+            JsonElement e = ownerObj.get(API_VERSION_PROPERTY_NAME); 
+            if ( e.isJsonPrimitive() ) {
+                return e.getAsString(); 
+            }
+            else { 
+                if ( Logger.isErrorEnabled()) { 
+                    Logger.log(className, "toOwnerApiVersion", Logger.LogType.ERROR, "JSON element is not a primitive - should be string.");
+                } 
+            }
+        }
+        return null; 
+    }
+
+    // return "kind" value from owner object from ownerReferences array  
+    private static String toOwnerKind(JsonObject ownerObj) { 
+        if ( ownerObj != null ) { 
+            JsonElement e = ownerObj.get(KIND_PROPERTY_NAME); 
+            if ( e.isJsonPrimitive() ) {
+                return e.getAsString(); 
+            }
+            else { 
+                if ( Logger.isErrorEnabled()) { 
+                    Logger.log(className, "toOwnerKind", Logger.LogType.ERROR, "JSON element is not a primitive - should be string.");
+                } 
+            }
+        }
+        return null; 
+    }
+
+    // return "uid" value from owner object from ownerReferences array  
+    private static String toOwnerUID(JsonObject ownerObj) { 
+        if ( ownerObj != null ) { 
+            JsonElement e = ownerObj.get(UID_PROPERTY_NAME); 
+            if ( e.isJsonPrimitive() ) {
+                return e.getAsString(); 
+            }
+            else { 
+                if ( Logger.isErrorEnabled()) { 
+                    Logger.log(className, "toOwnerUID", Logger.LogType.ERROR, "JSON element is not a primitive - should be string.");
+                } 
+            }
+        }
+        return null; 
     }
     
     private static JsonObject createStatusObject(String value, String flyover) {
