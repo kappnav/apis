@@ -20,23 +20,35 @@ package application.rest.v1.configmaps;
  */
 public class OwnerRef {
 
+    private final String apiVersion; 
     private final String kind;
     private final String uid; 
 
-    public OwnerRef(String ownerKind, String ownerUID) { 
+    public OwnerRef(String ownerApiVersion, String ownerKind, String ownerUID) { 
+        this.apiVersion= ownerApiVersion; 
         this.kind= ownerKind; 
         this.uid= ownerUID;
     }
 
+    public String getApiVersion() { return apiVersion; }
     public String getKind() { return kind;}
     public String getUID() { return uid;}
 
     public String toString() { 
-        return "{" + this.kind + "," + this.uid + "}"; 
+        return "{" + this.apiVersion + "," + this.kind + "," + this.uid + "}"; 
     }
 
     public boolean kindEquals(String kind) { 
         return this.kind.equals(kind); 
+    }
+
+    public boolean apiVersionMatches(String apiVersion) { 
+        if ( apiVersion.equals("*") ) { 
+            return true; 
+        }
+        else { 
+            return this.apiVersion.equals(apiVersion); 
+        } 
     }
 
     public boolean uidMatches(String uid) { 

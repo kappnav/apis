@@ -107,10 +107,7 @@ public abstract class KAppNavEndpoint {
     private static final String APP_PLURAL = "applications";
 
     private static final String DEFAULT_NAMESPACE = "default";
-
-    private static final int OWNER_REF_KIND= 0;
-    private static final int OWNER_REF_UID= 1;
-    
+  
     protected Object listApplicationObject(ApiClient client) throws ApiException {
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
@@ -428,7 +425,7 @@ public abstract class KAppNavEndpoint {
                 for (int i=0; i < owners.length; i++) { 
                     JsonElement e= ownerRefs.get(i); 
                     if ( e.isJsonObject() ) { 
-                        owners[i]= new OwnerRef(toOwnerKind((JsonObject)e),toOwnerUID((JsonObject)e));
+                        owners[i]= new OwnerRef(toOwnerApiVersion((JsonObject)e),toOwnerKind((JsonObject)e),toOwnerUID((JsonObject)e));
                     }
                     else { 
                         if ( Logger.isErrorEnabled()) { 
@@ -444,6 +441,22 @@ public abstract class KAppNavEndpoint {
             }
         }
         return owners; 
+    }
+
+    // return "apiVersion" value from owner object from ownerReferences array  
+    private static String toOwnerApiVersion(JsonObject ownerObj) { 
+        if ( ownerObj != null ) { 
+            JsonElement e = ownerObj.get(API_VERSION_PROPERTY_NAME); 
+            if ( e.isJsonPrimitive() ) {
+                return e.getAsString(); 
+            }
+            else { 
+                if ( Logger.isErrorEnabled()) { 
+                    Logger.log(className, "toOwnerApiVersion", Logger.LogType.ERROR, "JSON element is not a primitive - should be string.");
+                } 
+            }
+        }
+        return null; 
     }
 
     // return "kind" value from owner object from ownerReferences array  
