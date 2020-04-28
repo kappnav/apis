@@ -73,6 +73,14 @@ public class ApplicationCache {
     	coau = coa;
     }
     
+    static CustomObjectsApi getCustomObjectsApi() {
+    	if (coau == null) {
+        	return new CustomObjectsApi();
+        } else {
+        	return coau;
+        }
+    }
+    
     static class CachedList {
         private volatile List<JsonObject> list;
         private final long modCount;
@@ -101,12 +109,7 @@ public class ApplicationCache {
             @Override
             public List<Object> listResources(ApiClient client, AtomicReference<String> resourceVersion)
                     throws ApiException {
-            	final CustomObjectsApi coa;
-                if (coau == null) {
-                	coa = new CustomObjectsApi();
-                } else {
-                	coa = coau;
-                }
+            	final CustomObjectsApi coa = getCustomObjectsApi();
                 coa.setApiClient(client);
                 Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
                 return Watcher.processCustomObjectsApiList(client, o, resourceVersion);
@@ -114,12 +117,7 @@ public class ApplicationCache {
 
             @Override
             public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
-            	final CustomObjectsApi coa;
-                if (coau == null) {
-                	coa = new CustomObjectsApi();
-                } else {
-                	coa = coau;
-                }
+            	final CustomObjectsApi coa = getCustomObjectsApi();
                 coa.setApiClient(client);
                 return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, resourceVersion, Boolean.TRUE, null, null);
             }
@@ -224,12 +222,7 @@ public class ApplicationCache {
     }
     
     private static List<JsonObject> listApplicationObject0(ApiClient client) throws ApiException {
-    	final CustomObjectsApi coa;
-        if (coau == null) {
-        	coa = new CustomObjectsApi();
-        } else {
-        	coa = coau;
-        }
+    	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         final Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
         return KAppNavEndpoint.getItemsAsList(client, o);
@@ -281,12 +274,7 @@ public class ApplicationCache {
     }
     
     private static List<JsonObject> listNamespacedApplicationObject0(ApiClient client, String namespace) throws ApiException {
-    	final CustomObjectsApi coa;
-        if (coau == null) {
-        	coa = new CustomObjectsApi();
-        } else {
-        	coa = coau;
-        }
+    	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         final Object o = coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, null, null, null, null);
         return KAppNavEndpoint.getItemsAsList(client, o);
@@ -326,12 +314,7 @@ public class ApplicationCache {
     }
     
     private static JsonObject getNamespacedApplicationObject0(ApiClient client, String namespace, String name) throws ApiException {
-    	final CustomObjectsApi coa;
-        if (coau == null) {
-        	coa = new CustomObjectsApi();
-        } else {
-        	coa = coau;
-        }
+    	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         final Object o = coa.getNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, name);
         return KAppNavEndpoint.getItemAsObject(client, o);

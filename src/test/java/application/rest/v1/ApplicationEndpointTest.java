@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 IBM Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package application.rest.v1;
 
 import application.rest.v1.ApplicationEndpoint;
@@ -163,7 +179,7 @@ public class ApplicationEndpointTest {
 
 	
 	@Test
-	public void createApplication() throws Exception {
+	public void createApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
             {
             	oneOf(coa).setApiClient(ac);
@@ -175,15 +191,15 @@ public class ApplicationEndpointTest {
 		try {
 			response = aep.createApplication(sampleApp, "stock-trader");
 			int rc = response.getStatus();
-			assertEquals("Test createApplication FAILED", 200, rc);
+			assertEquals("Test createApplication_succeeds FAILED", 200, rc);
 		} catch (Exception e) {
-			fail("Test createApplication failed with exception " + e.getMessage());
+			fail("Test createApplication_succeeds failed with exception " + e.getMessage());
 		}
 	}
 	
 	
 	@Test
-	public void getApplication() throws Exception {
+	public void getApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
             {
             	allowing(coa).setApiClient(ac);
@@ -195,15 +211,15 @@ public class ApplicationEndpointTest {
 		try {
 			response = aep.getApplication("stock-trader", "stock-trader");
 			int rc = response.getStatus();
-			assertEquals("Test getApplication FAILED", 200, rc);
+			assertEquals("Test getApplication_succeeds FAILED", 200, rc);
 		} catch (Exception e) {
-			fail("Test getApplication failed with exception " + e.getMessage());
+			fail("Test getApplication_succeeds failed with exception " + e.getMessage());
 		}
 	}
 	
 	
 	@Test
-	public void replaceApplication() throws Exception {
+	public void replaceApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
             {
             	oneOf(coa).setApiClient(ac);
@@ -214,15 +230,15 @@ public class ApplicationEndpointTest {
 		try {
 			response = aep.replaceApplication(updatedSampleApp, "stock-trader", "stock-trader");
 			int rc = response.getStatus();
-			assertEquals("Test replaceApplication FAILED", 200, rc);
+			assertEquals("Test replaceApplication_succeeds FAILED", 200, rc);
 		} catch (Exception e) {
-			fail("Test replaceApplication failed with exception " + e.getMessage());
+			fail("Test replaceApplication_succeeds failed with exception " + e.getMessage());
 		}
 	}
 	
 	
 	@Test
-	public void deleteApplication() throws Exception {
+	public void deleteApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
             {
             	oneOf(coa).setApiClient(ac);
@@ -233,9 +249,9 @@ public class ApplicationEndpointTest {
 		try {
 			response = aep.deleteApplication(updatedSampleApp, "stock-trader");
 			int rc = response.getStatus();
-			assertEquals("Test deleteApplication FAILED", 200, rc);
+			assertEquals("Test deleteApplication_succeeds FAILED", 200, rc);
 		} catch (Exception e) {
-			fail("Test deleteApplication failed with exception " + e.getMessage());
+			fail("Test deleteApplication_succeeds failed with exception " + e.getMessage());
 		}
 	}
 	
