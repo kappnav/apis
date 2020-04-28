@@ -223,16 +223,9 @@ public class ApplicationEndpointTest {
 		mock.checking(new Expectations() {
 			{
 				oneOf(coa).setApiClient(ac);
-            	oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));
+				oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));
 			}		
 		});
-		
-		mock.checking(new Expectations() {
-            {
-            	oneOf(coa).setApiClient(ac);
-            	oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));
-            }
-        });
 		
 		try {
 			response = aep.replaceApplication(updatedSampleApp, "stock-trader", "stock-trader");
@@ -249,7 +242,7 @@ public class ApplicationEndpointTest {
 		mock.checking(new Expectations() {
 			{
 				oneOf(coa).setApiClient(ac);
-            	oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));
+				oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));
 			}
 		});
 		
