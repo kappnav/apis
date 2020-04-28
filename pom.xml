@@ -68,9 +68,15 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13</version>
             <scope>test</scope>
         </dependency>
+		<dependency>
+  			<groupId>org.jmock</groupId>
+  			<artifactId>jmock-junit4</artifactId>
+  			<version>2.12.0</version>
+  			<scope>test</scope>
+		</dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-rs-client</artifactId>
@@ -128,12 +134,12 @@
                 <version>2.18.1</version>
                 <executions>
                     <execution>
-                        <phase>test</phase>
-                        <id>default-test</id>
+                        <phase>unit-test</phase>
+                        <id>unit-test</id>
                         <configuration>
-                            <excludes>
-                                <exclude>**/it/**</exclude>
-                            </excludes>
+                            <includes>
+                                <exclude>**/ut/**</exclude>
+                            </includes>
                             <reportsDirectory>${project.build.directory}/test-reports/unit</reportsDirectory>
                         </configuration>
                     </execution>
