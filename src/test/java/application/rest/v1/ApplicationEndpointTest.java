@@ -43,7 +43,7 @@ import io.kubernetes.client.models.V1DeleteOptions;
  *
  */
 public class ApplicationEndpointTest {
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings("deprecation")	
 	private final Mockery mock = new JUnit4Mockery() {
         {
             setImposteriser(ClassImposteriser.INSTANCE);
@@ -223,7 +223,7 @@ public class ApplicationEndpointTest {
 		mock.checking(new Expectations() {
 			{
 				oneOf(coa).setApiClient(ac);
-				oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));
+				oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));				
 			}		
 		});
 		
@@ -242,7 +242,7 @@ public class ApplicationEndpointTest {
 		mock.checking(new Expectations() {
 			{
 				oneOf(coa).setApiClient(ac);
-				oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));
+				oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));		
 			}
 		});
 		
