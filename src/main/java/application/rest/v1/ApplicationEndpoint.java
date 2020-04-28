@@ -54,7 +54,21 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
 
     private static final String className = ApplicationEndpoint.class.getName();
     
-    @GET
+    // For junit only
+    ApiClient ac = null;
+	void setApiClientForJunit(ApiClient ac) {
+		this.ac = ac;
+	}
+	
+	ApiClient getApiClientForInternal() throws IOException {
+		if (ac == null) {
+        	return getApiClient();
+        } else {
+        	return ac;
+        }
+	}
+
+	@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{application-name}")
     @Operation(
@@ -68,7 +82,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
     public Response getApplication(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name, 
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
-            final ApiClient client = getApiClient();
+            final ApiClient client = getApiClientForInternal();
             final JsonObject json = ApplicationCache.getNamespacedApplicationObject(client, namespace, name);
             return Response.ok(json.toString()).build();
         }
@@ -93,8 +107,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
         @APIResponse(responseCode = "500", description = "Internal Server Error")})
     public Response createApplication(String jsonstr, @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
-
-            final ApiClient client = getApiClient();
+        	final ApiClient client = getApiClientForInternal();
             JsonParser parser= new JsonParser(); 
             JsonElement element= parser.parse(jsonstr);
             JsonObject json= element.getAsJsonObject();
@@ -126,8 +139,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
     public Response replaceApplication(String jsonstr, @Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name, 
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
-
-            final ApiClient client = getApiClient();
+        	final ApiClient client = getApiClientForInternal();
             JsonParser parser= new JsonParser(); 
             JsonElement element= parser.parse(jsonstr);
             JsonObject json= element.getAsJsonObject();
@@ -158,7 +170,7 @@ public class ApplicationEndpoint extends KAppNavEndpoint {
     public Response deleteApplication(@Pattern(regexp = NAME_PATTERN_ONE_OR_MORE) @PathParam("application-name") @Parameter(description = "The name of the application") String name, 
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the application") String namespace) {
         try {
-            final ApiClient client = getApiClient();
+        	final ApiClient client = getApiClientForInternal();
             deleteNamespacedApplicationObject(client, namespace, name);
             ApplicationCache.updateModCount();
             return Response.ok(getStatusMessageAsJSON("OK")).build();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,14 +108,28 @@ public abstract class KAppNavEndpoint {
 
     private static final String DEFAULT_NAMESPACE = "default";
   
+    //For junit only
+    static CustomObjectsApi coau = null;
+    static void setCustomObjectsApiForJunit(CustomObjectsApi coa) {
+    	coau = coa;
+    }
+    
+    CustomObjectsApi getCustomObjectsApi() {
+    	if (coau == null) {
+        	return new CustomObjectsApi();
+        } else {
+        	return coau;
+        }
+    }
+    
     protected Object listApplicationObject(ApiClient client) throws ApiException {
-        final CustomObjectsApi coa = new CustomObjectsApi();
+    	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
     }
     
     protected Object listNamespacedApplicationObject(ApiClient client, String namespace) throws ApiException {
-        final CustomObjectsApi coa = new CustomObjectsApi();
+    	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION,
                 encodeURLParameter(namespace), APP_PLURAL, null, null, null, null);
@@ -686,8 +700,8 @@ public abstract class KAppNavEndpoint {
     protected Object getNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "getNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
-        }
-        final CustomObjectsApi coa = new CustomObjectsApi();
+        }     
+        final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.getNamespacedCustomObject(group, APP_VERSION,
                 encodeURLParameter(namespace), kindPlural, encodeURLParameter(name));
@@ -697,7 +711,7 @@ public abstract class KAppNavEndpoint {
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "createNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace);
         }
-        final CustomObjectsApi coa = new CustomObjectsApi();
+        final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.createNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, body, "false");
     }
@@ -706,7 +720,7 @@ public abstract class KAppNavEndpoint {
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "replaceNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         }
-        final CustomObjectsApi coa = new CustomObjectsApi();
+        final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.replaceNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), body);
     }
@@ -715,7 +729,7 @@ public abstract class KAppNavEndpoint {
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "deleteNamespacedGenericObject", Logger.LogType.DEBUG, "For group=" + group + ", kindPlural="+kindPlural + ", namespace="+namespace + ", name="+name);
         }
-        final CustomObjectsApi coa = new CustomObjectsApi();
+        final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         V1DeleteOptions options= new V1DeleteOptions();
 
