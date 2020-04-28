@@ -127,24 +127,6 @@
                     <packagingExcludes>pom.xml</packagingExcludes>
                 </configuration>
             </plugin>
-            <!-- Plugin to run unit tests -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
-                <executions>
-                    <execution>
-                        <phase>unit-test</phase>
-                        <id>unit-test</id>
-                        <configuration>
-                            <includes>
-                                <exclude>**/ut/**</exclude>
-                            </includes>
-                            <reportsDirectory>${project.build.directory}/test-reports/unit</reportsDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- Plugin to run Open Liberty in dev mode -->
             <plugin>
                 <groupId>io.openliberty.tools</groupId>
@@ -181,6 +163,12 @@
                     </bootstrapProperties>
                     <looseApplication>false</looseApplication>
                 </configuration>
+            </plugin>
+            <!-- Plugin for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M4</version>
             </plugin>
             <!-- Plugin to run functional tests -->
             <plugin>
