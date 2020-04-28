@@ -56,9 +56,14 @@ public class KAppNavConfig {
     private static final String KUBE_ENV = "KUBE_ENV";
     private static final String DEFAULT_KUBE_ENV = "okd";
     
+    private static final String UI_LOG_LEVEL_API_ENV;
+    private static final String UI_LOG_LEVEL_API = "UI_LOG_LEVEL_API";
+    private static final String DEFAULT_UI_LOG_LEVEL_API = null;
+    
     static {
         KAPPNAV_NAMESPACE = getEnvironmentVariable(KAPPNAV_CONFIG_NAMESPACE, KAPPNAV_DEFAULT_NAMESPACE);
         KAPPNAV_KUBE_ENV = getEnvironmentVariable(KUBE_ENV, DEFAULT_KUBE_ENV);
+        UI_LOG_LEVEL_API_ENV = getEnvironmentVariable(UI_LOG_LEVEL_API, DEFAULT_UI_LOG_LEVEL_API);
         KAPPNAV_CUSTOM_RESOURCE_NAME = getEnvironmentVariable(KAPPNAV_CR_NAME, KAPPNAV_DEFAULT_CR_NAME);
     }
     
@@ -190,6 +195,10 @@ public class KAppNavConfig {
     
     public static String getkAppNavKubeEnvironment() {
         return KAPPNAV_KUBE_ENV;
+    }
+    
+    public static String getUILogLevelAPI() {     
+        return UI_LOG_LEVEL_API_ENV;
     }
     
     public static String getkAppNavConfigMapName() {
