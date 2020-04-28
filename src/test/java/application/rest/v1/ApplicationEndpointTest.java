@@ -181,13 +181,13 @@ public class ApplicationEndpointTest {
 	@Test
 	public void createApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
-            {
-            	oneOf(coa).setApiClient(ac);
-            	oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)), with(any(String.class)));
-            	
-            }
-        });
-
+			{
+				oneOf(coa).setApiClient(ac);
+				oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)), with(any(String.class)));
+			}
+			
+		});
+		
 		try {
 			response = aep.createApplication(sampleApp, "stock-trader");
 			int rc = response.getStatus();
@@ -201,12 +201,12 @@ public class ApplicationEndpointTest {
 	@Test
 	public void getApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
-            {
-            	allowing(coa).setApiClient(ac);
-            	oneOf(coa).getNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)));
+			{
+				allowing(coa).setApiClient(ac);
+				oneOf(coa).getNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)));
             	will(returnValue(jsonObject1));
-            }
-        });
+			}		
+		});
 		
 		try {
 			response = aep.getApplication("stock-trader", "stock-trader");
@@ -220,6 +220,13 @@ public class ApplicationEndpointTest {
 	
 	@Test
 	public void replaceApplication_succeeds() throws Exception {
+		mock.checking(new Expectations() {
+			{
+				oneOf(coa).setApiClient(ac);
+            	oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));
+			}		
+		});
+		
 		mock.checking(new Expectations() {
             {
             	oneOf(coa).setApiClient(ac);
@@ -240,11 +247,11 @@ public class ApplicationEndpointTest {
 	@Test
 	public void deleteApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
-            {
-            	oneOf(coa).setApiClient(ac);
+			{
+				oneOf(coa).setApiClient(ac);
             	oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));
-            }
-        });
+			}
+		});
 		
 		try {
 			response = aep.deleteApplication(updatedSampleApp, "stock-trader");
