@@ -82,6 +82,7 @@ public class KindActionMappingProcessor {
     private String compName;
     private String compSubkind;
     private String compKind;
+    private OwnerRef compMatchingOwner;
 
     public KindActionMappingProcessor(String namespace, OwnerRef[] owners, String apiVersion, String name,
                                       String subkind, String kind) {
@@ -91,6 +92,7 @@ public class KindActionMappingProcessor {
         this.compName = name;
         this.compSubkind = subkind;
         this.compKind = kind;
+        this.compMatchingOwner = null;
     }
 
     /**
@@ -477,7 +479,13 @@ public class KindActionMappingProcessor {
                     // (false) and mapping rule api(Version) and uid do not match resource owner 
                     //        apiVersion and uid.
                     else {
-                        return uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI);
+                        if (uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && 
+                              apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI)) {
+                            this.compMatchingOwner = resourceOwnerReferences[i];
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                 }
             }
@@ -694,6 +702,15 @@ public class KindActionMappingProcessor {
                                 this.compSubkind.toLowerCase(Locale.ENGLISH);
             } else if ( parts[i].equals("${kind}") ) {
                 actualMapName = actualMapName + this.compKind.toLowerCase(Locale.ENGLISH);
+            } else if ( parts[i].equals("${owner.apiVersion}") && 
+                        this.compMatchingOwner != null ) {
+                actualMapName = actualMapName + this.compMatchingOwner.getApiVersion().replace('/','-');
+            } else if ( parts[i].equals("${owner.kind}") && 
+                        this.compMatchingOwner != null ) {
+                actualMapName = actualMapName + this.compMatchingOwner.getKind().toLowerCase(Locale.ENGLISH);
+            } else if ( parts[i].equals("${owner.uid}") && 
+                        this.compMatchingOwner != null ) {
+                actualMapName = actualMapName + this.compMatchingOwner.getUID();
             } else {
                 actualMapName = actualMapName + parts[i];
             }
