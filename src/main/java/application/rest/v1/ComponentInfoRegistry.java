@@ -42,6 +42,8 @@ import io.kubernetes.client.models.V1APIGroupList;
 
 import com.ibm.kappnav.logging.Logger;
 
+import application.rest.v1.configmaps.KindActionMappingCache;
+
 /**
  * This class builds a mapping between component kinds and their 
  * associated {group, version, plural}. It provides methods for
@@ -51,6 +53,19 @@ import com.ibm.kappnav.logging.Logger;
 @ApplicationScoped
 public class ComponentInfoRegistry {
     private static final String className = ComponentInfoRegistry.class.getName();
+
+    static {
+        //start KindActionMapping watcher to watch any KindActionMapping CR add/modify/delete in a cluster
+        try { 
+            if (Logger.isExitEnabled())    
+                Logger.log(className, "Static-Block", Logger.LogType.DEBUG, "Start the KindActionMappingCache.startKAMCRWatcher.");             
+            KindActionMappingCache.startKAMCRWatcher();
+        } catch (Exception e) {
+            if (Logger.isExitEnabled()) 
+                Logger.log(className, "Static-Block", Logger.LogType.ERROR, 
+                    "Caught Exception at KindActionMappingCache.startKAMCRWatcher : " + e.toString());              
+        }   
+    }
 
     private static final String NOT_FOUND = "Not Found";
     
