@@ -69,8 +69,7 @@ public class KindActionMappingProcessor {
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     private static final String OWNER_PROPERTY_NAME = "owner"; 
-    private static final String OWNER_API_PROPERTY_NAME = "ownerAPI"; 
-    private static final String OWNER_UID_PROPERTY_NAME = "ownerUID"; 
+    private static final String UID_PROPERTY_NAME = "uid"; 
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String SUBKIND_PROPERTY_NAME = "subkind";
     private static final String KIND_PROPERTY_NAME = "kind";
@@ -185,12 +184,20 @@ public class KindActionMappingProcessor {
                                             if (props != null) {
                                                 JsonElement prop = props.get(APIVERSION_PROPERTY_NAME);
                                                 String apiVersion = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_API_PROPERTY_NAME);
-                                                String ownerAPI = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_PROPERTY_NAME);
-                                                String owner = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_UID_PROPERTY_NAME);
-                                                String ownerUID = (prop != null) ? prop.getAsString():null;
+
+                                                String ownerKind= null;
+                                                String ownerAPI= null;
+                                                String ownerUID= null; 
+                                                JsonObject owner= props.getAsJsonObject(OWNER_PROPERTY_NAME);
+                                                if ( owner != null ) { 
+                                                    prop= owner.get(APIVERSION_PROPERTY_NAME);
+                                                    ownerAPI = (prop != null) ? prop.getAsString():null;
+                                                    prop = props.get(KIND_PROPERTY_NAME);
+                                                    ownerKind = (prop != null) ? prop.getAsString():null;
+                                                    prop = props.get(UID_PROPERTY_NAME);
+                                                    ownerUID = (prop != null) ? prop.getAsString():null;
+                                                }
+
                                                 prop = props.get(NAME_PROPERTY_NAME);
                                                 String name = (prop != null) ? prop.getAsString():null;
                                                 prop = props.get(SUBKIND_PROPERTY_NAME);
@@ -211,7 +218,7 @@ public class KindActionMappingProcessor {
                                                        "\nmapname = " + mapname);
 
                                                 String normalizedApiVersion = normalizeApiVersion(apiVersion);
-                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(owner, ownerAPI, ownerUID, compOwners)) {
+                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(ownerKind, ownerAPI, ownerUID, compOwners)) {
                                                     int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
