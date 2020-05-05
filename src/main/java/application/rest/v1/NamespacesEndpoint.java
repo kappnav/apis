@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,21 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
     
     private static final String NAMESPACES_PROPERTY_NAME = "namespaces";
     
+    // For junit test only
+    private CoreV1Api cv1a = null;
+	void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+		this.cv1a = cv1a;
+	}
+
+	private CoreV1Api getCoreV1ApiForInternal() {
+		if (cv1a == null) {
+			final CoreV1Api api = new CoreV1Api();
+            return api;
+		} else {
+			return cv1a;
+		}
+	}
+	
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
@@ -78,7 +93,7 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
     }
     
     private Object listNamespaces(ApiClient client) throws ApiException {
-        final CoreV1Api api = new CoreV1Api();
+        final CoreV1Api api = getCoreV1ApiForInternal();
         api.setApiClient(client);
         final V1NamespaceList namespaces = api.listNamespace(null, null, null, null, null, null, null, null, null);
         return namespaces;

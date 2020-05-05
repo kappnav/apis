@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
 
 import javax.ws.rs.core.Response;
 
-
+import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JUnit4Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -45,7 +45,6 @@ public class SecretsEndpointTest {
         }
     };
     
-	private final ApiClient ac = mock.mock(ApiClient.class);
 	private final CoreV1Api cv1a = mock.mock(CoreV1Api.class);   
 	
 	private final SecretsEndpoint sep = new SecretsEndpoint();
@@ -70,6 +69,12 @@ public class SecretsEndpointTest {
 	
 	@Test
 	public void getSecrets_succeeds() throws Exception {
+		mock.checking(new Expectations() {
+			{
+				oneOf(cv1a).setApiClient(with(any(ApiClient.class))); 
+				oneOf(cv1a).listSecretForAllNamespaces(null, null, null, "solution=stock-trader", null, null, null, null, null);
+			}		
+		});
 		try {
 			response = sep.getSecrets("solution", "stock-trader");
 			int rc = response.getStatus();

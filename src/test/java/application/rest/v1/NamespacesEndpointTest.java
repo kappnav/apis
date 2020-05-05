@@ -17,12 +17,14 @@
 package application.rest.v1;
 
 import application.rest.v1.NamespacesEndpoint;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.apis.CoreV1Api;
 
 import static org.junit.Assert.*;
 
 import javax.ws.rs.core.Response;
 
-
+import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JUnit4Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -42,7 +44,8 @@ public class NamespacesEndpointTest {
             setImposteriser(ClassImposteriser.INSTANCE);
         }
     };
-	
+    private final CoreV1Api cv1a = mock.mock(CoreV1Api.class);   
+    
 	private final NamespacesEndpoint nep = new NamespacesEndpoint();
 	private Response response = null;
 	
@@ -51,6 +54,7 @@ public class NamespacesEndpointTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
+		nep.setCoreV1ApiForInternal(cv1a);
 	}
 
 	
@@ -64,6 +68,12 @@ public class NamespacesEndpointTest {
 	
 	@Test
 	public void getNamespaceList_succeeds() throws Exception {
+		mock.checking(new Expectations() {
+			{
+				oneOf(cv1a).setApiClient(with(any(ApiClient.class)));
+				oneOf(cv1a).listNamespace(null, null, null, null, null, null, null, null, null);
+			}		
+		});
 		try {
 			response = nep.getNamespaceList();
 			int rc = response.getStatus();
