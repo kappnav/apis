@@ -18,18 +18,16 @@ package application.rest.v1.configmaps;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.xml.namespace.QName;
 
 import com.google.common.reflect.TypeToken;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.Call;
@@ -46,15 +44,13 @@ import io.kubernetes.client.util.Watch;
  * namespaces). Because KAMs can exist in any namespace and be created at anytime, it is impossible for API 
  * server to simply do a one time query or query at time of use to find and cache KAMs. 
  * 
- * To handle the dynamic lifecycle of KAMs, all KAMs cross all namespaces are queried and cached during 
- * API server startup.
+ * With a request for all KAM custom resources in the cluster, cache is queried which will either return the
+ * cached values or directly read from the cluster.
  * 
  * A watch on KAMs across all namespaces:
  *   when a KAM is created, cache it
  *   when a KAM is updated, cache it (replace old kam with the new)
  *   when a KAM is deleted, evict it from the cache
- * 
- * Anytime a resource's action list must be calculated, use only the cached KAMs - do not query for more, as they should already all be cached.
  */
 public class KindActionMappingCache {
 
@@ -66,21 +62,42 @@ public class KindActionMappingCache {
     private static final String KAM_GROUP = "actions.kappnav.io";
     private static final String KAM_VERSION = "v1";
     
-    // Synchronization lock used for waking up the "kAppNav KindActionMapping Watcher" thread.
-    //private static Object LOCK;
-    
     // AtomicReference containing the current instance of the KindActionMapping cache or null if there is no cache available.
     // The map uses QNames as keys to represent the name and namespace pair identifying a KindActionMapping.
     // The map uses SoftReferences as values to allow GC to reclaim the KindActionMappings if required to keep the JVM from running out of memory.
     private static final AtomicReference<Map<QName,SoftReference<JsonObject>>> MAP_CACHE_REF = new AtomicReference<>(null);
+
+     // Cached list for listKAMCustomResources()
+     private static final AtomicReference<CachedList> CACHED_LIST = new AtomicReference<>(null);
     
+    // Synchronization lock used for waking up the "kAppNav KindActionMapping Watcher" thread.
+    private static final Object LOCK;
+
     // Name of the watcher thread.
     private static final String WATCHER_THREAD_NAME = "kAppNav KindActionMapping Watcher";
 
-    private static Map<QName, SoftReference<JsonObject>> kamCache = null;
+    // Mod count.
+    private static final AtomicLong MOD_COUNT = new AtomicLong(0);
 
-    public static void startKAMCRWatcher() {
-        Watcher.start(new Watcher.Handler<Object>() {
+    static class CachedList {
+        private volatile List<JsonObject> list;
+        private final long modCount;
+        CachedList(List<JsonObject> list, long modCount) {
+            this.list = Collections.unmodifiableList(list);
+            this.modCount = modCount;
+        }
+        List<JsonObject> getList() {
+            final List<JsonObject> _list = list;
+            if (modCount == MOD_COUNT.get()) {
+                return _list;
+            }
+            list = null;
+            return null;
+        }
+    }
+    
+    static {
+        LOCK = Watcher.start(new Watcher.Handler<Object>() {
 
             @Override
             public String getWatcherThreadName() {
@@ -95,8 +112,8 @@ public class KindActionMappingCache {
                 coa.setApiClient(client);
                 if (Logger.isDebugEnabled()) {
                     Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG,
-                            "\n List KAM Custom Resources for all namespaces with" + "\n group = " + KAM_GROUP
-                                    + "\n version = " + KAM_VERSION + "\n plural = " + KAM_PLURAL);
+                            "\n List KAM Custom Resources for all namespaces with" + "\n group = " + 
+                            KAM_GROUP + "\n version = " + KAM_VERSION + "\n plural = " + KAM_PLURAL);
                 }
 
                 Object kamCRs = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, null, null);
@@ -121,6 +138,15 @@ public class KindActionMappingCache {
             @Override
             public void processResponse(ApiClient client, String type, Object object) {
                 String methodName = "processResponse";
+
+                Map<QName,SoftReference<JsonObject>> kamCache = MAP_CACHE_REF.get();
+                if (kamCache == null) {
+                    updateModCount(); // Prevents a stale cached list from being returned when the map is restored.
+                    kamCache = new ConcurrentHashMap<>();
+                    MAP_CACHE_REF.set(kamCache);
+                    updateModCount();
+                }
+
                 JsonObject objItem = KAppNavEndpoint.getItemAsObject(client, object);
                 if (objItem != null) { 
                     String namespace = KAppNavEndpoint.getComponentNamespace(objItem);
@@ -133,18 +159,14 @@ public class KindActionMappingCache {
                         switch (type) {
                             case "ADDED":
                             case "MODIFIED":
-                                if (kamCache == null) {
-                                    kamCache = new ConcurrentHashMap<>();
-                                    MAP_CACHE_REF.set(kamCache);
-                                }
                                 kamCache.put(kamQName, new SoftReference<>(objItem));
+                                updateModCount();
                                 updated = true;
                                 break;
                             case "DELETED":
-                                if (kamCache != null) {
-                                    kamCache.remove(kamQName);
-                                    updated = true;
-                                }
+                                kamCache.remove(kamQName);
+                                updateModCount();
+                                updated = true;
                                 break;
                         }
                         if (updated && Logger.isDebugEnabled())
@@ -160,6 +182,10 @@ public class KindActionMappingCache {
 
             @Override
             public void reset(ApiClient client) {
+                // If the watch stops or fails delete the cache.
+                MAP_CACHE_REF.set(null);
+                CACHED_LIST.set(null);
+                updateModCount();
             }
         });
     }
@@ -175,37 +201,51 @@ public class KindActionMappingCache {
     public static List<JsonObject> listKAMCustomResources(ApiClient client) throws ApiException {
         String methodName = "listKAMCustomResources";
         if (Logger.isEntryEnabled())
-                Logger.log(CLASS_NAME, "listKAMCustomResources", Logger.LogType.ENTRY, ""); 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, ""); 
 
-        List<JsonObject> kamList = null;
-        if (kamCache == null) {
-            if (Logger.isDebugEnabled())
-                Logger.log(CLASS_NAME, "listKAMCustomResources", Logger.LogType.DEBUG, "KAM cache is null and retrieve kams from the cluster."); 
-            kamCache = new ConcurrentHashMap<>();
-            MAP_CACHE_REF.set(kamCache);
-            kamList = listKAMCustomResourcesFromCluster(client);
-            
-            if ( (kamList == null) || (kamList.isEmpty()) ){
-                if (Logger.isExitEnabled()) 
-                    Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "No KindActionMapping CR found.");
-                return kamList;
+        //List<JsonObject> kamList = null;
+        Map<QName,SoftReference<JsonObject>> kamCache = MAP_CACHE_REF.get();
+        if (kamCache != null) {
+            final CachedList cachedList = CACHED_LIST.get();
+            if (cachedList != null) {
+                final List<JsonObject> list = cachedList.getList();
+                if (list != null) {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(CLASS_NAME,methodName, Logger.LogType.DEBUG, 
+                                   "Returning cached KindActionMapping list for all namespaces.");
+                    }
+                    return list;
+                }
             }
 
-            // populate the KAM cache with the kams retrieved from the cluster
-            populateKAMCache(kamList);
-        } 
+            // No cached value. Retrieve the list directly from the cluster and cache it.
+            final long modCount = MOD_COUNT.get();
+            final List<JsonObject> list = listKAMCustomResourcesFromCluster(client);
+            CACHED_LIST.set(new CachedList(list, modCount));
+            if (Logger.isDebugEnabled()) {
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
+                           "Caching KindActionMapping list for all namespaces.");
+            }
+            return Collections.unmodifiableList(list);
 
-        if (Logger.isDebugEnabled())
-            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "retrieve the kams from the cache");
-        kamList = new ArrayList<>();
-        Iterator<SoftReference<JsonObject>> kamIter = kamCache.values().iterator();
-        while (kamIter.hasNext()) {
-            kamList.add((JsonObject) kamIter.next().get());
-        } 
+        } else {  // No Cached value Retrieve the list directly from the cluster and cache it.
+            // Wake up the working thread if there's no cache.
+            synchronized (LOCK) {
+                LOCK.notify();
+            }
 
-        if (Logger.isExitEnabled())
-                Logger.log(CLASS_NAME, "listKAMCustomResources", Logger.LogType.EXIT, ""); 
-        return kamList;      
+            if (Logger.isDebugEnabled())
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
+                        "No KAM cache available. Notify thread (" + WATCHER_THREAD_NAME + 
+                        ") to awaken and re-establish the cache and retrieve kams from the cluster.");
+        }
+        
+        // No cache. Retrieve the list directly from the cluster.
+        return listKAMCustomResourcesFromCluster(client);   
+    }
+
+    public static long updateModCount() {
+        return MOD_COUNT.incrementAndGet();
     }
 
     /**
@@ -221,47 +261,13 @@ public class KindActionMappingCache {
         final CustomObjectsApi coa = new CustomObjectsApi();
         coa.setApiClient(client);
         if (Logger.isDebugEnabled()) {
-            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
-                "\n List KAM Custom Resources for all namespaces with" +
-                "\n group = " + "actions.kappnav.io" + 
-                "\n namespace = kappnav and name = default");
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG,
+                       "\n List KAM Custom Resources for all namespaces with" + "\n group = " + 
+                       KAM_GROUP + "\n version = " + KAM_VERSION + "\n plural = " + KAM_PLURAL);
         }
 
         Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, 
                              null, null, null);
         return KAppNavEndpoint.getItemAsList(client, kamResource);
     }
-
-    /**
-     * Populate the KAM cache with the KAM CRs retrieved from the cluster
-     * 
-     * @param kamList a list of KAM CR instances in a cluster
-     */
-    private static void populateKAMCache(List<JsonObject> kamList) {
-        String methodName = "populateKAMCache";
-        kamList.forEach (v -> {
-            JsonElement items = v.get(KindActionMappingProcessor.ITEMS_PROPERTY_NAME);
-            if ((items != null) && (items.isJsonArray())) {
-                JsonArray itemsArray = items.getAsJsonArray();
-
-                // go though all kams to get the qualified configmaps defined in those kams   
-                // Sort the configmaps found in order of hierarchy & precedence
-                if (itemsArray != null) {
-                    itemsArray.forEach(kam-> {  
-                        if ( (kam != null) && (kam.isJsonObject()) ) {
-                            String name = KindActionMappingProcessor.getKAMName(kam);
-                            String namespace = KindActionMappingProcessor.getKAMNamespace(kam);
-
-                            if (Logger.isDebugEnabled())
-                                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
-                                        "store kam (" + name + "@" +namespace + ") in the kam cache");
-                            QName kamQName = new QName(namespace, name);
-                            kamCache.put(kamQName, new SoftReference<>(kam.getAsJsonObject()));
-                    }
-                });
-            }
-            }
-        });
-    }
-
 }
