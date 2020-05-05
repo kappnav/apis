@@ -69,8 +69,7 @@ public class KindActionMappingProcessor {
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     private static final String OWNER_PROPERTY_NAME = "owner"; 
-    private static final String OWNER_API_PROPERTY_NAME = "ownerAPI"; 
-    private static final String OWNER_UID_PROPERTY_NAME = "ownerUID"; 
+    private static final String UID_PROPERTY_NAME = "uid"; 
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String SUBKIND_PROPERTY_NAME = "subkind";
     private static final String KIND_PROPERTY_NAME = "kind";
@@ -185,12 +184,20 @@ public class KindActionMappingProcessor {
                                             if (props != null) {
                                                 JsonElement prop = props.get(APIVERSION_PROPERTY_NAME);
                                                 String apiVersion = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_API_PROPERTY_NAME);
-                                                String ownerAPI = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_PROPERTY_NAME);
-                                                String owner = (prop != null) ? prop.getAsString():null;
-                                                prop = props.get(OWNER_UID_PROPERTY_NAME);
-                                                String ownerUID = (prop != null) ? prop.getAsString():null;
+
+                                                String ownerKind= null;
+                                                String ownerAPIVersion= null;
+                                                String ownerUID= null; 
+                                                JsonObject owner = props.getAsJsonObject(OWNER_PROPERTY_NAME);
+                                                if ( owner != null ) { 
+                                                    prop = owner.get(APIVERSION_PROPERTY_NAME);
+                                                    ownerAPIVersion = (prop != null) ? prop.getAsString():null;
+                                                    prop = owner.get(KIND_PROPERTY_NAME);
+                                                    ownerKind = (prop != null) ? prop.getAsString():null;
+                                                    prop = owner.get(UID_PROPERTY_NAME);
+                                                    ownerUID = (prop != null) ? prop.getAsString():null;
+                                                }
+
                                                 prop = props.get(NAME_PROPERTY_NAME);
                                                 String name = (prop != null) ? prop.getAsString():null;
                                                 prop = props.get(SUBKIND_PROPERTY_NAME);
@@ -203,15 +210,16 @@ public class KindActionMappingProcessor {
                                                        "\nmapping info: " + 
                                                        "\napiVersion = " + apiVersion +
                                                        "\nowner = " + owner +
-                                                       "\nownerAPI = " + ownerAPI +
-                                                       "\nownerUID = " + ownerUID +
+                                                       "\nowner.kind = " + ownerKind +
+                                                       "\nowner.apiVersion = " + ownerAPIVersion +
+                                                       "\nowner.uid = " + ownerUID +
                                                        "\nname = " + name +
                                                        "\nsubkind = " + subkind +
                                                        "\nkind = " + kind + 
                                                        "\nmapname = " + mapname);
 
                                                 String normalizedApiVersion = normalizeApiVersion(apiVersion);
-                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(owner, ownerAPI, ownerUID, compOwners)) {
+                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(ownerKind, ownerAPIVersion, ownerUID, compOwners)) {
                                                     int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
@@ -401,7 +409,7 @@ public class KindActionMappingProcessor {
     private boolean isApiVersionMatch(String apiVersion, String compApiVersion) {
         String methodName = "isApiVersionMatch";
         if (Logger.isEntryEnabled()) 
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "apiVerion = " + apiVersion +
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "apiVersion = " + apiVersion +
                        ", compApiVersion = " + compApiVersion);
 
         boolean match = false;
@@ -453,25 +461,51 @@ public class KindActionMappingProcessor {
      * 
      *         false if mapping rule specifies owner (not wildcard) but resource has no matching owner
      */
-    private boolean ownerMatches(String mappingRuleOwner, String mappingRuleOwnerAPI, String mappingRuleOwnerUID, OwnerRef[] resourceOwnerReferences) {
-
-        // true if mapping rule does not specify owner
-        if ( mappingRuleOwner == null ) { 
+    private boolean ownerMatches(String mappingRuleOwnerKind, String mappingRuleOwnerAPIVersion, String mappingRuleOwnerUID, OwnerRef[] resourceOwnerReferences) {
+        String methodName = "ownerMatches";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, 
+               "mappingRuleOwnerKind: " + mappingRuleOwnerKind + ", mappingRuleOwnerAPI: " + mappingRuleOwnerAPIVersion + ", mappingRuleOwnerUID: " + mappingRuleOwnerUID + ", resourceOwnerReferences: " + resourceOwnerReferences);
+        }
+        // true if mapping rule does not specify owner kind
+        if ( mappingRuleOwnerKind == null ) { 
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                   "true. mapping rule has no owner.kind");
+            }
             return true; 
         }
         // true if mapping rule specifies owner wildcard ('*')
-        else if ( mappingRuleOwner.equals("*") ) { 
+        else if ( mappingRuleOwnerKind.equals("*") ) { 
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                   "true. mapping rule owner.kind = *");
+            }
             return true; 
         }
         // false if mapping rule specifies owner and resource has no owners 
         else if ( resourceOwnerReferences == null ) { 
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                   "false. resource has no ownerReferences");
+            }
             return false; 
         }
-        else { 
+        else {
+            // TODO: if owner does not match then move up the owner
+            //       hierarchy looking for a match
             for (int i=0; i < resourceOwnerReferences.length; i++ ) { 
-                if ( resourceOwnerReferences[i].kindEquals(mappingRuleOwner) ) { 
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                       "resourceOwnerReference: " + resourceOwnerReferences[i]);
+                }
+                if ( resourceOwnerReferences[i].kindEquals(mappingRuleOwnerKind) ) { 
                     // true if resource has owner that equals mapping rule owner
-                    if (( mappingRuleOwnerUID == null ) && ( mappingRuleOwnerAPI == null ))  {  
+                    if (( mappingRuleOwnerUID == null ) && ( mappingRuleOwnerAPIVersion == null ))  {  
+                        if (Logger.isExitEnabled()) {
+                            Logger.log(className, methodName, Logger.LogType.EXIT, 
+                               "true. mapping rule owner.kind matches owner reference kind, and mapping rule has no uid or apiVersion");
+                        }
                         return true;
                     }
                     // (true) and mapping rule api(Version) and uid match resource owner 
@@ -479,17 +513,36 @@ public class KindActionMappingProcessor {
                     // (false) and mapping rule api(Version) and uid do not match resource owner 
                     //        apiVersion and uid.
                     else {
-                        if (uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && 
-                              apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI)) {
-                            this.compMatchingOwner = resourceOwnerReferences[i];
-                            return true;
+                        if (uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID)) {
+                            if (apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPIVersion)) {
+                                this.compMatchingOwner = resourceOwnerReferences[i];
+                                if (Logger.isExitEnabled()) {
+                                    Logger.log(className, methodName, Logger.LogType.EXIT, 
+                                    "true. mapping rule owner.apiVersion and owner.uid match resource owner");
+                                }
+                                return true;
+                            } else {
+                                if (Logger.isExitEnabled()) {
+                                    Logger.log(className, methodName, Logger.LogType.EXIT, 
+                                    "false. mapping rule owner.apiVersion does not match resource owner");
+                                }
+                                return false;
+                            }
                         } else {
+                            if (Logger.isExitEnabled()) {
+                                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                                "false. mapping rule owner.uid does not match resource owner");
+                            }
                             return false;
                         }
                     }
                 }
             }
-            // false if mapping rule specifies owner (not wildcard) but resource has no matching owner            
+            // false if mapping rule specifies owner (not wildcard) but resource has no matching owner
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                "false. mapping rule owner.kind not * and does not match resource owner");
+            }
             return false; 
         }
     }
@@ -690,9 +743,24 @@ public class KindActionMappingProcessor {
      * @return substituted mapName
      */
     private String mapNameSubstitute(String rawMapName, String namespace) {
+        String methodName = "mapNameSubstitute";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "rawMapName: " + rawMapName + ", namespace: " + namespace);
+        }
         String actualMapName = new String("");
+        boolean ownerDotSub = false;
+        // TODO: regex to handle ${owner.xxx}. Until then...this hack
+        if (rawMapName.indexOf("${owner.") > -1) {
+            rawMapName = rawMapName.replace("${owner.kind}","${owner-kind}"). 
+                                    replace("${owner.apiVersion}","${owner-apiVersion}").
+                                    replace("${owner.uid}","${owner-uid}");
+            ownerDotSub = true;
+        }
         String[] parts = rawMapName.split("\\.");
         for (int i=0; i<parts.length; i++) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "processing mapname segment: " + parts[i]);
+            }
             if ( parts[i].equals("${namespace}") ) {
                 actualMapName = actualMapName + namespace;
             } else if ( parts[i].equals("${name}") ) {
@@ -702,13 +770,13 @@ public class KindActionMappingProcessor {
                                 this.compSubkind.toLowerCase(Locale.ENGLISH);
             } else if ( parts[i].equals("${kind}") ) {
                 actualMapName = actualMapName + this.compKind.toLowerCase(Locale.ENGLISH);
-            } else if ( parts[i].equals("${owner.apiVersion}") && 
+            } else if ( parts[i].equals("${owner-apiVersion}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getApiVersion().replace('/','-');
-            } else if ( parts[i].equals("${owner.kind}") && 
+            } else if ( parts[i].equals("${owner-kind}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getKind().toLowerCase(Locale.ENGLISH);
-            } else if ( parts[i].equals("${owner.uid}") && 
+            } else if ( parts[i].equals("${owner-uid}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getUID();
             } else {
@@ -717,6 +785,15 @@ public class KindActionMappingProcessor {
 
             if (i < parts.length-1)
                 actualMapName = actualMapName + ".";
+        }
+        // If a sub for a ${owner.xxx} variable was not completed then undo the hack 
+        if (ownerDotSub && actualMapName.indexOf("${owner-") > -1) {
+            actualMapName = actualMapName.replace("${owner-kind}","${owner.kind}"). 
+                                          replace("${owner-apiVersion}","${owner.apiVersion}").
+                                          replace("${owner-uid}","${owner.uid}");
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "return = " + actualMapName);
         }
         return actualMapName ;
     }
