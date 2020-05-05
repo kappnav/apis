@@ -55,6 +55,7 @@ import com.ibm.kappnav.logging.Logger;
 public class SecretEndpoint extends KAppNavEndpoint {
     private static final String className = SecretEndpoint.class.getName();
 
+    // For junit test only
     private CoreV1Api cv1a = null;
 	void setCoreV1ApiForInternal(CoreV1Api cv1a) {
 		this.cv1a = cv1a;

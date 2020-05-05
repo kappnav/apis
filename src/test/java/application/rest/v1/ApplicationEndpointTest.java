@@ -206,7 +206,7 @@ public class ApplicationEndpointTest {
 			{
 				allowing(coa).setApiClient(with(any(ApiClient.class)));
 				oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", "stock-trader");
-            	will(returnValue(jsonObject));
+				will(returnValue(jsonObject));
 			}		
 		});
 		
