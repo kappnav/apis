@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,20 @@ public class KAppNavConfig {
         KAPPNAV_CUSTOM_RESOURCE_NAME = getEnvironmentVariable(KAPPNAV_CR_NAME, KAPPNAV_DEFAULT_CR_NAME);
     }
     
+    // For Junit only
+    CoreV1Api cv1a = null;
+    static void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+    	cv1a = cv1a;
+	}
+    
+    CoreV1Api getCoreV1ApiForInternal() {
+    	if (cv1a == null) {
+    		return new CoreV1Api();
+    	} else {
+    		return cv1a;
+    	}
+	}
+    
     private static String getEnvironmentVariable(String name, String defaultValue) {
         // remove all Logger messages as Logger needs to call this method to initialize itself
         //if (Logger.isEntryEnabled()) {
@@ -117,7 +131,7 @@ public class KAppNavConfig {
         String statusUnknown = STATUS_UNKNOWN_DEFAULT;
         List<String> appStatusPrecedence = APP_STATUS_PRECDENCE_DEFAULT;
         try {
-            CoreV1Api api = new CoreV1Api();
+            CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1ConfigMap map = api.readNamespacedConfigMap(MAP_NAME, KAPPNAV_NAMESPACE, null, null, null);
             Map<String,String> data = map.getData();

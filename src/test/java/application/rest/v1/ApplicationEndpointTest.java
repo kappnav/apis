@@ -31,10 +31,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.JSON;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1DeleteOptions;
 
@@ -49,11 +51,12 @@ public class ApplicationEndpointTest {
             setImposteriser(ClassImposteriser.INSTANCE);
         }
     };
-    
-	private final ApiClient ac = mock.mock(ApiClient.class);
+ 
 	private final CustomObjectsApi coa = mock.mock(CustomObjectsApi.class);
 	private final ApplicationEndpoint aep = new ApplicationEndpoint();
 	private final ApplicationCache appc = new ApplicationCache();
+	private final JSON json = new JSON();
+	private final Gson gson = new Gson();
 	private Response response = null;
 	
 	String sampleApp = "{" + 
@@ -156,17 +159,16 @@ public class ApplicationEndpointTest {
 			"    ]" + 
 			"}";
 
-	JsonObject jsonObject1 = new JsonParser().parse(sampleApp).getAsJsonObject();
-	JsonObject jsonObject2 = new JsonParser().parse(updatedSampleApp).getAsJsonObject();
+	JsonObject jsonObject = new JsonParser().parse(sampleApp).getAsJsonObject();
 	
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-		aep.setApiClientForJunit(ac);
 		KAppNavEndpoint.setCustomObjectsApiForJunit(coa);
 		appc.setCustomObjectsApiForJunit(coa);
+		json.setGson(gson);
 	}
 
 	
@@ -182,7 +184,7 @@ public class ApplicationEndpointTest {
 	public void createApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
 			{
-				oneOf(coa).setApiClient(ac);
+				oneOf(coa).setApiClient(with(any(ApiClient.class)));
 				oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)), with(any(String.class)));
 			}
 			
@@ -202,9 +204,9 @@ public class ApplicationEndpointTest {
 	public void getApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
 			{
-				allowing(coa).setApiClient(ac);
-				oneOf(coa).getNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)));
-            	will(returnValue(jsonObject1));
+				allowing(coa).setApiClient(with(any(ApiClient.class)));
+				oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", "stock-trader");
+            	will(returnValue(jsonObject));
 			}		
 		});
 		
@@ -216,13 +218,13 @@ public class ApplicationEndpointTest {
 			fail("Test getApplication_succeeds failed with exception " + e.getMessage());
 		}
 	}
-	
+
 	
 	@Test
 	public void replaceApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
 			{
-				oneOf(coa).setApiClient(ac);
+				oneOf(coa).setApiClient(with(any(ApiClient.class)));
 				oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(Object.class)));				
 			}		
 		});
@@ -241,13 +243,13 @@ public class ApplicationEndpointTest {
 	public void deleteApplication_succeeds() throws Exception {
 		mock.checking(new Expectations() {
 			{
-				oneOf(coa).setApiClient(ac);
+				oneOf(coa).setApiClient(with(any(ApiClient.class)));
 				oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), with(any(String.class)), (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)), with(any(String.class)));		
 			}
 		});
 		
 		try {
-			response = aep.deleteApplication(updatedSampleApp, "stock-trader");
+			response = aep.deleteApplication("stock-trader", "stock-trader");
 			int rc = response.getStatus();
 			assertEquals("Test deleteApplication_succeeds FAILED", 200, rc);
 		} catch (Exception e) {

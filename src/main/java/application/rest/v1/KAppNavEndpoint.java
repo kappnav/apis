@@ -108,7 +108,6 @@ public abstract class KAppNavEndpoint {
 
     private static final String DEFAULT_NAMESPACE = "default";
   
-    //For junit only
     static CustomObjectsApi coau = null;
     static void setCustomObjectsApiForJunit(CustomObjectsApi coa) {
     	coau = coa;
@@ -396,11 +395,11 @@ public abstract class KAppNavEndpoint {
     }
     
     public static ApiClient getApiClient() throws IOException {
-        final ApiClient client = Config.defaultClient();
-        if (!DISABLE_TRUST_ALL_CERTS) {
-            trustAllCerts(client);
-        }
-        return client;
+    	final ApiClient client = Config.defaultClient();
+    	if (!DISABLE_TRUST_ALL_CERTS) {
+    		trustAllCerts(client);
+    	}
+    	return client;
     }
     
     // Write status object to metadata.annotations[kappnav.status].

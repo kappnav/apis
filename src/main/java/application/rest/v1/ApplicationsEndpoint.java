@@ -1,5 +1,5 @@
 /*
- * Copyright 2019,2020 IBM Corporation
+ * Copyright 2019 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import javax.lang.model.element.AnnotationValueVisitor;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -119,8 +118,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
         final ConfigMapProcessor processor = new ConfigMapProcessor(APPLICATION_PROPERTY_NAME);
         final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(APPLICATION_PROPERTY_NAME);
         appObjects.forEach(v -> {
-            if (! isApplicationHidden(v))
-               response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));   
+            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));   
         });
         return Response.ok(response.getJSON()).build();
     }

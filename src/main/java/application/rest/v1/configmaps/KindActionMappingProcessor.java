@@ -82,6 +82,22 @@ public class KindActionMappingProcessor {
     private String compName;
     private String compSubkind;
     private String compKind;
+    
+    // For junit only
+    CustomObjectsApi coau = null;
+    public KindActionMappingProcessor() {}
+    
+    public void setCustomObjectsApiForJunit(CustomObjectsApi coa) {
+    	this.coau = coa;
+    }
+    
+    private CustomObjectsApi getCustomObjectsApi() {
+    	if (coau == null) {
+        	return new CustomObjectsApi();
+        } else {
+        	return coau;
+        }
+    }
 
     public KindActionMappingProcessor(String namespace, OwnerRef[] owners, String apiVersion, String name,
                                       String subkind, String kind) {
@@ -93,7 +109,7 @@ public class KindActionMappingProcessor {
         this.compKind = kind;
     }
 
-    /**
+	/**
      * This method is to get configmaps defined in the mappings and precedences of the 
      * KindActionMapping custom resources for a given resource.
      * 
@@ -301,7 +317,7 @@ public class KindActionMappingProcessor {
     protected List<JsonObject> listKAMCustomResources(ApiClient client) 
         throws ApiException {
         String methodName = "listKAMCustomResources";
-        final CustomObjectsApi coa = new CustomObjectsApi();
+        final CustomObjectsApi coa = getCustomObjectsApi(); // JUNI
         coa.setApiClient(client);
         if (Logger.isDebugEnabled()) {
             Logger.log(className, methodName, Logger.LogType.DEBUG, 

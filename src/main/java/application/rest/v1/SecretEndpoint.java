@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import com.google.gson.JsonParseException;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1Secret;
 
@@ -53,6 +54,20 @@ import com.ibm.kappnav.logging.Logger;
 @Tag(name = "secret", description="kAppNav Secret CRUD API")
 public class SecretEndpoint extends KAppNavEndpoint {
     private static final String className = SecretEndpoint.class.getName();
+
+    private CoreV1Api cv1a = null;
+	void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+		this.cv1a = cv1a;
+	}
+
+	private CoreV1Api getCoreV1ApiForInternal() throws IOException {
+		if (cv1a == null) {
+			final CoreV1Api api = new CoreV1Api();
+            return api;
+		} else {
+			return cv1a;
+		}
+	}
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -69,7 +84,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the secret") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = api.readNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), null, null, null);
             final JsonObject json = getItemAsObject(client, secret);
@@ -107,7 +122,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the secret") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
             api.createNamespacedSecret(encodeURLParameter(namespace), secret, null);
@@ -137,7 +152,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the secret") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
             api.replaceNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), secret, null);
@@ -166,7 +181,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the secret") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1DeleteOptions options = new V1DeleteOptions();
             api.deleteNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), options, null, 0, true, "");

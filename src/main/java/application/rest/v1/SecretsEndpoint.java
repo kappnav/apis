@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,20 @@ public class SecretsEndpoint extends KAppNavEndpoint {
     
     private static final String KIND_PROPERTY_NAME = "kind";
     private static final String SECRET_KIND = "Secret";
+    
+    private CoreV1Api cv1a = null;
+	void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+		this.cv1a = cv1a;
+	}
+
+	private CoreV1Api getCoreV1ApiForInternal() throws IOException {
+		if (cv1a == null) {
+			final CoreV1Api api = new CoreV1Api();
+            return api;
+		} else {
+			return cv1a;
+		}
+	}
     
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
