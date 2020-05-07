@@ -723,9 +723,25 @@ public class KindActionMappingProcessor {
      * @return substituted mapName
      */
     private String mapNameSubstitute(String rawMapName, String namespace) {
+        String methodName = "mapNameSubstitute";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "rawMapName: " + rawMapName + ", namespace: " + namespace);
+        }
         String actualMapName = new String("");
+        boolean ownerDotSub = false;
+        // TODO: regex to handle ${owner.xxx} variables
+        // Temporarily substitute - for . in any ${owner.xxx} variables (for split with regex "\\.")
+        if (rawMapName.indexOf("${owner.") > -1) {
+            rawMapName = rawMapName.replace("${owner.kind}","${owner-kind}"). 
+                                    replace("${owner.apiVersion}","${owner-apiVersion}").
+                                    replace("${owner.uid}","${owner-uid}");
+            ownerDotSub = true;
+        }
         String[] parts = rawMapName.split("\\.");
         for (int i=0; i<parts.length; i++) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "processing mapname segment: " + parts[i]);
+            }
             if ( parts[i].equals("${namespace}") ) {
                 actualMapName = actualMapName + namespace;
             } else if ( parts[i].equals("${name}") ) {
@@ -735,13 +751,13 @@ public class KindActionMappingProcessor {
                                 this.compSubkind.toLowerCase(Locale.ENGLISH);
             } else if ( parts[i].equals("${kind}") ) {
                 actualMapName = actualMapName + this.compKind.toLowerCase(Locale.ENGLISH);
-            } else if ( parts[i].equals("${owner.apiVersion}") && 
+            } else if ( parts[i].equals("${owner-apiVersion}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getApiVersion().replace('/','-');
-            } else if ( parts[i].equals("${owner.kind}") && 
+            } else if ( parts[i].equals("${owner-kind}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getKind().toLowerCase(Locale.ENGLISH);
-            } else if ( parts[i].equals("${owner.uid}") && 
+            } else if ( parts[i].equals("${owner-uid}") && 
                         this.compMatchingOwner != null ) {
                 actualMapName = actualMapName + this.compMatchingOwner.getUID();
             } else {
@@ -750,6 +766,15 @@ public class KindActionMappingProcessor {
 
             if (i < parts.length-1)
                 actualMapName = actualMapName + ".";
+        }
+        // If a sub for a ${owner.xxx} variable was not completed then undo .- substitution
+        if (ownerDotSub && actualMapName.indexOf("${owner-") > -1) {
+            actualMapName = actualMapName.replace("${owner-kind}","${owner.kind}"). 
+                                          replace("${owner-apiVersion}","${owner.apiVersion}").
+                                          replace("${owner-uid}","${owner.uid}");
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "actualMapName = " + actualMapName);
         }
         return actualMapName ;
     }
