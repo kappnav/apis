@@ -152,7 +152,7 @@ public class KindActionMappingCache {
             public void reset(ApiClient client) {
                 // If the watch stops or fails delete the cache.
                 KAM_WATCHER_REF.set(null);
-                //KAM_CACHE.set(null);
+                KAM_CACHE_REF.set(null);
                 updateModCount();
             }
         });
