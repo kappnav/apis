@@ -1,0 +1,14 @@
+apiVersion: actions.kappnav.io/v1
+kind: KindActionMapping
+metadata:
+  name: kam4
+spec:
+  mappings:
+  - apiVersion: '*/*'
+    kind: 'Deployment'
+    mapname: map4
+    owner:
+      kind: OpenLibertyApplication
+      apiVersion: openliberty.io/v1beta1
+      uid: dcb4f899-66d3-4fd4-b389-c184b87b43c8
+  precedence: 2
