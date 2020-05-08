@@ -496,15 +496,6 @@ public class KindActionMappingProcessor {
         }
     }
 
-    // format ownerRef array into newline prefix string
-    private String ownerRefsToString(OwnerRef[] refs) { 
-        String result="";
-        for (int i=0; i<refs.length; i++) { 
-                result+= "\n"+refs[i].toString();
-        }
-        return result; 
-    }
-
     /**
      *  format ownerRef array into newline prefix string
      */
