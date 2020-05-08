@@ -5,6 +5,7 @@
 /.classpath
 /.project
 /.settings
+/.factoryPath
 
 /caches
 /local.properties

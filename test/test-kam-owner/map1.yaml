@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    kappnav.io/map-type: action
+  name: map1
+data:
+  url-actions: |
+    [   
+      {
+        "name": "map1", 
+        "text": "View Home Page Map1",
+        "description": "View Liberty Home Page", 
+        "url-pattern":"http://${snippet.get_route_host(${func.kubectlGet(Route,${resource.$.metadata.name},-n,${resource.$.metadata.namespace},-o,json)})}",
+        "open-window": "tab",
+        "menu-item": "true"
+      }
+    ]
+  snippets: | 
+    {
+      "get_route_host":"function getRouteHost(route) 
+        {
+          var routeJSON = JSON.parse(route);         
+          var host = routeJSON.spec.host;         
+          return host; 
+       }"
+    }

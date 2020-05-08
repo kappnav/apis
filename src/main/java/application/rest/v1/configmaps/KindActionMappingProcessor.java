@@ -445,17 +445,20 @@ public class KindActionMappingProcessor {
             );
         // true if mapping rule does not specify owner kind
         if ( mappingRuleOwnerKind == null ) { 
-            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule does not specify owner kind.");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule does not specify owner kind.");
             return true; 
         }
         // true if mapping rule specifies owner kind wildcard ('*')
         else if ( mappingRuleOwnerKind.equals("*") ) { 
-            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule specifies owner kind wildcard ('*').");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule specifies owner kind wildcard ('*').");
             return true; 
         }
         // false if mapping rule specifies owner kind (not wildcard) and resource has no owner refs
         else if ( resourceOwnerReferences == null ) { 
-            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "false because mapping rule specifies owner kind (not wildcard) and resource has no owner refs.");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "false because mapping rule specifies owner kind (not wildcard) and resource has no owner refs.");
             return false; 
         }
         else { 
@@ -463,7 +466,8 @@ public class KindActionMappingProcessor {
                 if ( resourceOwnerReferences[i].kindEquals(mappingRuleOwnerKind) ) { 
                     // true if resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid
                     if (( mappingRuleOwnerUID == null ) && ( mappingRuleOwnerAPI == null ))  {  
-                        if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid.");
+                        if (Logger.isDebugEnabled()) 
+                            Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid.");
                         return true;
                     }
                     else {
@@ -472,21 +476,33 @@ public class KindActionMappingProcessor {
                         if (uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && 
                               apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI)) {
                             this.compMatchingOwner = resourceOwnerReferences[i];
-                            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and mapping rule owner apiVersion and/or uid match resource owner apiVersion and/or uid.");
+                            if (Logger.isDebugEnabled()) 
+                                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and mapping rule owner apiVersion and/or uid match resource owner apiVersion and/or uid.");
                             return true;
                         // false if resource has owner ref kind that matches mapping rule owner kind 
                         //   and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid
                         } else {
-                            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because resource has owner ref kind that matches mapping rule owner kind and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid."); 
+                            if (Logger.isDebugEnabled()) 
+                                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because resource has owner ref kind that matches mapping rule owner kind and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid."); 
                             return false;
                         }
                     }
                 }
             }
             // false if mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind
-            if (Logger.isDebugEnabled()) Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind.");           
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind.");           
             return false; 
         }
+    }
+
+    // format ownerRef array into newline prefix string
+    private String ownerRefsToString(OwnerRef[] refs) { 
+        String result="";
+        for (int i=0; i<refs.length; i++) { 
+                result+= "\n"+refs[i].toString();
+        }
+        return result; 
     }
 
     /**
@@ -754,6 +770,7 @@ public class KindActionMappingProcessor {
         
         if (Logger.isExitEnabled()) {
             Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "actualMapName = " + actualMapName);
+
         }
         return actualMapName ;
     }
