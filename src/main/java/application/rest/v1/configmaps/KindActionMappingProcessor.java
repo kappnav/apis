@@ -26,10 +26,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import application.rest.v1.KAppNavEndpoint;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CustomObjectsApi;
 
 import com.ibm.kappnav.logging.Logger;
 
@@ -38,16 +36,14 @@ import com.ibm.kappnav.logging.Logger;
  * This class provides the methods that facilitate a process of getting a configmap for a given
  * resource following the mapping rules and configmap hierarchy & precedence. 
  * 
- * Desing document link: https://github.com/kappnav/design/blob/master/kind-action-mapping.md
+ * Design document link: https://github.com/kappnav/design/blob/master/kind-action-mapping.md
  */
 public class KindActionMappingProcessor {
 
-    private static final String className = KindActionMappingProcessor.class.getName();
+    private static final String CLASS_NAME = KindActionMappingProcessor.class.getName();
 
     // KindActionMapping/KAM definitions
-    private static final String KAM_PLURAL = "kindactionmappings";
-    private static final String KAM_GROUP = "actions.kappnav.io";
-    private static final String KAM_VERSION = "v1";
+
     private static final String WILDCARD = "*";
 
     private static final int MAX_PRECEDENCE = 9;
@@ -69,7 +65,7 @@ public class KindActionMappingProcessor {
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     private static final String OWNER_PROPERTY_NAME = "owner"; 
-    private static final String UID_PROPERTY_NAME = "uid"; 
+    private static final String UID_PROPERTY_NAME = "uid";
     private static final String NAME_PROPERTY_NAME = "name";
     private static final String SUBKIND_PROPERTY_NAME = "subkind";
     private static final String KIND_PROPERTY_NAME = "kind";
@@ -83,7 +79,7 @@ public class KindActionMappingProcessor {
     private String compKind;
     private OwnerRef compMatchingOwner;
 
-    public KindActionMappingProcessor(String namespace, OwnerRef[] owners, String apiVersion, String name,
+    public KindActionMappingProcessor(String namespace, OwnerRef[] owners, String apiVersion, String name, 
                                       String subkind, String kind) {
         this.compNamespace = namespace;
         this.compApiVersion = normalizeApiVersion(apiVersion);
@@ -103,7 +99,6 @@ public class KindActionMappingProcessor {
      * 
      * - apiVersion is the group/version identifier of the resource. Note Kubernetes resources 
      *   with no group value (e.g. Service) specify apiVersion as version only. E.g. apiVersion: v1.
-     * - owner is the kind name of the owner of a resource - e.g. from resource's ownerReferences array.
      * - kind is the resource's kind field
      * - subkind is the resource's metadata.annotations.kappnav.subkind annotation.
      * - name is the resource's metadata.name field
@@ -135,18 +130,18 @@ public class KindActionMappingProcessor {
     protected ArrayList<QName> getConfigMapsFromKAMs(ApiClient client) {
         String methodName = "getConfigMapsFromKAMs";
         if (Logger.isEntryEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"");
 
         QName[][][] mapNamesFound = new QName[MAX_PRECEDENCE][KAM_N][TOTAL_KSN_VALUES];
         ArrayList<QName> configMapsList = null;
         List <JsonObject> kamList = null;
 
         try {
-            kamList = listKAMCustomResources(client);
+            kamList = KindActionMappingCache.listKAMCustomResources(client);
 
             if ( (kamList == null) || (kamList.isEmpty()) ){
                 if (Logger.isExitEnabled()) 
-                    Logger.log(className, methodName, Logger.LogType.EXIT, "No KindActionMapping CR instance found.");
+                    Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "No KindActionMapping CR instance found.");
                 return configMapsList;
             }
 
@@ -157,14 +152,14 @@ public class KindActionMappingProcessor {
 
                     // go though all kams to get the qualified configmaps defined in those kams   
                     // Sort the configmaps found in order of hierarchy & precedence
-                    itemsArray.forEach(item-> {
-                        if ( (item != null) && (item.isJsonObject()) ) {
+                    itemsArray.forEach (kam -> {
+                        if ( (kam != null) && (kam.isJsonObject()) ) {
                             if (Logger.isDebugEnabled()) 
-                                Logger.log(className, methodName, Logger.LogType.DEBUG,
-                                           "\nKindActionMapping found: " + item);
+                                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG,
+                                    "\nKindActionMapping found: " + kam);
 
-                            JsonElement element = item.getAsJsonObject().get(SPEC_PROPERTY_NAME);
-                            String kamNamespace = getKAMNamespace(item);
+                            JsonElement element = kam.getAsJsonObject().get(SPEC_PROPERTY_NAME);
+                            String kamNamespace = getKAMNamespace(kam);
                             if (element != null) {
                                 JsonObject spec = element.getAsJsonObject();                           
                                 JsonElement precedence = spec.get(PRECEDENCE_PROPERTY_NAME);
@@ -196,7 +191,7 @@ public class KindActionMappingProcessor {
                                                     ownerKind = (prop != null) ? prop.getAsString():null;
                                                     prop = owner.get(UID_PROPERTY_NAME);
                                                     ownerUID = (prop != null) ? prop.getAsString():null;
-                                                }
+                                                } 
 
                                                 prop = props.get(NAME_PROPERTY_NAME);
                                                 String name = (prop != null) ? prop.getAsString():null;
@@ -206,25 +201,28 @@ public class KindActionMappingProcessor {
                                                 String kind = (prop != null) ? prop.getAsString():null;
                                                 prop = props.get(MAPNAME_PROPERTY_NAME);
                                                 String mapname = (prop != null) ? prop.getAsString():null;
-                                                Logger.log(className, methodName, Logger.LogType.DEBUG,
-                                                       "\nmapping info: " + 
-                                                       "\napiVersion = " + apiVersion +
-                                                       "\nownerKind = " + ownerKind +
-                                                       "\nownerAPI = " + ownerAPI +
-                                                       "\nownerUID = " + ownerUID +
-                                                       "\nname = " + name +
-                                                       "\nsubkind = " + subkind +
-                                                       "\nkind = " + kind + 
-                                                       "\nmapname = " + mapname);
+                                                if ( Logger.isDebugEnabled()) { 
+                                                    Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG,
+                                                        "\nmapping info: " + 
+                                                        "\napiVersion = " + apiVersion +
+                                                        "\nownerKind = " + ownerKind +
+                                                        "\nownerAPI = " + ownerAPI +
+                                                        "\nownerUID = " + ownerUID +
+                                                        "\nname = " + name +
+                                                        "\nsubkind = " + subkind +
+                                                        "\nkind = " + kind + 
+                                                        "\nmapname = " + mapname);
+                                                }
 
                                                 String normalizedApiVersion = normalizeApiVersion(apiVersion);
-                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && ownerMatches(ownerKind, ownerAPI, ownerUID, compOwners)) {
+                                                if (isApiVersionMatch(normalizedApiVersion, compApiVersion) && 
+                                                    ownerMatches(ownerKind, ownerAPI, ownerUID, compOwners)) {
                                                     int compPropsIdx = examineMappingProperties(compName, compSubkind, compKind);
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
                                                     // if the resource given matches the kind action mapping rules?
                                                     boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx, 
-                                                                                            name, subkind, kind);
+                                                                                    name, subkind, kind);
 
                                                     if (matches) {                                               
                                                         // find next available slot for a kam in same precedence
@@ -250,78 +248,54 @@ public class KindActionMappingProcessor {
                                                                 mapNamesFound[precedenceIndex][kamNIndex][kamMappingPropIdx] = 
                                                                     new QName(kamNamespace, mapname);
                                                             if (Logger.isDebugEnabled()) 
-                                                                Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                                                                           "mapName " + mapname + " is stored in configMapsFound["+kamMappingPropIdx+"]["
-                                                                           + precedenceIndex+"][" + kamNIndex+"]");
+                                                                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
+                                                                    "mapName " + mapname + " is stored in configMapsFound["+kamMappingPropIdx+"]["
+                                                                    + precedenceIndex+"][" + kamNIndex+"]");
                                                         } else {
                                                             if (Logger.isWarningEnabled()) 
-                                                                Logger.log(className, methodName, Logger.LogType.WARNING, 
-                                                                       "The number of kams with the precedence " + precedenceIndex+1 + 
-                                                                       " passes the limit of " + KAM_N);
+                                                                Logger.log(CLASS_NAME, methodName, Logger.LogType.WARNING, 
+                                                                    "The number of kams with the precedence " + precedenceIndex+1 + 
+                                                                    " passes the limit of " + KAM_N);
                                                         }
                                                     } else {
                                                         if (Logger.isDebugEnabled()) 
-                                                            Logger.log(className, methodName, Logger.LogType.DEBUG, "no match!!!");
+                                                            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "no match!!!");
                                                     }                                                
                                                 } else {
                                                     if (apiVersion == null) {
                                                         if (Logger.isErrorEnabled()) 
-                                                            Logger.log(className, methodName, Logger.LogType.ERROR, 
-                                                                   "apiVersion of the KindActionMapping resource " + name + " is null.");
+                                                            Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, 
+                                                                "apiVersion of the KindActionMapping resource " + name + " is null.");
                                                     }
                                                 }
                                             }
                                         }
                                     });  // mappings.forEach
                                 } else {
-                                    String kamName = getKAMName(item);
+                                    String kamName = getKAMName(kam);
                                     if (Logger.isErrorEnabled()) {
-                                        Logger.log(className, methodName, Logger.LogType.ERROR, 
-                                                   "There is no mappings properties found for the KAM: " + kamName);
+                                        Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, 
+                                            "There is no mappings properties found for the KAM: " + kamName);
                                     }
                                 }
-                            }   
-                        }
-                    }); // itemsArray.forEach
+                            }
+                        }  
+                    });  
                 }
-            });  // kamList.forEach
+            });// kamList.forEach
              
             // process candidate mapnames including a string substitution as needed and then store 
             // them to a list according the configmap hierarchy and (high to low) precedence 
             configMapsList = processCandidateMapnames(mapNamesFound, compNamespace);
         } catch  (ApiException e) {
-            if (Logger.isErrorEnabled()) {
-                Logger.log(className, methodName, Logger.LogType.ERROR, 
-                 "Caught ApiException: " + e.toString());}
+            if (Logger.isErrorEnabled()) 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, 
+                 "Caught an apiException: " + e.toString());
         }
 
         if (Logger.isExitEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.EXIT,"");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT,"");
         return configMapsList;
-    }
-
-    /**
-     * Get all "KindActionMapping" custom resources in a cluster
-     * 
-     * @param client apiVersion
-     * @return a list of KAM CR instances in a cluster
-     * @throws ApiException
-     */
-    protected List<JsonObject> listKAMCustomResources(ApiClient client) 
-        throws ApiException {
-        String methodName = "listKAMCustomResources";
-        final CustomObjectsApi coa = new CustomObjectsApi();
-        coa.setApiClient(client);
-        if (Logger.isDebugEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.DEBUG, 
-                "\n List KAM Custom Resources for all namespaces with" +
-                "\n group = " + "actions.kappnav.io" + 
-                "\n namespace = kappnav and name = default");
-        }
-
-        Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, 
-                             null, null, null);
-        return KAppNavEndpoint.getItemAsList(client, kamResource);
     }
 
     /**
@@ -335,7 +309,7 @@ public class KindActionMappingProcessor {
         if (apiVersion.startsWith("/") && (apiVersion.length() > 1) ) {
             apiVersion = apiVersion.substring(1);
             if (Logger.isDebugEnabled())
-                Logger.log(className, methodName, Logger.LogType.DEBUG, "apiVersion normalized = " + apiVersion);
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "apiVersion normalized = " + apiVersion);
         }
         return apiVersion;
     }
@@ -346,10 +320,10 @@ public class KindActionMappingProcessor {
      * @param kam
      * @return the namespace for the given kam resource
      */
-    private String getKAMNamespace(JsonElement kam) {
+    protected static String getKAMNamespace(JsonElement kam) {
         String methodName = "getKAMNamespace";
         if (Logger.isEntryEnabled())
-            Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"");
 
         String namespaceStr = null;
         JsonElement metadata = (JsonObject) kam.getAsJsonObject().get(METADATA_PROPERTY_NAME);
@@ -359,11 +333,11 @@ public class KindActionMappingProcessor {
                 namespaceStr = namespace.get(NAMESPACE_PROPERTY_NAME).getAsString();
         } else {
             if (Logger.isDebugEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.DEBUG, "kam metadata is null.");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "kam metadata is null.");
         }
 
         if (Logger.isExitEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.EXIT, "kam namespace = " + namespaceStr);
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "kam namespace = " + namespaceStr);
         } 
         return namespaceStr;
     }
@@ -374,10 +348,10 @@ public class KindActionMappingProcessor {
      * @param kam
      * @return the name for the given kam resource
      */
-    private String getKAMName(JsonElement kam) {
+    protected static String getKAMName(JsonElement kam) {
         String methodName = "getKAMName";
         if (Logger.isEntryEnabled())
-            Logger.log(className, methodName, Logger.LogType.ENTRY,"");
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"");
 
         String nameStr = null;
         JsonElement metadata = (JsonObject) kam.getAsJsonObject().get(METADATA_PROPERTY_NAME);
@@ -387,14 +361,15 @@ public class KindActionMappingProcessor {
                 nameStr = name.get(NAME_PROPERTY_NAME).getAsString();
         } else {
             if (Logger.isDebugEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.DEBUG, "kam metadata is null.");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "kam metadata is null.");
         }
 
         if (Logger.isExitEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.EXIT, "kam namespace = " + nameStr);
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "kam name = " + nameStr);
         } 
         return nameStr;
     }
+
     private static final int GROUP = 0; 
     private static final int VERSION = 1;
     private static final int GROUPLESS_VERSION = 0;
@@ -408,7 +383,7 @@ public class KindActionMappingProcessor {
     private boolean isApiVersionMatch(String apiVersion, String compApiVersion) {
         String methodName = "isApiVersionMatch";
         if (Logger.isEntryEnabled()) 
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "apiVerion = " + apiVersion +
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, "apiVerion = " + apiVersion +
                        ", compApiVersion = " + compApiVersion);
 
         boolean match = false;
@@ -430,16 +405,12 @@ public class KindActionMappingProcessor {
                        (grp_version[GROUPLESS_VERSION].equals(WILDCARD)) ) {
                         match = true;
                     }
-                } else {
-                    if (Logger.isDebugEnabled()) 
-                        Logger.log(className, methodName, Logger.LogType.DEBUG, "No match: group_version = " + grp_version
-                                   + ", component group_version = " + comp_grp_version);
-                }
+                } 
             }
         }
 
         if (Logger.isExitEnabled()) 
-            Logger.log(className, methodName, Logger.LogType.EXIT, "match = " + match);
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "match = " + match);
         return match;
     }
 
@@ -466,7 +437,7 @@ public class KindActionMappingProcessor {
     private boolean ownerMatches(String mappingRuleOwnerKind, String mappingRuleOwnerAPI, String mappingRuleOwnerUID, OwnerRef[] resourceOwnerReferences) {
 
         if (Logger.isDebugEnabled()) 
-           Logger.log(className, "ownerMatches", Logger.LogType.DEBUG,"Parameters: "+
+           Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"Parameters: "+
               "\nrule owner kind="+mappingRuleOwnerKind+
               "\nrule owner apiVersion="+mappingRuleOwnerAPI+
               "\nrule owner uid="+mappingRuleOwnerUID+
@@ -474,17 +445,20 @@ public class KindActionMappingProcessor {
             );
         // true if mapping rule does not specify owner kind
         if ( mappingRuleOwnerKind == null ) { 
-            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule does not specify owner kind.");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule does not specify owner kind.");
             return true; 
         }
         // true if mapping rule specifies owner kind wildcard ('*')
         else if ( mappingRuleOwnerKind.equals("*") ) { 
-            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule specifies owner kind wildcard ('*').");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because mapping rule specifies owner kind wildcard ('*').");
             return true; 
         }
         // false if mapping rule specifies owner kind (not wildcard) and resource has no owner refs
         else if ( resourceOwnerReferences == null ) { 
-            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG, "false because mapping rule specifies owner kind (not wildcard) and resource has no owner refs.");
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "false because mapping rule specifies owner kind (not wildcard) and resource has no owner refs.");
             return false; 
         }
         else { 
@@ -492,7 +466,8 @@ public class KindActionMappingProcessor {
                 if ( resourceOwnerReferences[i].kindEquals(mappingRuleOwnerKind) ) { 
                     // true if resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid
                     if (( mappingRuleOwnerUID == null ) && ( mappingRuleOwnerAPI == null ))  {  
-                        if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid.");
+                        if (Logger.isDebugEnabled()) 
+                            Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and rule has no owner apiVersion or uid.");
                         return true;
                     }
                     else {
@@ -501,28 +476,35 @@ public class KindActionMappingProcessor {
                         if (uidMatches(resourceOwnerReferences[i],mappingRuleOwnerUID) && 
                               apiMatches(resourceOwnerReferences[i],mappingRuleOwnerAPI)) {
                             this.compMatchingOwner = resourceOwnerReferences[i];
-                            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and mapping rule owner apiVersion and/or uid match resource owner apiVersion and/or uid.");
+                            if (Logger.isDebugEnabled()) 
+                                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG, "true because resource has owner ref kind that matches mapping rule owner kind and mapping rule owner apiVersion and/or uid match resource owner apiVersion and/or uid.");
                             return true;
                         // false if resource has owner ref kind that matches mapping rule owner kind 
                         //   and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid
                         } else {
-                            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG,"false because resource has owner ref kind that matches mapping rule owner kind and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid."); 
+                            if (Logger.isDebugEnabled()) 
+                                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because resource has owner ref kind that matches mapping rule owner kind and mapping rule apiVersion and/or uid do not match resource owner apiVersion and/or uid."); 
                             return false;
                         }
                     }
                 }
             }
             // false if mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind
-            if (Logger.isDebugEnabled()) Logger.log(className, "ownerMatches", Logger.LogType.DEBUG,"false because mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind.");           
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, "ownerMatches", Logger.LogType.DEBUG,"false because mapping rule specifies owner kind (not wildcard) but resource has no matching owner ref kind.");           
             return false; 
         }
     }
 
-    // format ownerRef array into newline prefix string
+    /**
+     *  format ownerRef array into newline prefix string
+     */
     private String ownerRefsToString(OwnerRef[] refs) { 
         String result="";
-        for (int i=0; i<refs.length; i++) { 
+        if (refs != null) {
+            for (int i=0; i<refs.length; i++) { 
                 result+= "\n"+refs[i].toString();
+            }
         }
         return result; 
     }
@@ -588,7 +570,7 @@ public class KindActionMappingProcessor {
     private int examineMappingProperties(String name, String subkind, String kind) {
         String methodName = "examineMappingProperties";
         if (Logger.isEntryEnabled()) 
-            Logger.log(className, methodName, Logger.LogType.ENTRY, 
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, 
                    "(name, subkind, kind) = (" + name +", " + subkind + ", " + kind + ")");
 
         int retVal = NO_KSN;
@@ -606,12 +588,12 @@ public class KindActionMappingProcessor {
             }
         } else {
             if (Logger.isErrorEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.ERROR, 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, 
                            "kind given is null or empty string");
         }
 
         if (Logger.isExitEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.EXIT, 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, 
                            "retVal = " + retVal);
 
         return retVal;
@@ -633,12 +615,12 @@ public class KindActionMappingProcessor {
 
         String methodName = "isResourceMatchesRule";
         if (Logger.isEntryEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.ENTRY, 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, 
                            "cNumField = " + compKSNValue + " kNumField = " + kamKSNValue);
 
         if ( (compKSNValue == NO_KSN) || (kamKSNValue == NO_KSN)) {
             if (Logger.isErrorEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.ERROR, "return false");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, "return false");
             return false;
         }
 
@@ -676,7 +658,7 @@ public class KindActionMappingProcessor {
         }
         
         if (Logger.isExitEnabled()) 
-                Logger.log(className, methodName, Logger.LogType.EXIT, "return = " + match);
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "return = " + match);
         return match;
     }
 
@@ -700,11 +682,11 @@ public class KindActionMappingProcessor {
                     if (aQName != null) {
                         String rawMapName = aQName.getLocalPart();
                         if (Logger.isDebugEnabled()) 
-                            Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
                                 "rawMapName = " + rawMapName);
                         String actualMapName = mapNameSubstitute(rawMapName, namespace);
                         if (Logger.isDebugEnabled()) 
-                            Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                            Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
                                 "actualMapName = " + actualMapName);
                         configMapList.add(new QName(aQName.getNamespaceURI(), actualMapName));
                     }
@@ -725,8 +707,9 @@ public class KindActionMappingProcessor {
     private String mapNameSubstitute(String rawMapName, String namespace) {
         String methodName = "mapNameSubstitute";
         if (Logger.isEntryEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.ENTRY, "rawMapName: " + rawMapName + ", namespace: " + namespace);
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY, "rawMapName: " + rawMapName + ", namespace: " + namespace);
         }
+
         String actualMapName = new String("");
         boolean ownerDotSub = false;
         // TODO: regex to handle ${owner.xxx} variables
@@ -736,12 +719,13 @@ public class KindActionMappingProcessor {
                                     replace("${owner.apiVersion}","${owner-apiVersion}").
                                     replace("${owner.uid}","${owner-uid}");
             ownerDotSub = true;
-        }
+        }        
         String[] parts = rawMapName.split("\\.");
         for (int i=0; i<parts.length; i++) {
             if (Logger.isDebugEnabled()) {
-                Logger.log(className, methodName, Logger.LogType.DEBUG, "processing mapname segment: " + parts[i]);
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "processing mapname segment: " + parts[i]);
             }
+
             if ( parts[i].equals("${namespace}") ) {
                 actualMapName = actualMapName + namespace;
             } else if ( parts[i].equals("${name}") ) {
@@ -767,14 +751,17 @@ public class KindActionMappingProcessor {
             if (i < parts.length-1)
                 actualMapName = actualMapName + ".";
         }
+
         // If a sub for a ${owner.xxx} variable was not completed then undo .- substitution
         if (ownerDotSub && actualMapName.indexOf("${owner-") > -1) {
             actualMapName = actualMapName.replace("${owner-kind}","${owner.kind}"). 
                                           replace("${owner-apiVersion}","${owner.apiVersion}").
                                           replace("${owner-uid}","${owner.uid}");
         }
+        
         if (Logger.isExitEnabled()) {
-            Logger.log(className, methodName, Logger.LogType.EXIT, "actualMapName = " + actualMapName);
+            Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT, "actualMapName = " + actualMapName);
+
         }
         return actualMapName ;
     }
