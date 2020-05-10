@@ -52,6 +52,21 @@ public class SecretsEndpoint extends KAppNavEndpoint {
     private static final String KIND_PROPERTY_NAME = "kind";
     private static final String SECRET_KIND = "Secret";
     
+    // For junit test only
+    private CoreV1Api cv1a = null;
+    void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+        this.cv1a = cv1a;
+    }
+
+    private CoreV1Api getCoreV1ApiForInternal() {
+        if (cv1a == null) {
+            final CoreV1Api api = new CoreV1Api();
+            return api;
+        } else {
+            return cv1a;
+        }
+    }
+   
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{label-name}/{label-value}")
@@ -91,7 +106,7 @@ public class SecretsEndpoint extends KAppNavEndpoint {
     }
     
     private Object listSecrets(ApiClient client, String selector) throws ApiException {
-        final CoreV1Api api = new CoreV1Api();
+        final CoreV1Api api = getCoreV1ApiForInternal();
         api.setApiClient(client);
         final V1SecretList secrets = api.listSecretForAllNamespaces(null, null, null, selector, null, null, null, null, null);
         return secrets;
