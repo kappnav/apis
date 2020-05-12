@@ -201,26 +201,8 @@ public class ConfigMapEndpointTest {
         }
     }
     
-    @Test
-    public void getConfigMapKAppNavConfig_succeeds() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(with(any(ApiClient.class)));
-                oneOf(cv1a).readNamespacedConfigMap("kappnav-config",
-                        "kappnav", null, null, null);
-            }
-        });
-
-        try {
-            response = cmep.getConfigMap("kappnav-config", "kappnav");
-            int rc = response.getStatus();
-            assertEquals("Test getConfigMap_succeeds FAILED", 200, rc);
-        } catch (Exception e) {
-            fail("Test getConfigMap_succeeds failed with exception " + e.getMessage());
-        }
-    }
     
-    //@Test
+    @Test
     public void getConfigMapThrowApiException_error() throws Exception {
         mock.checking(new Expectations() {
             {
