@@ -148,29 +148,6 @@ public class SecretEndpointTest {
     }
     
     @Test
-    public void createSecretThrowJsonSyntaxException_Error() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(ac);
-                oneOf(ac).getJSON();
-                will(returnValue(json));
-                oneOf(json).deserialize(test1, V1Secret.class);
-                will(returnValue(secret));
-                oneOf(cv1a).createNamespacedSecret(KAppNavEndpoint.encodeURLParameter("twas"), secret, null);
-                will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
-            }
-        });
-
-        try {
-            response = sep.createSecret(test1, "twas");
-            int rc = response.getStatus();
-            assertEquals("Test createSecretThrowJsonSyntaxException_Error FAILED", 400, rc);
-        } catch (Exception e) {
-            fail("Test createSecretThrowJsonSyntaxException_Error failed with exception " + e.getMessage());
-        }
-    }
-    
-    @Test
     public void createSecretThrowApiException_Error() throws Exception {
         mock.checking(new Expectations() {
             {
@@ -269,30 +246,6 @@ public class SecretEndpointTest {
             assertEquals("Test replaceSecret_succeeds FAILED", 200, rc);
         } catch (Exception e) {
             fail("Test replaceSecret_succeeds failed with exception " + e.getMessage());
-        }
-    }
-    
-    @Test
-    public void replaceSecretThrowJsonSyntaxException_error() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(ac);
-                oneOf(ac).getJSON();
-                will(returnValue(json));
-                oneOf(json).deserialize(test2, V1Secret.class);
-                will(returnValue(secret));
-                oneOf(cv1a).replaceNamespacedSecret(KAppNavEndpoint.encodeURLParameter("kappnav-test-cell1-secret"),
-                        "twas", secret, null);
-                will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
-            }
-        });
-
-        try {
-            response = sep.replaceSecret(test2, "kappnav-test-cell1-secret", "twas");
-            int rc = response.getStatus();
-            assertEquals("Test replaceSecretThrowJsonSyntaxException_error FAILED", 400, rc);
-        } catch (Exception e) {
-            fail("Test replaceSecretThrowJsonSyntaxException_error failed with exception " + e.getMessage());
         }
     }
     
