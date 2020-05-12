@@ -122,37 +122,6 @@ public class ConfigMapEndpointTest {
             "}" + 
             "";
     
-    String kappnavConfig = "{" + 
-            "    \"apiVersion\": \"v1\"," + 
-            "    \"data\": {" + 
-            "        \"app-status-precedence\": \"[ \\\"Failed\\\", \\\"Problem\\\", \\\"Warning\\\", \\\"Pending\\\", \\\"In Progress\\\", \\\"Unknown\\\", \\\"Normal\\\", \\\"Completed\\\" ]\"," + 
-            "        \"kappnav-sa-name\": \"kappnav-sa\",\n" + 
-            "        \"status-color-mapping\": \"{ \\\"values\\\": { \\\"Normal\\\": \\\"GREEN\\\", \\\"Completed\\\": \\\"GREEN\\\", \\\"Pending\\\": \\\"YELLOW\\\", \\\"Warning\\\": \\\"YELLOW\\\", \\\"Problem\\\": \\\"RED\\\", \\\"Failed\\\": \\\"RED\\\", \\\"Unknown\\\": \\\"GREY\\\", \\\"In Progress\\\": \\\"BLUE\\\"},\\\"colors\\\": { \\\"GREEN\\\": \\\"#5aa700\\\", \\\"BLUE\\\": \\\"#4589ff\\\", \\\"YELLOW\\\": \\\"#B4B017\\\", \\\"RED\\\": \\\"#A74343\\\", \\\"GREY\\\": \\\"#808080\\\"} }\"," + 
-            "        \"status-unknown\": \"Unknown\"" + 
-            "    }," + 
-            "    \"kind\": \"ConfigMap\"," + 
-            "    \"metadata\": {" + 
-            "        \"labels\": {\n" + 
-            "            \"app.kubernetes.io/component\": \"kappnav-config\"," + 
-            "            \"app.kubernetes.io/instance\": \"kappnav\"," + 
-            "            \"app.kubernetes.io/managed-by\": \"kappnav-operator\"," + 
-            "            \"app.kubernetes.io/name\": \"kappnav\"," + 
-            "            \"kappnav.io/map-type\": \"builtin\"" + 
-            "        }," + 
-            "        \"name\": \"kappnav-config\"," + 
-            "        \"namespace\": \"kappnav\"," + 
-            "        \"ownerReferences\": [" + 
-            "            {" + 
-            "                \"apiVersion\": \"kappnav.operator.kappnav.io/v1\"," + 
-            "                \"blockOwnerDeletion\": true," + 
-            "                \"controller\": true," + 
-            "                \"kind\": \"Kappnav\"," + 
-            "                \"name\": \"kappnav\"" + 
-            "            }" + 
-            "        ]" + 
-            "    }" + 
-            "}";
-    
     JsonObject jsonObject = new JsonParser().parse(test1).getAsJsonObject();
 
     /**
