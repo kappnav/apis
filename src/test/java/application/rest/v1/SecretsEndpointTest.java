@@ -88,24 +88,6 @@ public class SecretsEndpointTest {
 	}
 	
 	@Test
-    public void getSecretsThrowJsonSyntaxException_error() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(with(any(ApiClient.class))); 
-                oneOf(cv1a).listSecretForAllNamespaces(null, null, null, "secret-label=mysecret", null, null, null, null, null);
-                will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
-            }       
-        });
-        try {
-            response = sep.getSecrets("secret-label", "mysecret");
-            int rc = response.getStatus();
-            assertEquals("Test getSecretsThrowJsonSyntaxException_error FAILED", 400, rc);
-        } catch (Exception e) {
-            fail("Test getSecretsThrowJsonSyntaxException_error failed with exception " + e.getMessage());
-        }
-    }
-	
-	@Test
     public void getSecretsThrowApiException_error() throws Exception {
         mock.checking(new Expectations() {
             {
