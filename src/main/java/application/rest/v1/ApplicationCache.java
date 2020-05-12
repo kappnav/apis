@@ -69,7 +69,7 @@ public class ApplicationCache {
     
     // For junit only
     static CustomObjectsApi coau = null;
-    void setCustomObjectsApiForJunit(CustomObjectsApi coa) {
+    static void setCustomObjectsApiForJunit(CustomObjectsApi coa) {
     	coau = coa;
     }
     
