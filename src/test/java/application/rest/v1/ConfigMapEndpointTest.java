@@ -34,7 +34,6 @@ import org.junit.Test;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -59,8 +58,7 @@ public class ConfigMapEndpointTest {
     private final ApiClient ac = mock.mock(ApiClient.class);
     
     private final JSON json = new JSON();
-    private final V1ConfigMap v1cm = mock.mock(V1ConfigMap.class)
-            ;
+    
     private final Gson gson = new Gson();
 
     private final ConfigMapEndpoint cmep = new ConfigMapEndpoint();
@@ -124,6 +122,37 @@ public class ConfigMapEndpointTest {
             "}" + 
             "";
     
+    String kappnavConfig = "{" + 
+            "    \"apiVersion\": \"v1\"," + 
+            "    \"data\": {" + 
+            "        \"app-status-precedence\": \"[ \\\"Failed\\\", \\\"Problem\\\", \\\"Warning\\\", \\\"Pending\\\", \\\"In Progress\\\", \\\"Unknown\\\", \\\"Normal\\\", \\\"Completed\\\" ]\"," + 
+            "        \"kappnav-sa-name\": \"kappnav-sa\",\n" + 
+            "        \"status-color-mapping\": \"{ \\\"values\\\": { \\\"Normal\\\": \\\"GREEN\\\", \\\"Completed\\\": \\\"GREEN\\\", \\\"Pending\\\": \\\"YELLOW\\\", \\\"Warning\\\": \\\"YELLOW\\\", \\\"Problem\\\": \\\"RED\\\", \\\"Failed\\\": \\\"RED\\\", \\\"Unknown\\\": \\\"GREY\\\", \\\"In Progress\\\": \\\"BLUE\\\"},\\\"colors\\\": { \\\"GREEN\\\": \\\"#5aa700\\\", \\\"BLUE\\\": \\\"#4589ff\\\", \\\"YELLOW\\\": \\\"#B4B017\\\", \\\"RED\\\": \\\"#A74343\\\", \\\"GREY\\\": \\\"#808080\\\"} }\"," + 
+            "        \"status-unknown\": \"Unknown\"" + 
+            "    }," + 
+            "    \"kind\": \"ConfigMap\"," + 
+            "    \"metadata\": {" + 
+            "        \"labels\": {\n" + 
+            "            \"app.kubernetes.io/component\": \"kappnav-config\"," + 
+            "            \"app.kubernetes.io/instance\": \"kappnav\"," + 
+            "            \"app.kubernetes.io/managed-by\": \"kappnav-operator\"," + 
+            "            \"app.kubernetes.io/name\": \"kappnav\"," + 
+            "            \"kappnav.io/map-type\": \"builtin\"" + 
+            "        }," + 
+            "        \"name\": \"kappnav-config\"," + 
+            "        \"namespace\": \"kappnav\"," + 
+            "        \"ownerReferences\": [" + 
+            "            {" + 
+            "                \"apiVersion\": \"kappnav.operator.kappnav.io/v1\"," + 
+            "                \"blockOwnerDeletion\": true," + 
+            "                \"controller\": true," + 
+            "                \"kind\": \"Kappnav\"," + 
+            "                \"name\": \"kappnav\"" + 
+            "            }" + 
+            "        ]" + 
+            "    }" + 
+            "}";
+    
     JsonObject jsonObject = new JsonParser().parse(test1).getAsJsonObject();
 
     /**
@@ -160,27 +189,6 @@ public class ConfigMapEndpointTest {
             assertEquals("Test createConfigMap_succeeds FAILED", 200, rc);
         } catch (Exception e) {
             fail("Test createConfigMap_succeeds failed with exception " + e.getMessage());
-        }
-    }
-    
-    @Test
-    public void createConfigMapThrowJsonSyntaxException_error() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(with(any(ApiClient.class)));
-                oneOf(ac).getJSON();
-                will(returnValue(json));
-                oneOf(cv1a).createNamespacedConfigMap(with(any(String.class)), with(any(V1ConfigMap.class)), with(aNull(String.class)));
-                will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
-            } 
-        });
-
-        try {
-            response = cmep.createConfigMap(test1, "stock-trader");
-            int rc = response.getStatus();
-            assertEquals("Test createConfigMapThrowJsonSyntaxException_error FAILED", 400, rc);
-        } catch (Exception e) {
-            fail("Test createConfigMapThrowJsonSyntaxException_error failed with exception " + e.getMessage());
         }
     }
     
@@ -225,6 +233,25 @@ public class ConfigMapEndpointTest {
     }
     
     @Test
+    public void getConfigMapKAppNavConfig_succeeds() throws Exception {
+        mock.checking(new Expectations() {
+            {
+                oneOf(cv1a).setApiClient(with(any(ApiClient.class)));
+                oneOf(cv1a).readNamespacedConfigMap("kappnav-config",
+                        "kappnav", null, null, null);
+            }
+        });
+
+        try {
+            response = cmep.getConfigMap("kappnav-config", "kappnav");
+            int rc = response.getStatus();
+            assertEquals("Test getConfigMap_succeeds FAILED", 200, rc);
+        } catch (Exception e) {
+            fail("Test getConfigMap_succeeds failed with exception " + e.getMessage());
+        }
+    }
+    
+    //@Test
     public void getConfigMapThrowApiException_error() throws Exception {
         mock.checking(new Expectations() {
             {
@@ -261,27 +288,6 @@ public class ConfigMapEndpointTest {
             assertEquals("Test replaceConfigMap_succeeds FAILED", 200, rc);
         } catch (Exception e) {
             fail("Test replaceConfigMap_succeeds failed with exception " + e.getMessage());
-        }
-    }
-    
-    @Test
-    public void replaceConfigMapThrowJsonException_error() throws Exception {
-        mock.checking(new Expectations() {
-            {
-                oneOf(cv1a).setApiClient(with(any(ApiClient.class)));
-                oneOf(cv1a).replaceNamespacedConfigMap(with(any(String.class)), with(any(String.class)),
-                        with(any(V1ConfigMap.class)), with(aNull(String.class)));
-                will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
-            }
-        });
-
-        try {
-            response = cmep.replaceConfigMap(test2, "kappnav-test-cell1",
-                    "stock-trader");
-            int rc = response.getStatus();
-            assertEquals("Test replaceConfigMapThrowJsonException_error FAILED", 400, rc);
-        } catch (Exception e) {
-            fail("Test replaceConfigMapThrowJsonException_error failed with exception " + e.getMessage());
         }
     }
     
