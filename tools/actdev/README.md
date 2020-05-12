@@ -1,8 +1,10 @@
-# Action Developer Tool (actdev)
+# Implementing Custom Actions
+
+## Action Developer Tool (actdev)
 
 Use this tool to help you develop {k}AppNav actions.  
 
-## Install
+### Install
 
 Run ./installActDev.sh
 
@@ -22,13 +24,13 @@ Where:
 A period ('.') may be specified in the place of any of the preceding positional parameters to request the default value.
 ```
 
-## Start 
+### Start 
 
 Run ./actdev.sh
     
 Note, you may have to refresh browser after it first starts to see fully initialized openapi/ui.
 
-## Uninstall 
+### Uninstall 
 
 Run ./uninstallActDev.sh 
 
