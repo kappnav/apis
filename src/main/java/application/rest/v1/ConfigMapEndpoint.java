@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,34 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
     private static final String KAPPNAV_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
     private static final String KAPPNAV_CONFIG_MAP_NAME = KAppNavConfig.getkAppNavConfigMapName();
 
+    // For junit test only
+    CoreV1Api cv1a = null;
+    void setCoreV1ApiForInternal(CoreV1Api cv1a) {
+        this.cv1a = cv1a;
+    }
+    
+    CoreV1Api getCoreV1ApiForInternal() {
+        if (cv1a == null) {
+            return new CoreV1Api();
+        } else {
+            return cv1a;
+        }
+    }
+    
+    ApiClient ac = null;
+    public void setApiClientForInternal(ApiClient ac) {
+        this.ac = ac;
+        
+    }
+    
+    ApiClient getApiClientForInternal() throws IOException {
+        if (ac == null) {
+            return getApiClient();
+        } else {
+            return ac;
+        }
+    }
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{configmap-name}")
@@ -81,7 +109,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
                 map = ConfigMapCache.getConfigMap(client, KAPPNAV_NAMESPACE, KAPPNAV_CONFIG_MAP_NAME);
             }
             if (map == null) {
-                final CoreV1Api api = new CoreV1Api();
+                final CoreV1Api api = getCoreV1ApiForInternal();
                 api.setApiClient(client);
                 map = api.readNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), null, null, null);
             }    
@@ -116,8 +144,8 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
     public Response createConfigMap(String jsonstr, 
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the config map") String namespace) {
         try {
-            final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final ApiClient client = getApiClientForInternal();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1ConfigMap map = client.getJSON().deserialize(jsonstr, V1ConfigMap.class);
             api.createNamespacedConfigMap(encodeURLParameter(namespace), map, null);
@@ -147,7 +175,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the config map") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1ConfigMap map = client.getJSON().deserialize(jsonstr, V1ConfigMap.class);
             api.replaceNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), map, null);
@@ -176,7 +204,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the config map") String namespace) {
         try {
             final ApiClient client = getApiClient();
-            final CoreV1Api api = new CoreV1Api();
+            final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1DeleteOptions options = new V1DeleteOptions();
             api.deleteNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), options, null, 0, true, "");
@@ -189,4 +217,5 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(e)).build();
         }
     }
+
 }
