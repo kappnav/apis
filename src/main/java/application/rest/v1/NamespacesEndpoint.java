@@ -54,8 +54,7 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
 
     private CoreV1Api getCoreV1ApiForInternal() {
         if (cv1a == null) {
-            final CoreV1Api api = getCoreV1ApiForInternal();
-            return api;
+            return new CoreV1Api();
         } else {
             return cv1a;
         }
