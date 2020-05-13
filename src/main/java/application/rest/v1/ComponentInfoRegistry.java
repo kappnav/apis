@@ -113,6 +113,7 @@ public class ComponentInfoRegistry {
     static {
         CORE_KIND_TO_API_VERSION_MAP = new ConcurrentHashMap<String, String>();
         CORE_KIND_TO_API_VERSION_MAP.put("Service", "/v1");
+        CORE_KIND_TO_API_VERSION_MAP.put("Pod", "/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Deployment", "apps/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Route", "route.openshift.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("ConfigMap", "/v1");
