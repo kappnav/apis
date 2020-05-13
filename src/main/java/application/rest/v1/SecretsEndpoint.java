@@ -60,8 +60,7 @@ public class SecretsEndpoint extends KAppNavEndpoint {
 
     private CoreV1Api getCoreV1ApiForInternal() {
         if (cv1a == null) {
-            final CoreV1Api api = new CoreV1Api();
-            return api;
+            return new CoreV1Api();
         } else {
             return cv1a;
         }
