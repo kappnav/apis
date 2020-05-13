@@ -61,7 +61,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
     }
     
     private ApiClient getApiClientForInternal() throws IOException {
-        if (cv1a == null) {
+        if (ac == null) {
             return getApiClient();
         } else {
             return ac;
