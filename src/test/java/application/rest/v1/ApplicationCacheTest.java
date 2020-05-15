@@ -179,7 +179,7 @@ public class ApplicationCacheTest {
     }
 
     @Test
-    public void createApplicatigetNamespacedApplicationObject_succeeds() throws Exception {
+    public void getNamespacedApplicationObject_succeeds() throws Exception {
         mock.checking(new Expectations() {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
@@ -190,9 +190,9 @@ public class ApplicationCacheTest {
 
         try {
             JsonObject result = ApplicationCache.getNamespacedApplicationObject(ac, "book-info", "book-info");
-            assertEquals("Test createApplicatigetNamespacedApplicationObject_succeeds FAILED", jsonObject1, result);
+            assertEquals("Test getNamespacedApplicationObject_succeeds FAILED", jsonObject1, result);
         } catch (Exception e) {
-            fail("Test createApplicatigetNamespacedApplicationObject_succeeds failed with exception " + e.getMessage());
+            fail("Test getNamespacedApplicationObject_succeeds failed with exception " + e.getMessage());
         }
     }
 
