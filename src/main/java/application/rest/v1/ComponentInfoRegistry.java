@@ -51,6 +51,46 @@ import com.ibm.kappnav.logging.Logger;
 @ApplicationScoped
 public class ComponentInfoRegistry {
     private static final String className = ComponentInfoRegistry.class.getName();
+    
+    // For junit test only
+    private static ApisApi apis = null;
+    static void setApisApiForJunit(ApisApi apisinput) {
+        apis = apisinput;   
+    }
+    
+    private ApisApi getApisApisForInternal() {
+        if (apis == null) {
+            return new ApisApi();
+        } else {
+            return apis;
+        }
+    }
+    
+    private static CustomObjectsApi coa = null;
+    static void setCustomObjectsApiForJunit(CustomObjectsApi coainput) {
+        coa = coainput;
+    }
+    
+    private static CustomObjectsApi getCustomObjectsApiForInternal() {
+        if (coa == null) {
+            return new CustomObjectsApi();
+        } else {
+            return coa;
+        }
+    }
+    
+    private static CoreV1Api cv1a = null;
+    static void setCoreV1ApiForJunit(CoreV1Api cv1ainput) {
+        cv1a = cv1ainput;
+    }
+    
+    private static CoreV1Api getCoreV1ApiForInternal() {
+        if (cv1a == null) {
+            return new CoreV1Api();
+        } else {
+            return cv1a;
+        }
+    }
 
     private static final String NOT_FOUND = "Not Found";
     
@@ -113,7 +153,6 @@ public class ComponentInfoRegistry {
     static {
         CORE_KIND_TO_API_VERSION_MAP = new ConcurrentHashMap<String, String>();
         CORE_KIND_TO_API_VERSION_MAP.put("Service", "/v1");
-        CORE_KIND_TO_API_VERSION_MAP.put("Pod", "/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Deployment", "apps/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("Route", "route.openshift.io/v1");
         CORE_KIND_TO_API_VERSION_MAP.put("ConfigMap", "/v1");
@@ -157,7 +196,7 @@ public class ComponentInfoRegistry {
         if (info != null) {
             return info.namespaced;
         }
-        throw new ApiException(207, "resource kind " + componentKind + " is " + NOT_FOUND);
+        throw new ApiException(207, "resource kind " + componentKind + " or apiVersion " + apiVersion + " is " + NOT_FOUND);
     }
 
     public Object listClusterObject(ApiClient client, String componentKind, String apiVersion, 
@@ -246,7 +285,7 @@ public class ComponentInfoRegistry {
     }
     
     private Map<String,ComponentInfo> processGroupList(ApiClient client) throws ApiException {
-        ApisApi api = new ApisApi();
+        ApisApi api = getApisApisForInternal();
         api.setApiClient(client);
 
         final Map<String,Set<String>> groupKindMap = new HashMap<String,Set<String>>();
@@ -293,7 +332,7 @@ public class ComponentInfoRegistry {
     private void processGroupVersion(ApiClient client, Map<String,ComponentInfo> map, Map<String,Set<String>> groupKindMap, String group, String version) {
         Logger.log(className, "processGroupVersion", Logger.LogType.ENTRY, "For group=" + group + ", version="+version);
         try {
-            CustomObjectsApi coa = new CustomObjectsApi();
+            CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
 
             // {
@@ -439,7 +478,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(ApiClient client, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            CustomObjectsApi coa = new CustomObjectsApi();
+            CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             return coa.listClusterCustomObject(info.group, info.version, info.plural,
                     pretty, labelSelector, resourceVersion, watch);
@@ -448,7 +487,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(ApiClient client, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            CustomObjectsApi coa = new CustomObjectsApi();
+            CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             return coa.listNamespacedCustomObject(info.group, info.version,
                     namespace, info.plural, pretty, labelSelector, resourceVersion, watch);
@@ -457,7 +496,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(ApiClient client, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            CustomObjectsApi coa = new CustomObjectsApi();
+            CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             try {
                 Object result = coa.getNamespacedCustomObject(info.group, info.version, namespace, info.plural, name);
@@ -481,7 +520,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listClusterObject(ApiClient client, ComponentInfo info, String pretty, String labelSelector,
                 String resourceVersion, Boolean watch) throws ApiException {
-            CoreV1Api api = new CoreV1Api();
+            CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             return listClusterObject(api, info, pretty, labelSelector, resourceVersion, watch);
         }
@@ -489,7 +528,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object listNamespacedObject(ApiClient client, ComponentInfo info, String namespace, String pretty,
                 String labelSelector, String resourceVersion, Boolean watch) throws ApiException {
-            CoreV1Api api = new CoreV1Api();
+            CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             return listNamespacedObject(api, info, namespace, pretty, labelSelector, resourceVersion, watch);
         }
@@ -497,7 +536,7 @@ public class ComponentInfoRegistry {
         @Override
         public Object getNamespacedObject(ApiClient client, ComponentInfo info, String namespace, String name)
                 throws ApiException {
-            CoreV1Api api = new CoreV1Api();
+            CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             return getNamespacedObject(api, info, namespace, name);
         }
@@ -1006,4 +1045,5 @@ public class ComponentInfoRegistry {
             return api.readNamespacedServiceAccount(name, namespace, null, null, null);
         }
     }
+
 }
