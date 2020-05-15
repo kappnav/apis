@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
 
 import java.lang.String;
 
-import javax.ws.rs.core.Response;
 
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -42,8 +41,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.ApisApi;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1APIGroupList;
-
 
 /**
  * @author jasuryak
@@ -64,111 +61,7 @@ public class ComponentInfoRegistryTest {
     
     ComponentInfo ci = null;
     ComponentInfoRegistry cir = null;
-    //ApiClient ac = null;
-    
-    String sampleApp = "{" + 
-            "    \"apiVersion\": \"v1\"," + 
-            "    \"items\": [" + 
-            "        {" + 
-            "            \"apiVersion\": \"app.k8s.io/v1beta1\"," + 
-            "            \"kind\": \"Application\"," + 
-            "            \"metadata\": {" + 
-            "                \"annotations\": {" + 
-            "                    \"kappnav.component.namespaces\": \"twas,liberty,localliberty,appmetrics-dash\"" + 
-            "                }," + 
-            "                \"labels\": {" + 
-            "                    \"app.kubernetes.io/name\": \"stock-trader-app\"" + 
-            "                }," + 
-            "                \"name\": \"stock-trader\"," + 
-            "                \"namespace\": \"stock-trader\"" + 
-            "            }," + 
-            "            \"spec\": {" + 
-            "                \"componentKinds\": [" + 
-            "                    {" + 
-            "                        \"group\": \"core\"," + 
-            "                        \"kind\": \"Deployment\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"core\"," + 
-            "                        \"kind\": \"Service\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"kappnav.io\"," + 
-            "                        \"kind\": \"WAS-Traditional-App\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"kappnav.io\"," + 
-            "                        \"kind\": \"Liberty-App\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"apps.openshift.io\"," + 
-            "                        \"kind\": \"DeploymentConfig\"" + 
-            "                    }" + 
-            "                ]," + 
-            "                \"selector\": {" + 
-            "                    \"matchLabels\": {" + 
-            "                        \"solution\": \"stock-trader\"" + 
-            "                    }" + 
-            "                }" + 
-            "            }" + 
-            "        }" + 
-            "    ]" + 
-            "}";
-    
-    
-    // change the name and solution to stock-trader-new
-    String updatedSampleApp = "{" + 
-            "    \"apiVersion\": \"v1\"," + 
-            "    \"items\": [" + 
-            "        {" + 
-            "            \"apiVersion\": \"app.k8s.io/v1beta1\"," + 
-            "            \"kind\": \"Application\"," + 
-            "            \"metadata\": {" + 
-            "                \"annotations\": {" + 
-            "                    \"kappnav.component.namespaces\": \"twas,liberty,localliberty,appmetrics-dash\"" + 
-            "                }," + 
-            "                \"labels\": {" + 
-            "                    \"app.kubernetes.io/name\": \"stock-trader-app\"" + 
-            "                }," + 
-            "                \"name\": \"stock-trader-new\"," + 
-            "                \"namespace\": \"stock-trader\"" + 
-            "            }," + 
-            "            \"spec\": {" + 
-            "                \"componentKinds\": [" + 
-            "                    {" + 
-            "                        \"group\": \"core\"," + 
-            "                        \"kind\": \"Deployment\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"core\"," + 
-            "                        \"kind\": \"Service\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"kappnav.io\"," + 
-            "                        \"kind\": \"WAS-Traditional-App\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"kappnav.io\"," + 
-            "                        \"kind\": \"Liberty-App\"" + 
-            "                    }," + 
-            "                    {" + 
-            "                        \"group\": \"apps.openshift.io\"," + 
-            "                        \"kind\": \"DeploymentConfig\"" + 
-            "                    }" + 
-            "                ]," + 
-            "                \"selector\": {" + 
-            "                    \"matchLabels\": {" + 
-            "                        \"solution\": \"stock-trader-new\"" + 
-            "                    }" + 
-            "                }" + 
-            "            }" + 
-            "        }" + 
-            "    ]" + 
-            "}";
-
-    JsonObject jsonObject1 = new JsonParser().parse(sampleApp).getAsJsonObject();
-    JsonObject jsonObject2 = new JsonParser().parse(updatedSampleApp).getAsJsonObject();
-
+   
     /**
      * @throws java.lang.Exception
      */
@@ -177,7 +70,6 @@ public class ComponentInfoRegistryTest {
         ComponentInfoRegistry.setApisApiForJunit(apis);
         ComponentInfoRegistry.setCustomObjectsApiForJunit(coa);
         ComponentInfoRegistry.setCoreV1ApiForJunit(cv1a);
-        //ac = KAppNavEndpoint.getApiClient();
     }
 
     /**
@@ -244,7 +136,7 @@ public class ComponentInfoRegistryTest {
         String expectedError = "resource kind " + kind + " or apiVersion " + apiVersion + " is Not Found";
         try {
             cir = new ComponentInfoRegistry();
-            boolean result = cir.isNamespaced(ac, kind, apiVersion);
+            cir.isNamespaced(ac, kind, apiVersion);
             fail("Test isNamespacedWithWrongKind_error should failed with exception " + expectedError);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -267,7 +159,7 @@ public class ComponentInfoRegistryTest {
         String expectedError = "resource kind " + kind + " or apiVersion " + apiVersion + " is Not Found";
         try {
             cir = new ComponentInfoRegistry();
-            boolean result = cir.isNamespaced(ac, kind, apiVersion);
+            cir.isNamespaced(ac, kind, apiVersion);
             fail("Test isNamespacedWithWrongApiVersion_error should failed with exception " + expectedError);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -289,7 +181,7 @@ public class ComponentInfoRegistryTest {
 
         try {
             cir = new ComponentInfoRegistry();
-            Object result = cir.listClusterObject(ac, "Pod", "/v1", null, null, null, null);
+            cir.listClusterObject(ac, "Pod", "/v1", null, null, null, null);
         } catch (Exception e) {
             fail("Test listClusterObject_succeeds failed with exception " + e.getMessage());
         }
@@ -309,7 +201,7 @@ public class ComponentInfoRegistryTest {
 
         try {
             cir = new ComponentInfoRegistry();
-            Object result = cir.listNamespacedObject(ac, "Secret", "/v1", null, null, null, null, null);
+            cir.listNamespacedObject(ac, "Secret", "/v1", null, null, null, null, null);
         } catch (Exception e) {
             fail("Test listClusterObject_succeeds failed with exception " + e.getMessage());
         }
@@ -330,7 +222,6 @@ public class ComponentInfoRegistryTest {
         try {
             cir = new ComponentInfoRegistry();
             Object result = cir.getNamespacedObject(ac, "Node", "/v1", null, null);
-            System.out.println(result);
             assertNotNull("Test listClusterObject_succeeds FAILED", result);
         } catch (Exception e) {
             fail("Test listClusterObject_succeeds failed with exception " + e.getMessage());
@@ -356,8 +247,6 @@ public class ComponentInfoRegistryTest {
             cir.getNamespacedObject(ac, "Application", "/v1", null, null);
             fail("Test getNamespacedObjectWithNoExistKind_error should failed.");
         } catch (Exception e) {
-            System.out.println(e.toString());
-            System.out.println(e.getMessage());
             assertEquals("Test getNamespacedObjectWithNoExistKind_error FAILED", expectedError, e.getMessage());
         }
     }
@@ -381,7 +270,6 @@ public class ComponentInfoRegistryTest {
             cir.getNamespacedObject(ac, "Namespace", null, null, null);
             fail("Test getNamespacedObjectWithNoVersion_error should failed.");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             assertEquals("Test getNamespacedObjectWithNoVersion_error FAILED", expectedError, e.getMessage());
         }
     }
@@ -418,7 +306,6 @@ public class ComponentInfoRegistryTest {
                 allowing(apis).getAPIVersions();
                 
             }
-
         });
 
         String expectedResult = "[apps/v1]";
