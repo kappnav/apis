@@ -16,9 +16,12 @@
 
 package application.rest.v1.configmaps;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import javax.xml.namespace.QName;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -41,8 +44,7 @@ public class SectionConfigMapProcessor {
     private static final String SECTION_DATASOURCES_PROPERTY_NAME = "section-datasources";
     private static final String SECTION_DATA_PROPERTY_NAME = "section-data";
     private static final String NAME_PROPERTY_NAME = "name"; 
-    private static final String DATASOURCE_PROPERTY_NAME = "datasource";
-    private static final String KINDS_PROPERTY_NAME = "kinds";   
+    private static final String DATASOURCE_PROPERTY_NAME = "datasource"; 
     private static final String ENABLEMENT_LABEL_PROPERTY_NAME = "enablement-label";
     private static final String TYPE_PROPERTY_NAME = "type";
     private static final String LABELS_PROPERTY_NAME = "labels";
@@ -54,7 +56,6 @@ public class SectionConfigMapProcessor {
     private static final String LABEL_PROPERTY_NAME = "label";
     private static final String ANNOTATION_PROPERTY_NAME = "annotation";
     private static final String VALUE_PROPERTY_NAME = "value";
-
             
     private final String sectionName;
     private final String sectionNameWithKind;
@@ -63,58 +64,106 @@ public class SectionConfigMapProcessor {
 
     public SectionConfigMapProcessor(String kind) {
         this.sectionName= SECTION_CONFIG_MAP_NAME;   
-        this.sectionNameWithKind = SECTION_CONFIG_MAP_NAME + kind.toLowerCase(Locale.ENGLISH);
+        this.sectionNameWithKind = this.sectionName + kind.toLowerCase(Locale.ENGLISH);
         this.kappnavNSMapCache = new HashMap<>();        
     }
 
     public JsonObject getConfigMap(ApiClient client, JsonObject component) {
+        if (Logger.isEntryEnabled()) 
+            Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "");
+
         final SectionConfigMapBuilder builder = new SectionConfigMapBuilder();
+        final String namespace = KAppNavEndpoint.getComponentNamespace(component);        
+        final String kind = KAppNavEndpoint.getComponentKind(component);
+        final String apiVersion = KAppNavEndpoint.getComponentApiVersion(component, kind);
+        final String subkind = KAppNavEndpoint.getComponentSubKind(component);
         final String name = KAppNavEndpoint.getComponentName(component);
+        final OwnerRef[] owners = KAppNavEndpoint.getOwners(component);
+        JsonObject map = null;
+
         if (Logger.isDebugEnabled()) {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "For component=" + name);
+            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG,
+                   "\n component namespace = " + namespace +
+                   "\n component apiVersion = " + apiVersion +
+                   "\n component name = " + name +
+                   "\n component subkind= " + subkind +
+                   "\n component kind = " + kind + 
+                   "\n component ownerReferences = " + ConfigMapProcessor.ownerRefArrayToString(owners));
         }
 
-        if (name != null && !name.isEmpty()) {       
-            if (builder.getConfigMap().entrySet().size() == 0) {
-                JsonObject map = getConfigMap(client, sectionNameWithKind);
-                
-                if (map != null) {
-                    builder.merge(map);      
-                } else {
-                    if (Logger.isDebugEnabled()) {
-                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map is null.");
-                    }
-                }
-            }
+        if ((apiVersion == null) || (apiVersion.isEmpty())) {
+            if (Logger.isDebugEnabled()) 
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "component apiVersion is null or empty.");
+        } else if (name != null && !name.isEmpty()) { 
+            // Get details section configmaps available in a cluster
+            KindActionMappingProcessor kam =
+                new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
+            String configMapName = this.sectionNameWithKind + ConfigMapProcessor.getConfigMapNameSuffix(name, subkind);
+            map = getConfigMap(client, kam, namespace, configMapName, builder);
         }
         
-        return builder.getConfigMap();
+        JsonObject configMapFound = builder.getConfigMap();
+        if (Logger.isExitEnabled()) 
+            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "configMap found = " + configMapFound);
+        return configMapFound;
     } 
-         
 
-    private JsonObject getConfigMap(ApiClient client, String configMapName) {
+    private JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
+                                    String configMapName, ConfigMapBuilder builder) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "For namespace=" + namespace + 
+                   ", configMapName=" + configMapName);
+        }
+
         // Return the map from the local cache if it's been previously loaded.
-        if (kappnavNSMapCache.containsKey(configMapName)) {
-            return kappnavNSMapCache.get(configMapName);
+        final boolean isGlobalNS = GLOBAL_NAMESPACE.equals(namespace);
+        if (isGlobalNS && this.kappnavNSMapCache.containsKey(configMapName)) {
+            return this.kappnavNSMapCache.get(configMapName);
         }
+    
+        if (kam != null) {
+            // get Configmaps declared in the KindActionMapping custom resources
+            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, 
+                ConfigMapProcessor.ConfigMapType.DETAILS_MAPPING);
 
-        final JsonElement element = ConfigMapCache.getConfigMapAsJSON(client, GLOBAL_NAMESPACE, configMapName);
-        if (element != null && element.isJsonObject()) {
-            final JsonObject m = element.getAsJsonObject();   
+            if (configMapsList != null) {
+                // look up the configmaps in a cluster
+                final ArrayList<JsonObject> configMapsFound = ConfigMapCache.getConfigMapsAsJSON(client, configMapsList);
 
-            // Store the map in the local cache.
-            kappnavNSMapCache.put(configMapName, m);    
-            return m;
+                // merge configmaps found
+                ConfigMapProcessor.mergeConfigMaps(configMapsFound, builder);
+                JsonObject map = builder.getConfigMap();
+                if (map != null) {
+                    if (isGlobalNS) {
+                        // Store the map in the local cache.
+                        kappnavNSMapCache.put(configMapName, map); 
+                    }
+                    if (Logger.isExitEnabled()) 
+                        Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "Merged configmap returned = " + map);
+                    return map;
+                } else {
+                    if (Logger.isDebugEnabled()) 
+                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "map to be merged is null");
+                }   
+            } else {
+                if (Logger.isDebugEnabled()) 
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "no configmap with given kam is found");
+            } 
         }
-
+    
+        if (isGlobalNS) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, 
+                       "Global namespace, store null in the local cache");
+        }
         // No map. Store null in the local cache.
-        if (Logger.isDebugEnabled()) {
-            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "No map so storing null to local cache.");
-        }
-        kappnavNSMapCache.put(configMapName, null);
-        return null;
+        this.kappnavNSMapCache.put(configMapName, null);
     }
 
+        if (Logger.isExitEnabled()) 
+            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "No map so storing null to local cache.");
+        return null;
+    }
 
     // Process section config map into a map of sections and section-data output 
     // in the following format :

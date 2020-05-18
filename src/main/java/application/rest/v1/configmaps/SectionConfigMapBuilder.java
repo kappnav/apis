@@ -17,7 +17,6 @@
 package application.rest.v1.configmaps;
 
 import java.util.HashSet;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.google.gson.JsonArray;

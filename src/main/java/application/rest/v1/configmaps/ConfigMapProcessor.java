@@ -32,9 +32,10 @@ import io.kubernetes.client.ApiClient;
 
 public class ConfigMapProcessor {
 
-    public enum ConfigMapType {
+    public static enum ConfigMapType {
         ACTION,
-        STATUS_MAPPING
+        STATUS_MAPPING,
+        DETAILS_MAPPING
     }
 
     private static final String className = ConfigMapProcessor.class.getName();
@@ -86,66 +87,21 @@ public class ConfigMapProcessor {
         if ((apiVersion == null) || (apiVersion.isEmpty())) {
             if (Logger.isDebugEnabled()) 
                 Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "component apiVersion is null or empty.");
-        } else {            
-            if (type == ConfigMapType.ACTION) {  // using KAM CRs for action configmaps
-                KindActionMappingProcessor kam =
-                    new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
-                String configMapName = getConfigMapName(type, name, subkind, kind);
-                map = getConfigMap(client, kam, namespace, configMapName, builder);
-            } else { // status mapping configmap
-                // Map: kappnav.actions.{kind}[-{subkind}].{name}
-                if (name != null && !name.isEmpty()) {
-                    map = getConfigMap(client, null, namespace, 
-                                       getConfigMapName(type, (subkind != null && !subkind.isEmpty()) ? '-' + subkind + '.' + name : '.' + name),
-                                       null);
-                    if (map != null) {
-                        builder.merge(map);
-                        // Stop here if the action is replace.
-                        if (getConflictAction(map) == ConflictAction.REPLACE) {
-                            return builder.getConfigMap();
-                        }
-                    } else {
-                        if (Logger.isDebugEnabled()) {
-                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-1 is null.");
-                        }
-                    }
-                }
-
-                // Map: kappnav.actions.{kind}-{subkind}
-                if (subkind != null && !subkind.isEmpty()) {
-                    map = getConfigMap(client, null, GLOBAL_NAMESPACE, getConfigMapName(type, '-' + subkind), null);
-                    if (map != null) {
-                        builder.merge(map);
-                        // Stop here if the action is replace.
-                        if (getConflictAction(map) == ConflictAction.REPLACE) {
-                            return builder.getConfigMap();
-                        }
-                    } else {
-                        if (Logger.isDebugEnabled()) {
-                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-2 is null.");
-                         }
-                    }
-                 }
-
-                // Map: kappnav.actions.{kind}
-                map = getConfigMap(client, null, GLOBAL_NAMESPACE, getConfigMapName(type, ""), null);
+        } else { 
+            // Get configmaps available in a cluster
+            KindActionMappingProcessor kam =
+                new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
+            String configMapName = getConfigMapName(type, name, subkind, kind);
+            map = getConfigMap(client, kam, namespace, type, configMapName, builder);
+ 
+            if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
+                // unregistered, try the unregistered configmap
+                map = getConfigMap(client, null, GLOBAL_NAMESPACE, type, getUnregisteredConfigMapName(), builder);
                 if (map != null) {
                     builder.merge(map);
                 } else {
-                    if (Logger.isDebugEnabled()) {
-                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "Map-3 is null.");
-                    }
-                }
-
-                if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
-                    // unregistered, try the unregistered configmap
-                    map = getConfigMap(client, null, GLOBAL_NAMESPACE, getUnregisteredConfigMapName(), builder);
-                    if (map != null) {
-                        builder.merge(map);
-                    } else {
-                        if (Logger.isDebugEnabled()) 
-                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
-                    }
+                    if (Logger.isDebugEnabled()) 
+                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
                 }
             }
         }
@@ -163,7 +119,7 @@ public class ConfigMapProcessor {
      * Return string "empty" if input array is empty 
      * Otherwise return array as string "[ element1 ][elemnt 2] ..."
      * */ 
-    private String ownerRefArrayToString(OwnerRef[] array) { 
+    protected static String ownerRefArrayToString(OwnerRef[] array) { 
         String string= null;
         if ( array == null ) { 
             string= "null";
@@ -179,11 +135,12 @@ public class ConfigMapProcessor {
         return string; 
     }
 
-    private String getConfigMapName(ConfigMapType type, String suffix) {
+    private String getConfigMapName(ConfigMapType type, String name, String subkind, String kind) {
+        String suffix = getConfigMapNameSuffix(name, subkind);        
         return (type == ConfigMapType.ACTION ? actionNameWithKind : statusMappingNameWithKind) + suffix;
     }
 
-    private String getConfigMapName(ConfigMapType type, String name, String subkind, String kind) {
+    protected static String getConfigMapNameSuffix(String name, String subkind) {
         String suffix;
         if (name != null && !name.isEmpty()) {
             suffix = (subkind != null && !subkind.isEmpty()) ? '-' + subkind + '.' + name : '.' + name;
@@ -191,23 +148,22 @@ public class ConfigMapProcessor {
             suffix = '-' + subkind;
         } else {
             suffix = "";
-        }
-        
-        return (type == ConfigMapType.ACTION ? actionNameWithKind : statusMappingNameWithKind) + suffix;
+        }       
+        return suffix;
     }
     
     private String getUnregisteredConfigMapName() {
         return UNREGISTERED;
     }
 
-    private JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, 
-                                    String namespace, String configMapName, ConfigMapBuilder builder) {
-        // Return the map from the local cache if it's been previously loaded.
+    private JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
+                                    ConfigMapType type, String configMapName, ConfigMapBuilder builder) {      
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "For namespace=" + namespace + 
                        ", configMapName=" + configMapName);
         }
 
+        // Return the map from the local cache if it's been previously loaded.
         final boolean isGlobalNS = GLOBAL_NAMESPACE.equals(namespace);
         if (isGlobalNS && kappnavNSMapCache.containsKey(configMapName)) {
             return kappnavNSMapCache.get(configMapName);
@@ -215,7 +171,7 @@ public class ConfigMapProcessor {
         
         if (kam != null) {
             // get Configmaps declared in the KindActionMapping custom resources
-            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client);
+            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, type);
 
             if (configMapsList != null) {
                 // look up the configmaps in a cluster
@@ -240,18 +196,6 @@ public class ConfigMapProcessor {
                 if (Logger.isDebugEnabled()) 
                 Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "no configmap with given kam is found");
             } 
-        } else {
-            final JsonElement element = ConfigMapCache.getConfigMapAsJSON(client, namespace, configMapName);
-            if (element != null && element.isJsonObject()) {
-                final JsonObject map = element.getAsJsonObject();
-                if (isGlobalNS) {
-                    // Store the map in the local cache.
-                    kappnavNSMapCache.put(configMapName, map);
-                }
-                if (Logger.isExitEnabled()) 
-                    Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "Status mapping configmap returned = " + map);
-                return map;
-            }
         }
         
         if (isGlobalNS) {
@@ -264,7 +208,7 @@ public class ConfigMapProcessor {
         }
 
         if (Logger.isExitEnabled()) 
-            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "returns null");
+            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "No map so storing null to local cache.");
         return null;
     }
 
@@ -295,7 +239,7 @@ public class ConfigMapProcessor {
         REPLACE
     }
 
-    private static void mergeConfigMaps(ArrayList<JsonObject> configMapsFound, ConfigMapBuilder builder) {
+    protected static void mergeConfigMaps(ArrayList<JsonObject> configMapsFound, ConfigMapBuilder builder) {
         for (int cIdx=0; cIdx<configMapsFound.size(); cIdx++) {
             JsonObject cMap = configMapsFound.get(cIdx);
             if (cMap != null) {
