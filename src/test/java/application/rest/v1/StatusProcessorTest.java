@@ -168,8 +168,8 @@ public class StatusProcessorTest {
 		try {
 		    JsonObject expectedResult = new JsonParser().parse("{value:Unknown,flyover:Unknown}").getAsJsonObject();
 		    cir = new ComponentInfoRegistry();
-			JsonObject result = sp.getComponentStatus(ac, cir, jsonObject1, jsonObject2);
-			assertEquals("Test getComponentStatus_succeeds FAILED", expectedResult, result);
+		    JsonObject result = sp.getComponentStatus(ac, cir, jsonObject1, jsonObject2);
+		    assertEquals("Test getComponentStatus_succeeds FAILED", expectedResult, result);
 		} catch (Exception e) {
 			fail("Test getComponentStatus_succeeds failed with exception " + e.getMessage());
 		}
