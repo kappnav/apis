@@ -60,7 +60,6 @@ public class StatusEndpointTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		//sep.setCoreV1ApiForInternal(cv1a);
 	    ComponentInfoRegistry.setCustomObjectsApiForJunit(coa);
 	    ComponentInfoRegistry.setApisApiForJunit(apis);
 	    ComponentInfoRegistry.setCoreV1ApiForJunit(cv1a);
@@ -76,7 +75,7 @@ public class StatusEndpointTest {
 
 	
 	@Test
-	public void getSecrets_succeeds() throws Exception {
+	public void computeStatus_succeeds() throws Exception {
 		mock.checking(new Expectations() {
 			{
 			    allowing(coa).setApiClient(with(any(ApiClient.class)));
@@ -121,14 +120,14 @@ public class StatusEndpointTest {
 		try {
 		    response = sep.computeStatus("mysecret", "Secret", "/v1", "");
 			int rc = response.getStatus();
-			assertEquals("Test getSecrets_succeeds FAILED", 200, rc);
+			assertEquals("Test computeStatus_succeeds FAILED", 200, rc);
 		} catch (Exception e) {
-			fail("Test getSecrets_succeeds failed with exception " + e.getMessage());
+			fail("Test computeStatus_succeeds failed with exception " + e.getMessage());
 		}
 	}
 	
 	@Test
-    public void getSecretsThrowApiException_error() throws Exception {
+    public void computeStatusThrowApiException_error() throws Exception {
         mock.checking(new Expectations() {
             {
                 allowing(apis).setApiClient(with(any(ApiClient.class)));
@@ -139,9 +138,9 @@ public class StatusEndpointTest {
         try {
             response = sep.computeStatus("stock-trader", "Application", "/v1", "");
             int rc = response.getStatus();
-            assertEquals("Test getSecretsThrowApiException_error FAILED", 207, rc);
+            assertEquals("Test computeStatusThrowApiException_error FAILED", 207, rc);
         } catch (Exception e) {
-            fail("Test getSecretsThrowApiException_error failed with exception " + e.getMessage());
+            fail("Test computeStatusThrowApiException_error failed with exception " + e.getMessage());
         }
     }
 	
