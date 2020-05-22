@@ -74,20 +74,30 @@ public class StatusEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
         try {
+            System.out.println("CPV: enter");
             final ApiClient client = getApiClient();
+            System.out.println("CPV: got here -1a");
             final JsonObject resource = getResource(client, name, kind, urlDecode(apiVersion), namespace);
+            System.out.println("CPV: got here -1b");
             // Add a 'kind' property to the resource if it is missing.
             if (resource.get(KIND_PROPERTY_NAME) == null) {
+                System.out.println("CPV: got here - WTF?!");
                 resource.addProperty(KIND_PROPERTY_NAME, kind);
             }
+            System.out.println("CPV: got here 0a");
             final ConfigMapProcessor processor = new ConfigMapProcessor(kind);
+            System.out.println("CPV: got here 0b");
             if (config == null) {
                 // Initialize the config here if CDI failed to do it.
                 config = new KAppNavConfig(client);
             }
+            System.out.println("CPV: got here 1");
             final StatusProcessor statusProcessor = new StatusProcessor(config);
+            System.out.println("CPV: got here 2");
             final JsonObject configMap = processor.getConfigMap(client, resource, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING);
+            System.out.println("CPV: got here 3");
             final JsonObject status = statusProcessor.getComponentStatus(client, registry, resource, configMap);
+            System.out.println("CPV: got here 4");
             return Response.ok(status.toString()).build();
         }
         catch (IOException | ApiException e) {
@@ -103,7 +113,9 @@ public class StatusEndpoint extends KAppNavEndpoint {
             // Initialize the registry here if CDI failed to do it.
             registry = new ComponentInfoRegistry(client);
         }
+        System.out.println("CPV: getResource 1");
         final Object o = registry.getNamespacedObject(client, kind, apiVersion, namespace, name);
+        System.out.println("CPV: getResource 2");
         return getItemAsObject(client, o);
     }
 

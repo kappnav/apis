@@ -179,10 +179,14 @@ public class ComponentInfoRegistry {
     }
 
     public Object getNamespacedObject(ApiClient client, String componentKind, String apiVersion, String namespace, String name) throws ApiException {
+        System.out.println("CPV getNamespacedObject - 1 ");
         ComponentInfo info = getComponentInfo(client, componentKind, apiVersion);
+        System.out.println("CPV getNamespacedObject - 2 ");
         if (info != null) {
             try {
+                System.out.println("CPV getNamespacedObject - 3 ");
                 Object result = info.resolver.getNamespacedObject(client, info, namespace, name);
+                System.out.println("CPV getNamespacedObject - 4 ");
                 return result;
             } catch (ApiException e) {
                 throw new ApiException(207, e.toString());
@@ -195,10 +199,14 @@ public class ComponentInfoRegistry {
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getComponentInfo", Logger.LogType.ENTRY, "For componentKind=" + componentKind + ", apiVersion=" +apiVersion);
         }
+        System.out.println("CPV getComponentInfo For componentKind=" + componentKind + ", apiVersion=" +apiVersion);
         Map<String,ComponentInfo> map = componentKindMap.get();
         if (apiVersion == null || apiVersion.length() == 0) {
+            System.out.println("CPV getComponentInfo - 1");
             apiVersion = CORE_KIND_TO_API_VERSION_MAP.get(componentKind);
+            System.out.println("CPV getComponentInfo - 2");
             if (apiVersion == null) {
+                System.out.println("CPV getComponentInfo - 3");
                 if (Logger.isExitEnabled()) {
                     Logger.log(className, "getComponentInfo", Logger.LogType.EXIT,"ApiVersion is null and not core kind: " + componentKind);
                 }
@@ -206,6 +214,7 @@ public class ComponentInfoRegistry {
             }
 
         }
+        System.out.println("CPV getComponentInfo - 4");
         String key = apiVersion + "/" + componentKind;
         if (Logger.isDebugEnabled()) {
             Logger.log(className, "getComponentInfo", Logger.LogType.DEBUG,"Using key: " + key);
