@@ -43,66 +43,66 @@ import io.kubernetes.client.apis.CustomObjectsApi;
  *
  */
 public class ComponentsEndpointTest {
-	@SuppressWarnings("deprecation")	
-	private final Mockery mock = new JUnit4Mockery() {
+    @SuppressWarnings("deprecation")
+    private final Mockery mock = new JUnit4Mockery() {
         {
             setImposteriser(ClassImposteriser.INSTANCE);
         }
     };
-    
-	private final ApisApi apis = mock.mock(ApisApi.class);  
-	private final CustomObjectsApi coa = mock.mock(CustomObjectsApi.class);
-	
-	private final ComponentsEndpoint cep = new ComponentsEndpoint();
-	private Response response = null;
-	
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@Before
-	public void setUp() throws Exception {
-		ComponentInfoRegistry.setApisApiForJunit(apis);
-		ApplicationCache.setCustomObjectsApiForJunit(coa);
-	}
 
-	
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@After
-	public void tearDown() throws Exception {
-	}
+    private final ApisApi apis = mock.mock(ApisApi.class);
+    private final CustomObjectsApi coa = mock.mock(CustomObjectsApi.class);
 
-	
-	@Test
-	public void getComponents_succeeds() throws Exception {
-		mock.checking(new Expectations() {
-			{
-			    allowing(apis).setApiClient(with(any(ApiClient.class)));
-			    allowing(apis).getAPIVersions();
-			    allowing(coa).setApiClient(with(any(ApiClient.class)));
-			    oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", "stock-trader");
-			}		
-		});
-		try {
-			response = cep.getComponents("stock-trader", "stock-trader");
-			int rc = response.getStatus();
-			assertEquals("Test getComponents_succeeds FAILED", 200, rc);
-		} catch (Exception e) {
-			fail("Test getComponents_succeeds failed with exception " + e.getMessage());
-		}
-	}
-	
-	@Test
+    private final ComponentsEndpoint cep = new ComponentsEndpoint();
+    private Response response = null;
+
+    /**
+     * @throws java.lang.Exception
+     */
+    @Before
+    public void setUp() throws Exception {
+        ComponentInfoRegistry.setApisApiForJunit(apis);
+        ApplicationCache.setCustomObjectsApiForJunit(coa);
+    }
+
+    /**
+     * @throws java.lang.Exception
+     */
+    @After
+    public void tearDown() throws Exception {
+    }
+
+    @Test
+    public void getComponents_succeeds() throws Exception {
+        mock.checking(new Expectations() {
+            {
+                allowing(apis).setApiClient(with(any(ApiClient.class)));
+                allowing(apis).getAPIVersions();
+                allowing(coa).setApiClient(with(any(ApiClient.class)));
+                oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications",
+                        "stock-trader");
+            }
+        });
+        try {
+            response = cep.getComponents("stock-trader", "stock-trader");
+            int rc = response.getStatus();
+            assertEquals("Test getComponents_succeeds FAILED", 200, rc);
+        } catch (Exception e) {
+            fail("Test getComponents_succeeds failed with exception " + e.getMessage());
+        }
+    }
+
+    @Test
     public void getComponentsThrowApiException_error() throws Exception {
         mock.checking(new Expectations() {
             {
                 allowing(apis).setApiClient(with(any(ApiClient.class)));
                 allowing(apis).getAPIVersions();
                 allowing(coa).setApiClient(with(any(ApiClient.class)));
-                oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", "stock-trader");
+                oneOf(coa).getNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications",
+                        "stock-trader");
                 will(throwException(new ApiException(207, "Injection to throw ApiException.")));
-            }       
+            }
         });
         try {
             response = cep.getComponents("stock-trader", "stock-trader");
@@ -112,5 +112,5 @@ public class ComponentsEndpointTest {
             fail("Test getComponentsThrowApiException_error failed with exception " + e.getMessage());
         }
     }
-	
+
 }
