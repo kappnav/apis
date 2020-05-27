@@ -64,7 +64,7 @@ public class KindActionMappingProcessor {
     private static final String PRECEDENCE_PROPERTY_NAME = "precedence";
     private static final String MAPPINGS_PROPERTY_NAME = "mappings";
     private static final String STATUS_MAPPINGS_PROPERTY_NAME = "statusMappings";
-    private static final String DETAILS_MAPPINGS_PROPERTY_NAME = "detailsMappings";
+    private static final String SECTION_MAPPINGS_PROPERTY_NAME = "sectionMappings";
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     private static final String OWNER_PROPERTY_NAME = "owner"; 
@@ -172,7 +172,7 @@ public class KindActionMappingProcessor {
                                 else 
                                     precedenceIndex = 0; // No precedence specified: set default precedenceIndex as 0 
                                                          // (The default for precedence is 1)
-                                JsonArray mappings = getMappingsArray(spec, cmType);
+                                JsonArray mappings = getMappingsByConfigMapType(spec, cmType);
 
                                 // iterate through each mapping within a KAM custom resource
                                 if (mappings != null) {
@@ -224,8 +224,8 @@ public class KindActionMappingProcessor {
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
                                                     // if the resource given matches the kind action mapping rules?
-                                                    boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx, 
-                                                                                    name, subkind, kind);
+                                                    boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx,
+                                                                                            name, subkind, kind);
 
                                                     if (matches) {                                               
                                                         // find next available slot for a kam in same precedence
@@ -304,11 +304,11 @@ public class KindActionMappingProcessor {
     /**
      * Return the responding mapping array per a given configmap type
      * 
-     * @param cmType - configMap type (ACTION, STATUS, DETAILS)
+     * @param cmType - configMap type (ACTION, STATUS, SECTION)
      * @return a JsonArray the responding mappings for a given configmap type
      */
-    private JsonArray getMappingsArray(JsonObject spec, ConfigMapType cmType) {
-        String methodName = "getMappingsArry";
+    private JsonArray getMappingsByConfigMapType(JsonObject spec, ConfigMapType cmType) {
+        String methodName = "getMappingsByConfigMapType";
         if (Logger.isEntryEnabled()) 
                     Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,
                         "configmap type = " + cmType);
@@ -317,8 +317,8 @@ public class KindActionMappingProcessor {
             mappings = spec.getAsJsonArray(MAPPINGS_PROPERTY_NAME);
         else if (cmType == ConfigMapProcessor.ConfigMapType.STATUS_MAPPING)
             mappings = spec.getAsJsonArray(STATUS_MAPPINGS_PROPERTY_NAME);
-        else if (cmType == ConfigMapProcessor.ConfigMapType.DETAILS_MAPPING)
-            mappings = spec.getAsJsonArray(DETAILS_MAPPINGS_PROPERTY_NAME);
+        else if (cmType == ConfigMapProcessor.ConfigMapType.SECTION)
+            mappings = spec.getAsJsonArray(SECTION_MAPPINGS_PROPERTY_NAME);
         else {
             if (Logger.isWarningEnabled()) 
                 Logger.log(CLASS_NAME, methodName, Logger.LogType.WARNING,
@@ -682,8 +682,8 @@ public class KindActionMappingProcessor {
             }
         } else if ((compKSNValue == KSN) && (kamKSNValue == KS)) {
             if ( (kamSubkind.equals(this.compSubkind)) || (kamSubkind.equals(WILDCARD)) ) 
-                        if ( (kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)) ) 
-                            match = true;
+                if ( (kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)) ) 
+                    match = true;
         } else if (kamKSNValue == K) {
             if ((kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)))
                 match = true;

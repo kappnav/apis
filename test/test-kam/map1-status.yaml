@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test.status-mapping.deployment.test1
+  namespace: test
+data:
+  exists: |
+    {  
+      test1value: "Normal",
+      flyover: "Test Status is normal when resource exists",
+      flyover.nls: "status.flyover.service"
+    }

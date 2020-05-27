@@ -1,0 +1,34 @@
+apiVersion: actions.kappnav.io/v1
+kind: KindActionMapping
+metadata:
+  name: kam2
+  namespace: test
+spec:
+   precedence: 5
+   mappings:
+   - apiVersion: 'apps/v1'
+     kind: 'Deployment'
+     subkind: 'Liberty'
+     mapname: ${namespace}.actions.test2
+     owner:
+       apiVersion: kappnav.operator.kappnav.io/v1
+       kind: Kappnav
+       uid: 12345678-aaaa-bbbb-cccc-123456789abc
+   statusMappings:
+   - apiVersion: 'apps/v1'
+     kind: 'Deployment'
+     subkind: 'Liberty'
+     mapname: ${namespace}.status-mapping.test2
+     owner:
+       apiVersion: kappnav.operator.kappnav.io/v1
+       kind: Kappnav
+       uid: 12345678-aaaa-bbbb-cccc-123456789abc
+   sectionMappings:
+   - apiVersion: 'apps/v1'
+     kind: 'Deployment'
+     subkind: 'Liberty'
+     mapname: ${namespace}.sections.test2
+     owner:
+       apiVersion: kappnav.operator.kappnav.io/v1
+       kind: Kappnav
+       uid: 12345678-aaaa-bbbb-cccc-123456789abc

@@ -35,16 +35,16 @@ public class ConfigMapProcessor {
     public static enum ConfigMapType {
         ACTION,
         STATUS_MAPPING,
-        DETAILS_MAPPING
+        SECTION
     }
 
     private static final String className = ConfigMapProcessor.class.getName();
 
-    private static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
+    public static final String GLOBAL_NAMESPACE = KAppNavConfig.getkAppNavNamespace();
 
     private static final String ACTION_CONFIG_MAP_NAME = "kappnav.actions.";
     private static final String STATUS_MAPPING_CONFIG_MAP_NAME = "kappnav.status-mapping.";
-    private static final String UNREGISTERED = "kappnav.status-mapping-unregistered";
+    public static final String UNREGISTERED = "kappnav.status-mapping-unregistered";
 
     private static final String METADATA_PROPERTY_NAME = "metadata";
     private static final String ANNOTATIONS_PROPERTY_NAME = "annotations";
@@ -140,7 +140,7 @@ public class ConfigMapProcessor {
         return (type == ConfigMapType.ACTION ? actionNameWithKind : statusMappingNameWithKind) + suffix;
     }
 
-    protected static String getConfigMapNameSuffix(String name, String subkind) {
+    public static String getConfigMapNameSuffix(String name, String subkind) {
         String suffix;
         if (name != null && !name.isEmpty()) {
             suffix = (subkind != null && !subkind.isEmpty()) ? '-' + subkind + '.' + name : '.' + name;
@@ -156,7 +156,7 @@ public class ConfigMapProcessor {
         return UNREGISTERED;
     }
 
-    private JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
+    public JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
                                     ConfigMapType type, String configMapName, ConfigMapBuilder builder) {      
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "For namespace=" + namespace + 
@@ -178,7 +178,7 @@ public class ConfigMapProcessor {
                 final ArrayList<JsonObject> configMapsFound = ConfigMapCache.getConfigMapsAsJSON(client, configMapsList);
 
                 // merge configmaps found
-                mergeConfigMaps(configMapsFound, builder);
+                mergeConfigMaps(configMapsFound, type, builder);
                 JsonObject map = builder.getConfigMap();
                 if (map != null) {
                     if (isGlobalNS) {
@@ -217,8 +217,8 @@ public class ConfigMapProcessor {
         if (metadata != null) {
             final JsonObject annotations = metadata.getAsJsonObject(ANNOTATIONS_PROPERTY_NAME);
             if (annotations != null) {
-                JsonElement e = metadata.get(KAPPNAV_ACTIONS_ON_CONFLICT_PROPERTY_NAME);
-                if (e != null && e.isJsonPrimitive()) {
+                JsonElement e = annotations.get(KAPPNAV_ACTIONS_ON_CONFLICT_PROPERTY_NAME);               
+                if (e != null && e.isJsonPrimitive()) {                 
                     String s = e.getAsString();
                     if ("merge".equals(s)) {
                         return ConflictAction.MERGE;
@@ -239,25 +239,41 @@ public class ConfigMapProcessor {
         REPLACE
     }
 
-    protected static void mergeConfigMaps(ArrayList<JsonObject> configMapsFound, ConfigMapBuilder builder) {
+    protected static void mergeConfigMaps(ArrayList<JsonObject> configMapsFound, ConfigMapType type, ConfigMapBuilder builder) {
+        String methodName = "mergeConfigMaps";
+        if (type == ConfigMapType.STATUS_MAPPING){
+            // Use the first configmap found with no more merge
+            if ( !configMapsFound.isEmpty()) {
+                JsonObject cMap = configMapsFound.get(0);
+                if (cMap != null)  {
+                    if (Logger.isDebugEnabled()) 
+                        Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                                   "Status mapping: configmap to be merged:\n cMap[0] = "+cMap);
+                    builder.merge(cMap);
+                    return;
+                }
+            }
+        }
+
+        // action and sections: merge the configmaps
         for (int cIdx=0; cIdx<configMapsFound.size(); cIdx++) {
             JsonObject cMap = configMapsFound.get(cIdx);
             if (cMap != null) {
                 if (Logger.isDebugEnabled()) 
-                    Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, 
-                               "configmap to be merged:\n cMap["+cIdx+"]="+cMap);
+                    Logger.log(className, methodName, Logger.LogType.DEBUG, 
+                               "Action: configmap to be merged:\n cMap["+cIdx+"] = "+cMap);
                 builder.merge(cMap);
 
                 // Stop here if the action is replace.
                 if (getConflictAction(cMap) == ConflictAction.REPLACE) {
                     if (Logger.isDebugEnabled()) 
-                        Logger.log(className, "getConflictAction", Logger.LogType.DEBUG, 
+                        Logger.log(className, methodName, Logger.LogType.DEBUG, 
                                    "Stop merging with a REPLACE conflict action");
                     return;
                 }
             } else {
                 if (Logger.isDebugEnabled()) {
-                    Logger.log(className, "mergeConfigMapActions", Logger.LogType.DEBUG, 
+                    Logger.log(className, methodName, Logger.LogType.DEBUG, 
                                "Do nothing as the configMap to be merged is null.");
                 }
             }

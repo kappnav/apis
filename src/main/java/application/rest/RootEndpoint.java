@@ -44,6 +44,7 @@ public class RootEndpoint {
         String applicationsURL = (uriInfo.getAbsolutePath() + "/applications").replaceAll("(?<!http:)\\/\\/", "/");
         String componentsURL = (uriInfo.getAbsolutePath() + "/components").replaceAll("(?<!http:)\\/\\/", "/");
         String configmapURL = (uriInfo.getAbsolutePath() + "/configmap").replaceAll("(?<!http:)\\/\\/", "/");
+        String kindactionmappingURL = (uriInfo.getAbsolutePath() + "/kindactionmapping").replaceAll("(?<!http:)\\/\\/", "/");
         String namespacesURL = (uriInfo.getAbsolutePath() + "/namespaces").replaceAll("(?<!http:)\\/\\/", "/");
         String secretURL = (uriInfo.getAbsolutePath() + "/secret").replaceAll("(?<!http:)\\/\\/", "/");
         String secretsURL = (uriInfo.getAbsolutePath() + "/secrets").replaceAll("(?<!http:)\\/\\/", "/");
@@ -53,6 +54,7 @@ public class RootEndpoint {
                 "\",\"applications\":\"" + applicationsURL +
                 "\",\"components\":\"" + componentsURL +
                 "\",\"configmap\":\"" + configmapURL +
+                "\",\"kindactionmapping\":\"" + kindactionmappingURL +
                 "\",\"namespaces\":\"" + namespacesURL +
                 "\",\"secret\":\"" + secretURL +
                 "\",\"secrets\":\"" + secretsURL +

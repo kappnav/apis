@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test.actions.deployment.test1
+  namespace: test
+data:
+  url-actions: |
+    [
+      {
+        "name":"test detail",
+        "text":"Test View Detail",
+        "text.nls":"action.url.deployment.detail.text",
+        "description":"View Deployment detail test",
+        "description.nls":"action.url.deployment.detail.desc.test",
+        "open-window": "current",
+        "menu-item": "false"
+      }
+    ]

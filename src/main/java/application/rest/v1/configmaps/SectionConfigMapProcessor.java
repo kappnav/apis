@@ -57,14 +57,12 @@ public class SectionConfigMapProcessor {
     private static final String ANNOTATION_PROPERTY_NAME = "annotation";
     private static final String VALUE_PROPERTY_NAME = "value";
             
-    private final String sectionName;
     private final String sectionNameWithKind;
     
     private final Map<String,JsonObject> kappnavNSMapCache;
 
-    public SectionConfigMapProcessor(String kind) {
-        this.sectionName= SECTION_CONFIG_MAP_NAME;   
-        this.sectionNameWithKind = this.sectionName + kind.toLowerCase(Locale.ENGLISH);
+    public SectionConfigMapProcessor(String kind) { 
+        this.sectionNameWithKind = SECTION_CONFIG_MAP_NAME + kind.toLowerCase(Locale.ENGLISH);
         this.kappnavNSMapCache = new HashMap<>();        
     }
 
@@ -108,7 +106,7 @@ public class SectionConfigMapProcessor {
         return configMapFound;
     } 
 
-    private JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
+    public JsonObject getConfigMap(ApiClient client, KindActionMappingProcessor kam, String namespace,
                                     String configMapName, ConfigMapBuilder builder) {
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "For namespace=" + namespace + 
@@ -124,14 +122,14 @@ public class SectionConfigMapProcessor {
         if (kam != null) {
             // get Configmaps declared in the KindActionMapping custom resources
             ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, 
-                ConfigMapProcessor.ConfigMapType.DETAILS_MAPPING);
+                ConfigMapProcessor.ConfigMapType.SECTION);
 
             if (configMapsList != null) {
                 // look up the configmaps in a cluster
                 final ArrayList<JsonObject> configMapsFound = ConfigMapCache.getConfigMapsAsJSON(client, configMapsList);
 
                 // merge configmaps found
-                ConfigMapProcessor.mergeConfigMaps(configMapsFound, builder);
+                ConfigMapProcessor.mergeConfigMaps(configMapsFound, ConfigMapProcessor.ConfigMapType.SECTION, builder);
                 JsonObject map = builder.getConfigMap();
                 if (map != null) {
                     if (isGlobalNS) {
