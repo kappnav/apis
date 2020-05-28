@@ -19,6 +19,7 @@ package application.rest.v1;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
@@ -28,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -636,6 +639,11 @@ public abstract class KAppNavEndpoint {
         return s;
     }
 
+    // Escape html special chars
+    public static String encodeHTML(String s) {         
+        return StringEscapeUtils.escapeHtml4(s);      
+    }
+    
     protected static int getResponseCode(Exception e) {
         if (e instanceof ApiException) {
             final int code = ((ApiException) e).getCode();
@@ -661,22 +669,24 @@ public abstract class KAppNavEndpoint {
 
     protected static String getStatusMessageAsJSON(Exception e) {
         if (e instanceof ApiException) {
-            final int code = ((ApiException) e).getCode();
-            return getStatusMessageAsJSON(code, e.getMessage());
+            final int code = ((ApiException) e).getCode();          
+            return getStatusMessageAsJSON(code, encodeHTML(e.getMessage()));
         }
         else if (e instanceof ValidationException) {
-            return getValidationErrorMessageAsJSON(e.getMessage(), ((ValidationException) e).getFieldName());
+            return getValidationErrorMessageAsJSON(encodeHTML(e.getMessage()), ((ValidationException) e).getFieldName());
         }
-        return getErrorMessageAsJSON(e.getMessage());
+        
+        return getErrorMessageAsJSON(encodeHTML(e.getMessage()));
     }
     
     protected static String getStatusMessageAsJSON(String msg) {
-        return getStatusMessageAsJSON(0, msg);
+        String escapedMsg = encodeHTML(msg);
+        return getStatusMessageAsJSON(0, escapedMsg);
     }
     
     private static String getStatusMessageAsJSON(int code, String msg) {
-        final JsonObject o = new JsonObject();
-        o.addProperty("message", msg);       
+        final JsonObject o = new JsonObject();       
+        o.addProperty("message", msg);  
         return o.toString();
     }
     
