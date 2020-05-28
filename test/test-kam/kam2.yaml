@@ -6,7 +6,7 @@ metadata:
 spec:
    precedence: 5
    mappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      subkind: 'Liberty'
      mapname: ${namespace}.actions.test2
@@ -15,7 +15,7 @@ spec:
        kind: Kappnav
        uid: 12345678-aaaa-bbbb-cccc-123456789abc
    statusMappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      subkind: 'Liberty'
      mapname: ${namespace}.status-mapping.test2
@@ -24,7 +24,7 @@ spec:
        kind: Kappnav
        uid: 12345678-aaaa-bbbb-cccc-123456789abc
    sectionMappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      subkind: 'Liberty'
      mapname: ${namespace}.sections.test2

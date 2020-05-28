@@ -6,14 +6,14 @@ metadata:
 spec:
    precedence: 8
    mappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      mapname: test.actions.deployment.test1
    statusMappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      mapname: test.status-mapping.deployment.test1
    sectionMappings:
-   - apiVersion: 'apps/v1'
+   - apiVersion: 'tests/v1'
      kind: 'Deployment'
      mapname: test.sections.deployment.test1
