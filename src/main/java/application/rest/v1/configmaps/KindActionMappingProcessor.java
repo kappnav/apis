@@ -130,7 +130,7 @@ public class KindActionMappingProcessor {
      * @return configmaps matched the defined action configmap mappings in KAM in order of
      *         configmap hierarchy & precedence
      */
-    protected ArrayList<QName> getConfigMapsFromKAMs(ApiClient client, ConfigMapType cmType) {
+    public ArrayList<QName> getConfigMapsFromKAMs(ApiClient client, ConfigMapType cmType) {
         String methodName = "getConfigMapsFromKAMs";
         if (Logger.isEntryEnabled()) 
                 Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"configMap type = " + cmType);
