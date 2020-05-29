@@ -134,7 +134,7 @@ public class ConfigMapCache {
                 Logger.log(CLASS_NAME, "getConfigMapsAsJSON", Logger.LogType.DEBUG, 
                     "configMapsList["+i+"]="+configMapsList.get(i));
             }                                                   
-            QName mapName = configMapsList.get(i);  // list entry format: mapname@namespace
+            QName mapName = configMapsList.get(i); 
 
             // Configmap lookup in either the resource's namespace for an instance specfic configmaps
             // or in the KindActionMapping resource's namespace for others.

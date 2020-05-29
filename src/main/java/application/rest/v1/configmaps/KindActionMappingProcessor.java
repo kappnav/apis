@@ -31,6 +31,8 @@ import io.kubernetes.client.ApiException;
 
 import com.ibm.kappnav.logging.Logger;
 
+import application.rest.v1.configmaps.ConfigMapProcessor.ConfigMapType;
+
 /**
  * KindActionMapping provides mapping rules that map a resource to a set of action configmaps.
  * This class provides the methods that facilitate a process of getting a configmap for a given
@@ -43,7 +45,6 @@ public class KindActionMappingProcessor {
     private static final String CLASS_NAME = KindActionMappingProcessor.class.getName();
 
     // KindActionMapping/KAM definitions
-
     private static final String WILDCARD = "*";
 
     private static final int MAX_PRECEDENCE = 9;
@@ -62,6 +63,8 @@ public class KindActionMappingProcessor {
     private static final String SPEC_PROPERTY_NAME = "spec";
     private static final String PRECEDENCE_PROPERTY_NAME = "precedence";
     private static final String MAPPINGS_PROPERTY_NAME = "mappings";
+    private static final String STATUS_MAPPINGS_PROPERTY_NAME = "statusMappings";
+    private static final String SECTION_MAPPINGS_PROPERTY_NAME = "sectionMappings";
 
     private static final String APIVERSION_PROPERTY_NAME = "apiVersion";
     private static final String OWNER_PROPERTY_NAME = "owner"; 
@@ -127,10 +130,10 @@ public class KindActionMappingProcessor {
      * @return configmaps matched the defined action configmap mappings in KAM in order of
      *         configmap hierarchy & precedence
      */
-    protected ArrayList<QName> getConfigMapsFromKAMs(ApiClient client) {
+    public ArrayList<QName> getConfigMapsFromKAMs(ApiClient client, ConfigMapType cmType) {
         String methodName = "getConfigMapsFromKAMs";
         if (Logger.isEntryEnabled()) 
-                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"");
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"configMap type = " + cmType);
 
         QName[][][] mapNamesFound = new QName[MAX_PRECEDENCE][KAM_N][TOTAL_KSN_VALUES];
         ArrayList<QName> configMapsList = null;
@@ -169,7 +172,7 @@ public class KindActionMappingProcessor {
                                 else 
                                     precedenceIndex = 0; // No precedence specified: set default precedenceIndex as 0 
                                                          // (The default for precedence is 1)
-                                JsonArray mappings = spec.getAsJsonArray(MAPPINGS_PROPERTY_NAME);
+                                JsonArray mappings = getMappingsByConfigMapType(spec, cmType);
 
                                 // iterate through each mapping within a KAM custom resource
                                 if (mappings != null) {
@@ -221,8 +224,8 @@ public class KindActionMappingProcessor {
                                                     int kamMappingPropIdx = examineMappingProperties(name, subkind, kind);
 
                                                     // if the resource given matches the kind action mapping rules?
-                                                    boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx, 
-                                                                                    name, subkind, kind);
+                                                    boolean matches = isResourceMatchesRule(compPropsIdx, kamMappingPropIdx,
+                                                                                            name, subkind, kind);
 
                                                     if (matches) {                                               
                                                         // find next available slot for a kam in same precedence
@@ -296,6 +299,35 @@ public class KindActionMappingProcessor {
         if (Logger.isExitEnabled()) 
                 Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT,"");
         return configMapsList;
+    }
+
+    /**
+     * Return the responding mapping array per a given configmap type
+     * 
+     * @param cmType - configMap type (ACTION, STATUS, SECTION)
+     * @return a JsonArray the responding mappings for a given configmap type
+     */
+    private JsonArray getMappingsByConfigMapType(JsonObject spec, ConfigMapType cmType) {
+        String methodName = "getMappingsByConfigMapType";
+        if (Logger.isEntryEnabled()) 
+                    Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,
+                        "configmap type = " + cmType);
+        JsonArray mappings = null;
+        if (cmType == ConfigMapProcessor.ConfigMapType.ACTION)
+            mappings = spec.getAsJsonArray(MAPPINGS_PROPERTY_NAME);
+        else if (cmType == ConfigMapProcessor.ConfigMapType.STATUS_MAPPING)
+            mappings = spec.getAsJsonArray(STATUS_MAPPINGS_PROPERTY_NAME);
+        else if (cmType == ConfigMapProcessor.ConfigMapType.SECTION)
+            mappings = spec.getAsJsonArray(SECTION_MAPPINGS_PROPERTY_NAME);
+        else {
+            if (Logger.isWarningEnabled()) 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.WARNING,
+                           "KindActionMapping does not support the configmap type " + cmType); 
+        }
+        if (Logger.isExitEnabled()) 
+                    Logger.log(CLASS_NAME, methodName, Logger.LogType.EXIT,
+                        "returned mappings = " + mappings); 
+        return mappings;
     }
 
     /**
@@ -650,8 +682,8 @@ public class KindActionMappingProcessor {
             }
         } else if ((compKSNValue == KSN) && (kamKSNValue == KS)) {
             if ( (kamSubkind.equals(this.compSubkind)) || (kamSubkind.equals(WILDCARD)) ) 
-                        if ( (kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)) ) 
-                            match = true;
+                if ( (kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)) ) 
+                    match = true;
         } else if (kamKSNValue == K) {
             if ((kamKind.equals(this.compKind)) || (kamKind.equals(WILDCARD)))
                 match = true;

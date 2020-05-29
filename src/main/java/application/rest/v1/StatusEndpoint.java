@@ -73,6 +73,13 @@ public class StatusEndpoint extends KAppNavEndpoint {
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") String kind,
             @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiversion") @Parameter(description = "The apiVersion of the resource") String apiVersion,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") String namespace) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(StatusEndpoint.class.getName(), "computeStatus", Logger.LogType.ENTRY, 
+            "\nresource-name = " + name +
+            "\nresource-kind = " + kind +
+            "\nnamespace = " + namespace +
+            "\napiversion= " + apiVersion);
+        }
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, urlDecode(apiVersion), namespace);

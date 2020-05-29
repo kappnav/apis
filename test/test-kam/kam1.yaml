@@ -1,0 +1,19 @@
+apiVersion: actions.kappnav.io/v1
+kind: KindActionMapping
+metadata:
+  name: kam1
+  namespace: test
+spec:
+   precedence: 8
+   mappings:
+   - apiVersion: 'tests/v1'
+     kind: 'Deployment'
+     mapname: test.actions.deployment.test1
+   statusMappings:
+   - apiVersion: 'tests/v1'
+     kind: 'Deployment'
+     mapname: test.status-mapping.deployment.test1
+   sectionMappings:
+   - apiVersion: 'tests/v1'
+     kind: 'Deployment'
+     mapname: test.sections.deployment.test1

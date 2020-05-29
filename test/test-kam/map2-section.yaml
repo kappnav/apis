@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test.sections.test2
+  namespace: test
+data:
+  sections: |
+    [
+      {
+        "name": "test2",
+        "title": "Test2 Information",
+        "title.nls": "section.test.title",
+        "description": "Information about testing this resource.",
+        "description.nls": "section.test.description",
+        "datasource": "test-labels-annotations",
+        "enablement-label": "stack.test.dev/id"
+      }
+    ]

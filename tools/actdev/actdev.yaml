@@ -23,7 +23,7 @@ spec:
           - name: KUBE_ENV
             value: okd 
           - name: mp.openapi.scan.classes
-            value: application.rest.v1.ActionsEndpoint                  
+            value: application.rest.v1.ActionsEndpoint,application.rest.v1.KindActionMappingEndpoint
 ---
 
 apiVersion: v1
