@@ -41,7 +41,7 @@ To validate all kams and configmaps installed successfully:
 
 ### Run the test via Action Developer Tool (actdev):
 
-Start the actdev tool.  Once the openapi/ui is filly intailized, drive the 'kindactionmapping' GET API: "GET ​/kindactionmapping​/{resource-kind} Computes config maps of a Kubernetes resource." with the following inputs:
+Start the actdev tool.  Once the openapi/ui is fully initialized, drive the 'kindactionmapping' GET API: "GET ​/kindactionmapping​/{resource-kind} Computes config maps of a Kubernetes resource." with the following inputs:
 
 resouce-kind: Deployment
 
@@ -54,14 +54,14 @@ resouce-kind: Deployment
       namespace: test
 
 Return data:
-1. the condidate-maps list;
+1. the candidate-maps list;
 1. the content of map1-action.yaml and map2-action.yaml being merged into the "url-actions" section.
 
 With the type value of 'status-mapping', you should see:
-1. the condidate-maps list;
+1. the candidate-maps list;
 1. the content of map2-status.yaml.
 
 With the type value of 'sections', you should see:
-1. the condidate-maps list;
+1. the candidate-maps list;
 1. the content of map1-section.yaml and map2-section.yaml being merged into the "url-actions" section.
 
