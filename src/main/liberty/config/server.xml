@@ -15,5 +15,7 @@
   <applicationManager autoExpand="true"/>
 
   <webApplication name="kappnav" location="${app.location}"/>
+  
+  <webContainer com.ibm.ws.webcontainer.disablexPoweredBy="true" />
 
 </server>
