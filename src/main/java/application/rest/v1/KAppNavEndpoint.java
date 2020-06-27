@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -39,12 +42,15 @@ import javax.net.ssl.X509TrustManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.ibm.kappnav.logging.Logger;
 import com.squareup.okhttp.ConnectionSpec;
 
+import application.rest.v1.actions.ResolutionContext;
 import application.rest.v1.actions.ValidationException;
+import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.configmaps.OwnerRef;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -314,6 +320,193 @@ public abstract class KAppNavEndpoint {
         }
         return DEFAULT_NAMESPACE;
     }
+
+    /**
+     * resolveInputPatterns evaluates patterns contained in input fields of an
+     * action ConfigMap. Examples of patterns: 
+     *  ${proc.podlist()}
+     *  ${resource.$.metadata.name}
+     * 
+     * @param map        action ConfigMap
+     * @param client     Kube API client
+     * @param registry   ComponentInfoRegistry
+     * @param kind       target resource kind
+     * @param apiVersion target resource apiVersion
+     * @param name       target resource name
+     * @param namespace  target resource namespace
+     */
+    public static void resolveInputPatterns(JsonObject map, final ApiClient client, ComponentInfoRegistry registry, String kind, String apiVersion, String name, String namespace) {
+        final String methodName = "resolveInputPatterns";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY, "kind: " + kind + " apiVersion: " + apiVersion + " name: " + name + " namespace: " + namespace);
+        }
+        if (!kind.equals("Deployment") && !kind.equals("Pod")) {
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.EXIT, "Only kind Deployment and Pod supported");
+            }
+            return;
+        }
+        try {
+            boolean found = false;
+            JsonObject resource;
+            try {
+                resource = getResource(client, registry, name, kind, apiVersion, namespace);
+                if (resource != null) {
+                    found = true;
+                }
+            } catch (Exception e) {
+                if (Logger.isDebugEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.DEBUG, "Exception getting resource: " + e);
+                }
+                return;
+            } finally {
+                if (!found) {
+                    if (Logger.isExitEnabled()) {
+                        Logger.log(className, methodName, Logger.LogType.EXIT, "Resource not found - name: " + name + " kind: " + kind + " apiVersion: " + apiVersion + " namespace: " + namespace + " not found");
+                    }
+                    return;
+                }
+            }
+            final ResolutionContext context = new ResolutionContext(client, registry, resource, kind);
+            JsonObject inputs = map.getAsJsonObject("inputs");
+            if (inputs == null) {
+                if (Logger.isExitEnabled()) {
+                    Logger.log(className, methodName, Logger.LogType.EXIT, "Inputs not found");
+                }
+                return;
+            }
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "inputs found");
+            }
+            Set<Entry<String, JsonElement>> inputEntries = inputs.entrySet();
+            for (Map.Entry<String, JsonElement> inputEntry : inputEntries) {
+                try {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, methodName, Logger.LogType.DEBUG, "input found: " + inputEntry.getKey());
+                    }
+                    JsonObject fields = inputEntry.getValue().getAsJsonObject().getAsJsonObject("fields");
+                    if (fields != null) {
+                        if (Logger.isDebugEnabled()) {
+                            Logger.log(className, methodName, Logger.LogType.DEBUG, "fields found");
+                        }
+                        Set<Entry<String, JsonElement>> fieldEntries = fields.entrySet();
+                        for (Map.Entry<String, JsonElement> fieldEntry : fieldEntries) {
+                            try {
+                                if (Logger.isDebugEnabled()) {
+                                    Logger.log(className, methodName, Logger.LogType.DEBUG,
+                                            "field found: " + fieldEntry.getKey());
+                                }
+                                JsonObject field = fieldEntry.getValue().getAsJsonObject();
+                                if (field != null) {
+                                    if (Logger.isDebugEnabled()) {
+                                        Logger.log(className, methodName, Logger.LogType.DEBUG, "field JsonObject found");
+                                    }
+                                    // process values field
+                                    JsonArray valuesArray = field.getAsJsonArray("values");
+                                    if (valuesArray != null) {
+                                        if (Logger.isDebugEnabled()) {
+                                            Logger.log(className, methodName, Logger.LogType.DEBUG, "values array found");
+                                        }
+                                        try {
+                                            if (valuesArray.size() == 1 && valuesArray.get(0).getAsString().equals("${func.podlist()}")) {
+                                                ResolvedValue rv = context.resolve(valuesArray.get(0).getAsString());
+                                                if (Logger.isDebugEnabled()) {
+                                                    Logger.log(className, methodName, Logger.LogType.DEBUG, "values value: " + valuesArray.get(0).getAsString());
+                                                }
+                                                if (Logger.isDebugEnabled()) {
+                                                    Logger.log(className, methodName, Logger.LogType.DEBUG, "Resolved value: " + rv.getValue());
+                                                }
+                                                valuesArray.remove(0);
+                                                JsonObject pods = new JsonParser().parse(rv.getValue()).getAsJsonObject();
+                                                JsonArray podsArray = pods.getAsJsonArray("pods");
+                                                // {"pods":["demo-app-56dcb8d858-sf2md"]}
+                                                if (podsArray != null) {
+                                                    for (JsonElement pod : podsArray) {
+                                                        valuesArray.add(pod);
+                                                        if (Logger.isDebugEnabled()) {
+                                                            Logger.log(className, methodName, Logger.LogType.DEBUG, "Added pod: " + pod.getAsString());
+                                                        }
+                                                    } 
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            if (Logger.isDebugEnabled()) {
+                                                Logger.log(className, methodName, Logger.LogType.DEBUG, "Exception processing values array: " + e);
+                                            }
+                                        }
+                                    }
+                                    // process default field
+                                    JsonPrimitive defaultValue = field.getAsJsonPrimitive("default");
+                                    if (defaultValue != null && defaultValue.isString() && defaultValue.getAsString().equals("${resource.$.metadata.name}")) {
+                                        ResolvedValue rv = context.resolve(defaultValue.getAsString());
+                                        if (Logger.isDebugEnabled()) {
+                                            Logger.log(className, methodName, Logger.LogType.DEBUG, "Resolved value of " + defaultValue.getAsString() + " = " + rv.getValue());
+                                        }
+                                        field.remove("default");
+                                        field.add("default", new JsonPrimitive(rv.getValue()));
+                                    }
+                                }
+                            } catch (Exception e) {
+                                if (Logger.isDebugEnabled()) {
+                                    Logger.log(className, methodName, Logger.LogType.DEBUG, "Exception processing field: " + fieldEntry.getKey() + " Exception: " + e);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    if (Logger.isDebugEnabled()) {
+                        Logger.log(className, methodName, Logger.LogType.DEBUG, "Exception processing input: " + inputEntry.getKey() + " Exception: " + e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "Exception: " + e);
+            }
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "resource = " + name + ", kind = " + kind);
+        }
+        return;
+    }
+
+    /**
+     * getResource retrieves a resource from the ComponentInfoRegistry
+     * 
+     * @param client     Kube API client
+     * @param registry   ComponentInfoRegistry
+     * @param kind       resource kind
+     * @param apiVersion resource apiVersion
+     * @param name       resource name
+     * @param namespace  resource namespace
+     * 
+     * @return JsonObject representing the resource
+     * 
+     * @throws ApiException if apiVersion is null or invalid
+     */
+    public static JsonObject getResource(final ApiClient client, ComponentInfoRegistry registry, final String name, 
+                                         final String kind, String apiVersion, final String namespace) throws ApiException {
+        final String methodName = "getResource";
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.ENTRY,
+                    "Name=" + name + ", kind=" + kind + ", apiVersion=" + apiVersion + ", namespace=" + namespace);
+        }
+        if (apiVersion == null || apiVersion.trim().length() == 0) {
+            apiVersion = ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.get(kind);
+            if (apiVersion == null) {
+                if (Logger.isErrorEnabled()) {
+                    Logger.log(className, "getResource", Logger.LogType.ERROR, "apiVersion is null.");
+                }
+                throw new ApiException(400, "getResource Unknown kind: " + kind);
+            }
+        }
+        final Object o = registry.getNamespacedObject(client, kind, apiVersion, namespace, name);
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, methodName, Logger.LogType.EXIT, "");
+        }
+        return getItemAsObject(client, o);
+    }
+
     
     public static String getResourceVersion(JsonObject component) {
         if (Logger.isEntryEnabled()) {
