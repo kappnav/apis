@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
@@ -40,9 +42,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.ibm.kappnav.logging.Logger;
 
+import application.rest.v1.actions.ResolutionContext;
+import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.ApiClient;
@@ -157,8 +164,8 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
             if (v.get(APIVERSION_PROPERTY_NAME) == null) {
                 v.addProperty(APIVERSION_PROPERTY_NAME, apiVersion);
             }
-
-            response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
+            JsonObject configMap = processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION);
+            response.add(v, configMap, sectionProcessor.processSectionMap(client, v));
         });
     }
 
@@ -166,25 +173,30 @@ public class ComponentsEndpoint extends KAppNavEndpoint {
                                    String apiVersion, List<JsonObject> components, String appNamespace, String appName) {
         final ConfigMapProcessor processor = new ConfigMapProcessor(componentKind.kind);
         final SectionConfigMapProcessor sectionProcessor = new SectionConfigMapProcessor(componentKind.kind);
-        components.forEach(v -> {
+        final String methodName = "processComponents";
+        components.forEach(component -> {
+            if (Logger.isEntryEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.ENTRY, "Processing component: " + getComponentName(component));
+            }
             // Add 'kind' property to components that are missing it.
-            if (v.get(KIND_PROPERTY_NAME) == null) {
-                v.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
+            if (component.get(KIND_PROPERTY_NAME) == null) {
+                component.addProperty(KIND_PROPERTY_NAME, componentKind.kind);
             }
             
             // Add 'apiVersion' property to components that are missing it.
-            if (v.get(APIVERSION_PROPERTY_NAME) == null) {
-                v.addProperty(APIVERSION_PROPERTY_NAME, apiVersion);
+            if (component.get(APIVERSION_PROPERTY_NAME) == null) {
+                component.addProperty(APIVERSION_PROPERTY_NAME, apiVersion);
             }
-
             // filter out recursive app from component list
             if (!(componentKind.kind.equals("Application") &&
-                   getComponentName(v).equals(appName) &&
-                   getComponentNamespace(v).equals(appNamespace))) {                                       
-                response.add(v, processor.getConfigMap(client, v, ConfigMapProcessor.ConfigMapType.ACTION), sectionProcessor.processSectionMap(client, v));
+                   getComponentName(component).equals(appName) &&
+                   getComponentNamespace(component).equals(appNamespace))) {                                       
+                JsonObject configMap = processor.getConfigMap(client, component, ConfigMapProcessor.ConfigMapType.ACTION);
+                resolveInputPatterns(configMap, client, registry, componentKind.kind, getComponentApiVersion(component, componentKind.kind), getComponentName(component), getComponentNamespace(component));
+                response.add(component, configMap, sectionProcessor.processSectionMap(client, component));
             }
         });
-    }    
+    }
 
     private List<String> getNamespaceList(ApiClient client, JsonObject o, String namespace) {
         final List<String> newNamespaces = new ArrayList<String>();

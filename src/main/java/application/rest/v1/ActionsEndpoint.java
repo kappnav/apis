@@ -22,8 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -159,11 +161,18 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") final String namespace,
             @DefaultValue("") @QueryParam("action-pattern") @Parameter(description = "The action pattern to resolve") final String pattern) {
         try {
+            if (Logger.isEntryEnabled()) {
+                Logger.log(className, "resolve endpoint", Logger.LogType.ENTRY, "name: " + name + " kind: " + kind + " namespace: " + namespace + " pattern: " + pattern);
+            }
             final ApiClient client = getApiClient();
             final ResponseBuilder builder = Response
                     .ok(new ActionSubstitutionResolverResponse(resolve(client, name, kind, apiVersion, namespace, pattern))
                     .getJSON());
-            return builder.build();
+            Response response = builder.build();
+            if (Logger.isExitEnabled()) {
+                Logger.log(className, "resolve endpoint", Logger.LogType.EXIT, "response: " + response.toString());
+            }
+            return response;
         } catch (IOException | ApiException | PatternException e) {
             String msg = null;
             if (e instanceof PatternException) {
@@ -479,6 +488,9 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             @PathParam("resource-kind") @Parameter(description = "The Kubernetes resource kind for the resource") final String kind,
             @Pattern(regexp = API_VERSION_PATTERN_ZERO_OR_MORE) @DefaultValue("") @QueryParam("apiVersion") @Parameter(description = "The apiVersion of the resource") final String apiVersion,
             @Pattern(regexp = NAME_PATTERN_ZERO_OR_MORE) @DefaultValue("default") @QueryParam("namespace") @Parameter(description = "The namespace of the resource") final String namespace) {
+        if (Logger.isEntryEnabled()) {
+            Logger.log(className, "getActionMap endpoint", Logger.LogType.ENTRY,  "name: " + name + " kind: " + kind + " namespace: " + namespace );
+        }
         try {
             final ApiClient client = getApiClient();
             final JsonObject resource = getResource(client, name, kind, apiVersion, namespace);
@@ -487,6 +499,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             if (resource != null) {
                 final ConfigMapProcessor processor = new ConfigMapProcessor(kind);
                 map = processor.getConfigMap(client, resource, ConfigMapProcessor.ConfigMapType.ACTION);
+                resolveInputPatterns(map, client, registry, kind, apiVersion, name, namespace);
             } else {
                 map = new JsonObject();
             }
@@ -631,53 +644,25 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                 throw new KAppNavException(msg);
             }
             final String resolvedPattern = resolvedValue.getValue();
-            final CommandLineTokenizer tokenizer = new CommandLineTokenizer(resolvedPattern);
-
-            // Construct the pod template / container from the request.
-            final V1Container container = new V1Container();
-            container.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
-            container.setImage(imageName);
-            final List<String> command = new ArrayList<>();
-            tokenizer.forEach(parameter -> {
-                command.add(parameter);
-            });
-            container.setCommand(command);
-
-            final V1PodSpec spec = new V1PodSpec();
-            spec.setContainers(Collections.singletonList(container));
-            spec.setRestartPolicy("Never");
-            setSecurityContextAndServiceAccountName(client, spec);
-
-            final V1PodTemplateSpec podTemplate = new V1PodTemplateSpec();
-            podTemplate.setSpec(spec);
-
-            // Create and populate the job object.
-            final V1Job job = new V1Job();
-            job.setApiVersion("batch/v1");
-            job.setKind("Job");
-            final V1ObjectMeta meta = new V1ObjectMeta();
-            meta.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
-
-            // Add context labels to the job, allowing for queries using selectors.
-            final Map<String, String> labels = createJobLabels(client, resource, name, kind, namespace, appName,
-                    appNamespace, commandName);
-            meta.setLabels(labels);
-
-            final Map<String, String> annotations = createJobAnnotations(text, user);
-            if (annotations != null) {
-                meta.setAnnotations(annotations);
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, methodName, Logger.LogType.DEBUG, "resolvedPattern: " + resolvedPattern);
             }
+            final CommandLineTokenizer tokenizer = new CommandLineTokenizer(resolvedPattern);
+        
+            JsonObject response = new JsonObject();
 
-            job.setMetadata(meta);
-            final V1JobSpec jobSpec = new V1JobSpec();
-            job.setSpec(jobSpec);
-            jobSpec.setBackoffLimit(4);
-            jobSpec.setTemplate(podTemplate);
-
-            // Submit the job to Kubernetes and return the job object to the caller.
-            final BatchV1Api batch = new BatchV1Api();
-            batch.setApiClient(client);
-            final JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, null));
+            // Check for special case of day 2 operation with multiple pods selected
+            String []podNames = getPodnamesArray(tokenizer); 
+            if (podNames != null) {
+                // Create a Job for each selected pod
+                for (String podName : podNames) {
+                    response = createJob(podName, imageName, tokenizer, client, resource, text, name,
+                                         kind, namespace, commandName, appName, appNamespace, user);
+                }
+            } else {
+                response = createJob(null, imageName, tokenizer, client, resource, text, name,
+                                     kind, namespace, commandName, appName, appNamespace, user);
+            }
             if (Logger.isExitEnabled()) {
                 Logger.log(className, methodName, Logger.LogType.EXIT, response.toString());
             }
@@ -701,6 +686,89 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             }
             return Response.status(getResponseCode(e)).entity(getStatusMessageAsJSON(msg)).build();
         }
+    }
+
+    private JsonObject createJob(String podName, String imageName, CommandLineTokenizer tokenizer, ApiClient client,  
+                                 JsonObject resource, String text, String name, String kind, String namespace, 
+                                 String commandName, String appName, String appNamespace, String user)
+            throws ApiException {
+        // Construct the pod template / container from the request.
+        final V1Container container = new V1Container();
+        container.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
+        container.setImage(imageName);
+        final List<String> command = new ArrayList<>();
+        String prevParameter = "";
+        for (String parameter : tokenizer) {
+            //  NOTE: pod name is a special case for day 2 operator actions.
+            //  For all other cases the parameters are unchanged
+            if (podName != null && prevParameter.equals("path:podName:string")) {
+                command.add(podName);
+            } else {
+                command.add(parameter);
+            }
+            prevParameter = parameter;
+        }
+        container.setCommand(command);
+
+        final V1PodSpec spec = new V1PodSpec();
+        spec.setContainers(Collections.singletonList(container));
+        spec.setRestartPolicy("Never");
+        setSecurityContextAndServiceAccountName(client, spec);
+
+        final V1PodTemplateSpec podTemplate = new V1PodTemplateSpec();
+        podTemplate.setSpec(spec);
+
+        // Create and populate the job object.
+        final V1Job job = new V1Job();
+        job.setApiVersion("batch/v1");
+        job.setKind("Job");
+        final V1ObjectMeta meta = new V1ObjectMeta();
+        meta.setName(KAPPNAV_PREVIX + "-" + UUID.randomUUID().toString());
+
+        // Add context labels to the job, allowing for queries using selectors.
+        final Map<String, String> labels = createJobLabels(client, resource, name, kind, namespace, appName,
+                appNamespace, commandName);
+        meta.setLabels(labels);
+
+        final Map<String, String> annotations = createJobAnnotations(text, user);
+        if (annotations != null) {
+            meta.setAnnotations(annotations);
+        }
+
+        job.setMetadata(meta);
+        final V1JobSpec jobSpec = new V1JobSpec();
+        job.setSpec(jobSpec);
+        jobSpec.setBackoffLimit(4);
+        jobSpec.setTemplate(podTemplate);
+
+        // Submit the job to Kubernetes and return the job object to the caller.
+        final BatchV1Api batch = new BatchV1Api();
+        batch.setApiClient(client);
+        JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, null));
+        return response;
+    }
+
+    private String[] getPodnamesArray(CommandLineTokenizer tokenizer) {
+        String prevParameter = "";
+        String podNames = "";
+        String []podNamesArray = null;
+        for (String parameter : tokenizer) {
+            if (prevParameter.equals("path:podName:string")) {
+                podNames = parameter;
+                break;
+            }
+            prevParameter = parameter;
+        }
+        if (podNames.equals("")) {
+           podNamesArray = new String[]{""};
+        }
+        else {
+           podNamesArray = podNames.split(",");
+        }
+        if (Logger.isExitEnabled()) {
+            Logger.log(className, "getPodnamesArray", Logger.LogType.EXIT, "podNamesArray: " + podNamesArray);
+        }
+        return podNamesArray;
     }
 
     private void processUserInput(final String jsonstr, final JsonObject action, final ResolutionContext context)
