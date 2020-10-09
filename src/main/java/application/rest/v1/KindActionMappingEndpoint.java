@@ -115,37 +115,42 @@ public class KindActionMappingEndpoint extends KAppNavEndpoint {
                 ArrayList <QName> configMapList = null;
                 if (type.equals(ACTIONS_CONFIGMAP_TYPE)) {
                     // get configmap names declared in the KindActionMapping custom resources
-                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.ACTION);
+                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.ACTION, configMapName);
 
                     ConfigMapProcessor cmProc = new ConfigMapProcessor(kind);
                     map = cmProc.getConfigMap(client, kam, namespace, ConfigMapProcessor.ConfigMapType.ACTION, configMapName, new ActionConfigMapBuilder());
                 } else if (type.equals(STATUS_MAPPING_CONFIGMAP_TYPE)) {
-                    // get configmap names declared in the KindActionMapping custom resources
-                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING);
-
                     ConfigMapProcessor cmProc = new ConfigMapProcessor(kind);
                     StatusMappingConfigMapBuilder builder = new StatusMappingConfigMapBuilder();
-                    map = cmProc.getConfigMap(client, kam, namespace, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
                     if (builder.getConfigMap().entrySet().size() == 0) {
-                        // unregistered, try the unregistered configmap
-                        map = cmProc.getConfigMap(client, null, ConfigMapProcessor.GLOBAL_NAMESPACE, 
-                                                  ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, ConfigMapProcessor.UNREGISTERED, builder);
-                        if (map != null) {
-                            builder.merge(map);
-                        } else {
-                            if (Logger.isDebugEnabled()) 
-                                Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
-                        }
+                        configMapName = ConfigMapProcessor.UNREGISTERED;
+                    }
+                    // get configmap names declared in the KindActionMapping custom resources
+                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName);
+                    if (configMapName.equals(ConfigMapProcessor.UNREGISTERED)) {
+                        map = cmProc.getConfigMap(client, kam, ConfigMapProcessor.GLOBAL_NAMESPACE, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
+                    } else {
+                        map = cmProc.getConfigMap(client, kam, namespace, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
+                    }
+
+                    if (map != null) {
+                        builder.merge(map);
+                    } else {
+                        if (Logger.isDebugEnabled()) 
+                            Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
                     }
                 } else if (type.equals(SECTIONS_CONFIGMAP_TYPE)) {
                     // get configmap names declared in the KindActionMapping custom resources
-                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.SECTION);
+                    configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.SECTION, configMapName);
 
                     SectionConfigMapProcessor scmProc = new SectionConfigMapProcessor(kind);
                     map = scmProc.getConfigMap(client, kam, namespace, configMapName, new SectionConfigMapBuilder());
                 } else {
                     return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(getStatusMessageAsJSON("Invalid configMap type: " + type)).build();
                 }
+
+                if (Logger.isDebugEnabled()) 
+                    Logger.log(CLASS_NAME, "getConfigMap", Logger.LogType.DEBUG, "configMapList " + configMapList.toString());
                 
                 JsonArray cmapJsonArray = toJsonArray(configMapList);
                 final JsonObject cmapInfoJSON = new JsonObject();

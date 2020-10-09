@@ -789,7 +789,13 @@ public abstract class KAppNavEndpoint {
         final JsonElement valueObj = statusObj.get(VALUE_PROPERTY_NAME);
         if (valueObj != null && valueObj.isJsonPrimitive()) {
             final String value = valueObj.getAsString();
-            return config.isKnownStatus(value);
+            if ( Logger.isDebugEnabled()) { 
+                Logger.log(className, "hasKnownStatus", Logger.LogType.DEBUG, "value:" + value);
+            } 
+            // return true if value not null or config contain status value
+            if (config.isKnownStatus(value) || value != null) {
+                return true;
+            } 
         }
         return false;
     }

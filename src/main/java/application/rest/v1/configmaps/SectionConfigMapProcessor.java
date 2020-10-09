@@ -122,7 +122,7 @@ public class SectionConfigMapProcessor {
         if (kam != null) {
             // get Configmaps declared in the KindActionMapping custom resources
             ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, 
-                ConfigMapProcessor.ConfigMapType.SECTION);
+                ConfigMapProcessor.ConfigMapType.SECTION, configMapName);
 
             if (configMapsList != null) {
                 // look up the configmaps in a cluster

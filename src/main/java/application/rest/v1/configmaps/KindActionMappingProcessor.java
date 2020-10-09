@@ -73,6 +73,7 @@ public class KindActionMappingProcessor {
     private static final String SUBKIND_PROPERTY_NAME = "subkind";
     private static final String KIND_PROPERTY_NAME = "kind";
     private static final String MAPNAME_PROPERTY_NAME = "mapname";
+    private static final String UNREGISTERED = "kappnav.status-mapping-unregistered";
 
     private String compNamespace;
     private String compApiVersion;
@@ -130,10 +131,10 @@ public class KindActionMappingProcessor {
      * @return configmaps matched the defined action configmap mappings in KAM in order of
      *         configmap hierarchy & precedence
      */
-    public ArrayList<QName> getConfigMapsFromKAMs(ApiClient client, ConfigMapType cmType) {
+    public ArrayList<QName> getConfigMapsFromKAMs(ApiClient client, ConfigMapType cmType, String configMapName) {
         String methodName = "getConfigMapsFromKAMs";
         if (Logger.isEntryEnabled()) 
-                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"configMap type = " + cmType);
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.ENTRY,"configMap type = " + cmType + " configMapName = " + configMapName);
 
         QName[][][] mapNamesFound = new QName[MAX_PRECEDENCE][KAM_N][TOTAL_KSN_VALUES];
         ArrayList<QName> configMapsList = null;
@@ -289,7 +290,9 @@ public class KindActionMappingProcessor {
              
             // process candidate mapnames including a string substitution as needed and then store 
             // them to a list according the configmap hierarchy and (high to low) precedence 
-            configMapsList = processCandidateMapnames(mapNamesFound, compNamespace);
+            configMapsList = processCandidateMapnames(mapNamesFound, compNamespace, configMapName);
+            if (Logger.isDebugEnabled()) 
+                Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, "configMapslist: " + configMapsList.toString());
         } catch  (ApiException e) {
             if (Logger.isErrorEnabled()) 
                 Logger.log(CLASS_NAME, methodName, Logger.LogType.ERROR, 
@@ -703,7 +706,7 @@ public class KindActionMappingProcessor {
      * @param namespace matching resource's namespace
      * @return processed configmap list
      */
-    private ArrayList<QName> processCandidateMapnames(QName[][][] configMapsFound, String namespace) {
+    private ArrayList<QName> processCandidateMapnames(QName[][][] configMapsFound, String namespace, String configMapName) {
         String methodName = "processCandidateMapnames";
         ArrayList<QName> configMapList = new ArrayList<QName> ();
 
@@ -712,11 +715,14 @@ public class KindActionMappingProcessor {
                 for (int kamNIdx=0; kamNIdx<KAM_N; kamNIdx++) { 
                     QName aQName = configMapsFound[precedenceIdx][kamNIdx][ksnIdx];        
                     if (aQName != null) {
-                        String rawMapName = aQName.getLocalPart();
+                        String rawMapName = aQName.getLocalPart();             
+                        String actualMapName = mapNameSubstitute(rawMapName, namespace);
                         if (Logger.isDebugEnabled()) 
                             Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
-                                "rawMapName = " + rawMapName);
-                        String actualMapName = mapNameSubstitute(rawMapName, namespace);
+                            "rawMapName = " + rawMapName + ", actualMapName = " + actualMapName + ", configMapName = " + configMapName);     
+                        if (!actualMapName.equals(configMapName) && configMapName.equals(UNREGISTERED)) {
+                            actualMapName = configMapName;
+                        }        
                         if (Logger.isDebugEnabled()) 
                             Logger.log(CLASS_NAME, methodName, Logger.LogType.DEBUG, 
                                 "actualMapName = " + actualMapName);
