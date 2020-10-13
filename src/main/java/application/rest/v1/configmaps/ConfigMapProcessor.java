@@ -92,18 +92,25 @@ public class ConfigMapProcessor {
             KindActionMappingProcessor kam =
                 new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
             String configMapName = getConfigMapName(type, name, subkind, kind);
-            map = getConfigMap(client, kam, namespace, type, configMapName, builder);
- 
+
+            // if kind is unregistered, try the unregistered configmap
             if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
-                // unregistered, try the unregistered configmap
-                map = getConfigMap(client, null, GLOBAL_NAMESPACE, type, getUnregisteredConfigMapName(), builder);
-                if (map != null) {
-                    builder.merge(map);
-                } else {
-                    if (Logger.isDebugEnabled()) 
-                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
-                }
+                configMapName = getUnregisteredConfigMapName();
             }
+
+            if (configMapName.equals(UNREGISTERED)) {
+                map = getConfigMap(client, kam, GLOBAL_NAMESPACE, type, configMapName, builder);
+            } else {
+                map = getConfigMap(client, kam, namespace, type, configMapName, builder);
+            } 
+
+            if (map != null) {
+                builder.merge(map);
+            } else {
+                if (Logger.isDebugEnabled()) 
+                    Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "configmap is null.");
+            }
+            
         }
 
         JsonObject configMapFound = builder.getConfigMap();
@@ -160,7 +167,7 @@ public class ConfigMapProcessor {
                                     ConfigMapType type, String configMapName, ConfigMapBuilder builder) {      
         if (Logger.isEntryEnabled()) {
             Logger.log(className, "getConfigMap", Logger.LogType.ENTRY, "For namespace=" + namespace + 
-                       ", configMapName=" + configMapName);
+                       ", type= " + type + ", configMapName=" + configMapName);
         }
 
         // Return the map from the local cache if it's been previously loaded.
@@ -171,7 +178,7 @@ public class ConfigMapProcessor {
         
         if (kam != null) {
             // get Configmaps declared in the KindActionMapping custom resources
-            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, type);
+            ArrayList <QName> configMapsList = kam.getConfigMapsFromKAMs(client, type, configMapName);
 
             if (configMapsList != null) {
                 // look up the configmaps in a cluster
