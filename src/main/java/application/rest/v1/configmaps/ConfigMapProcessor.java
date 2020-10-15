@@ -93,16 +93,12 @@ public class ConfigMapProcessor {
                 new KindActionMappingProcessor(namespace, owners, apiVersion, name, subkind, kind);
             String configMapName = getConfigMapName(type, name, subkind, kind);
 
-            // if kind is unregistered, try the unregistered configmap
-            if (type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {
-                configMapName = getUnregisteredConfigMapName();
+            map = getConfigMap(client, kam, namespace, type, configMapName, builder);
+         
+            // get config map for status-mapping and unregistered.
+            if (map == null && type == ConfigMapType.STATUS_MAPPING && builder.getConfigMap().entrySet().size() == 0) {             
+                map = getConfigMap(client, kam, GLOBAL_NAMESPACE, type, ConfigMapProcessor.UNREGISTERED, builder);
             }
-
-            if (configMapName.equals(UNREGISTERED)) {
-                map = getConfigMap(client, kam, GLOBAL_NAMESPACE, type, configMapName, builder);
-            } else {
-                map = getConfigMap(client, kam, namespace, type, configMapName, builder);
-            } 
 
             if (map != null) {
                 builder.merge(map);
@@ -185,20 +181,22 @@ public class ConfigMapProcessor {
                 final ArrayList<JsonObject> configMapsFound = ConfigMapCache.getConfigMapsAsJSON(client, configMapsList);
 
                 // merge configmaps found
-                mergeConfigMaps(configMapsFound, type, builder);
-                JsonObject map = builder.getConfigMap();
-                if (map != null) {
-                    if (isGlobalNS) {
-                        // Store the map in the local cache.
-                        kappnavNSMapCache.put(configMapName, map); 
-                    }
-                    if (Logger.isExitEnabled()) 
-                        Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "Merged configmap returned = " + map);
-                    return map;
-                } else {
-                    if (Logger.isDebugEnabled()) 
-                        Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "map to be merged is null");
-                }   
+                if (configMapsFound.size() > 0) {
+                    mergeConfigMaps(configMapsFound, type, builder);
+                    JsonObject map = builder.getConfigMap();
+                    if (map != null) {
+                        if (isGlobalNS) {
+                            // Store the map in the local cache.
+                            kappnavNSMapCache.put(configMapName, map); 
+                        }
+                        if (Logger.isExitEnabled()) 
+                            Logger.log(className, "getConfigMap", Logger.LogType.EXIT, "Merged configmap returned = " + map);
+                        return map;
+                    } else {
+                        if (Logger.isDebugEnabled()) 
+                            Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "map to be merged is null");
+                    }   
+                }
             } else {
                 if (Logger.isDebugEnabled()) 
                 Logger.log(className, "getConfigMap", Logger.LogType.DEBUG, "no configmap with given kam is found");
