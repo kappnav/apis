@@ -122,17 +122,18 @@ public class KindActionMappingEndpoint extends KAppNavEndpoint {
                 } else if (type.equals(STATUS_MAPPING_CONFIGMAP_TYPE)) {
                     ConfigMapProcessor cmProc = new ConfigMapProcessor(kind);
                     StatusMappingConfigMapBuilder builder = new StatusMappingConfigMapBuilder();
-                    if (builder.getConfigMap().entrySet().size() == 0) {
-                        configMapName = ConfigMapProcessor.UNREGISTERED;
-                    }
+                   
                     // get configmap names declared in the KindActionMapping custom resources
                     configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName);
-                    if (configMapName.equals(ConfigMapProcessor.UNREGISTERED)) {
-                        map = cmProc.getConfigMap(client, kam, ConfigMapProcessor.GLOBAL_NAMESPACE, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
-                    } else {
-                        map = cmProc.getConfigMap(client, kam, namespace, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
+                    map = cmProc.getConfigMap(client, kam, namespace, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, configMapName, builder);
+ 
+                    // get config map for unregistered component status-mapping
+                    if (map == null && builder.getConfigMap().entrySet().size() == 0) {
+                        map = cmProc.getConfigMap(client, kam, ConfigMapProcessor.GLOBAL_NAMESPACE, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, ConfigMapProcessor.UNREGISTERED, builder);
+                        // get configmap names declared in the KindActionMapping custom resources
+                        configMapList = kam.getConfigMapsFromKAMs(client, ConfigMapProcessor.ConfigMapType.STATUS_MAPPING, ConfigMapProcessor.UNREGISTERED);
                     }
-
+ 
                     if (map != null) {
                         builder.merge(map);
                     } else {
