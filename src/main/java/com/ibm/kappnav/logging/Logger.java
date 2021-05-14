@@ -26,12 +26,8 @@ import com.google.gson.JsonArray;
 
 import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.KAppNavConfig;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.apis.CustomObjectsApi;
-
-import com.squareup.okhttp.OkHttpClient;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 
 
 /**

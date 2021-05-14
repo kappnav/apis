@@ -46,17 +46,21 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.ConnectionSpec;
 
 import application.rest.v1.actions.ResolutionContext;
 import application.rest.v1.actions.ValidationException;
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.configmaps.OwnerRef;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.util.Config;
+
+import okhttp3.ConnectionSpec;
+
+
+
 
 public abstract class KAppNavEndpoint {
     private static final String className = KAppNavEndpoint.class.getName();

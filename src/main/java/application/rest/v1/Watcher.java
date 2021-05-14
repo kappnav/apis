@@ -25,12 +25,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.OkHttpClient;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch;
+
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+
 
 /**
  * Convenience class for building a watch on a set of resources.

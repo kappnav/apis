@@ -30,20 +30,22 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.Call;
 
 import application.rest.v1.KAppNavConfig;
 import application.rest.v1.MatchExpression;
 import application.rest.v1.Selector;
 import application.rest.v1.Watcher;
 import application.rest.v1.MatchExpression.Operator;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ConfigMapList;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
+
+import okhttp3.Call;
+
 
 /**
  * Cache for frequently accessed config maps, including action/status/section maps and built-in

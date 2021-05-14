@@ -25,14 +25,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.Call;
 
 import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.Watcher;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Watch;
+
+import okhttp3.Call;
+
 
 /**
  * Cache for all KindActionMappings in the cluster. Cached lists of kindactionmappings for a cluster (all

@@ -26,8 +26,8 @@ import application.rest.v1.ComponentInfoRegistry;
 import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.Selector;
 import application.rest.v1.ComponentKind;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 
 import com.ibm.kappnav.logging.Logger;
 

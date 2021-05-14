@@ -28,7 +28,7 @@ import com.ibm.kappnav.logging.Logger;
 
 import application.rest.v1.KAppNavConfig;
 import application.rest.v1.KAppNavEndpoint;
-import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.openapi.ApiClient;
 
 public class ConfigMapProcessor {
 

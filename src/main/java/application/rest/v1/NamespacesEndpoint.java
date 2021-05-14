@@ -33,10 +33,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1NamespaceList;
 
 import com.ibm.kappnav.logging.Logger;
 

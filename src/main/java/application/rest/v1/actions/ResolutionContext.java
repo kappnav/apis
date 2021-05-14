@@ -41,9 +41,9 @@ import application.rest.v1.ComponentInfoRegistry;
 import application.rest.v1.KAppNavConfig;
 import application.rest.v1.configmaps.ConfigMapCache;
 import application.rest.v1.configmaps.ConfigMapProcessor;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 
 public final class ResolutionContext {
 	

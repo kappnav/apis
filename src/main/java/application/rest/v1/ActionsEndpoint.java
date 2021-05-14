@@ -70,17 +70,17 @@ import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.actions.ValidationException;
 import application.rest.v1.actions.PatternException;
 import application.rest.v1.configmaps.ConfigMapProcessor;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.BatchV1Api;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobSpec;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 
 import com.ibm.kappnav.logging.Logger;
 

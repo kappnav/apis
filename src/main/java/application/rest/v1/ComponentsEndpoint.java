@@ -52,8 +52,8 @@ import application.rest.v1.actions.ResolutionContext;
 import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import application.rest.v1.configmaps.SectionConfigMapProcessor;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 
 @Path("/components")
 @Tag(name = "components", description="kAppNav Components API")
