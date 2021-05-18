@@ -31,6 +31,7 @@ import com.ibm.kappnav.logging.Logger;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.util.Watch;
 
 import okhttp3.Call;
@@ -112,7 +113,7 @@ public class ApplicationCache {
                     throws ApiException {
             	final CustomObjectsApi coa = getCustomObjectsApi();
                 coa.setApiClient(client);
-                Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
+                Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null, 60, null, 60, false);
                 return Watcher.processCustomObjectsApiList(client, o, resourceVersion);
             }
 
@@ -120,7 +121,8 @@ public class ApplicationCache {
             public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
             	final CustomObjectsApi coa = getCustomObjectsApi();
                 coa.setApiClient(client);
-                return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, resourceVersion, Boolean.TRUE, null, null);
+                final ApiCallback callBack = null;
+                return coa.listClusterCustomObjectCall(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null, 60, resourceVersion, 60, Boolean.TRUE, callBack);
             }
             
             @SuppressWarnings("serial")
@@ -225,7 +227,7 @@ public class ApplicationCache {
     private static List<JsonObject> listApplicationObject0(ApiClient client) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        final Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
+        final Object o = coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null, 60, null, 60, false);
         return KAppNavEndpoint.getItemsAsList(client, o);
     }
     
@@ -277,7 +279,7 @@ public class ApplicationCache {
     private static List<JsonObject> listNamespacedApplicationObject0(ApiClient client, String namespace) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        final Object o = coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, null, null, null, null);
+        final Object o = coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);
         return KAppNavEndpoint.getItemsAsList(client, o);
     }
     

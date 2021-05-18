@@ -57,9 +57,8 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.util.Config;
 
+import okhttp3.OkHttpClient;
 import okhttp3.ConnectionSpec;
-
-
 
 
 public abstract class KAppNavEndpoint {
@@ -138,14 +137,14 @@ public abstract class KAppNavEndpoint {
     protected Object listApplicationObject(ApiClient client) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        return coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null);
+        return coa.listClusterCustomObject(APP_GROUP, APP_VERSION, APP_PLURAL, null, null, null, null, 60, null, 60, false);
     }
     
     protected Object listNamespacedApplicationObject(ApiClient client, String namespace) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         return coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION,
-                encodeURLParameter(namespace), APP_PLURAL, null, null, null, null);
+                encodeURLParameter(namespace), APP_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);
     }
 
     public static List<JsonObject> getItemsAsList(ApiClient client, Object resources) {
@@ -817,10 +816,14 @@ public abstract class KAppNavEndpoint {
     
             SSLContext sc = SSLContext.getInstance("TLSv1.2");
             sc.init(null, trustAllCerts, new SecureRandom());
-            client.getHttpClient().setSslSocketFactory(sc.getSocketFactory());
-            
+              
+            OkHttpClient httpClient = client.getHttpClient();
             ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
-            client.getHttpClient().setConnectionSpecs(Collections.singletonList((spec)));
+           
+            httpClient = new OkHttpClient.Builder()
+                .connectionSpecs(Collections.singletonList(spec))
+                .sslSocketFactory(sc.getSocketFactory())
+                .build();
         }
         catch (Exception e) {
             if (Logger.isDebugEnabled()) {
@@ -926,7 +929,7 @@ public abstract class KAppNavEndpoint {
         }
         final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        return coa.createNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, body, "false");
+        return coa.createNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, body, "false", null, null);
     }
 
     protected Object replaceNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name, JsonObject body) throws ApiException {
@@ -935,7 +938,8 @@ public abstract class KAppNavEndpoint {
         }
         final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        return coa.replaceNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), body);
+        
+        return coa.replaceNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), body, null, null);
     }
 
     protected Object deleteNamespacedGenericObject(ApiClient client, String group, String kindPlural, String namespace, String name) throws ApiException {
@@ -945,8 +949,7 @@ public abstract class KAppNavEndpoint {
         final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
         V1DeleteOptions options= new V1DeleteOptions();
-
-        return coa.deleteNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), options, 0, true, "" );
+        return coa.deleteNamespacedCustomObject(group, APP_VERSION, encodeURLParameter(namespace), kindPlural, encodeURLParameter(name), 0, true, null, null, options);
     }
 
     // Application CRUD APIs 

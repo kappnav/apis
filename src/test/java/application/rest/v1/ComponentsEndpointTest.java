@@ -32,11 +32,11 @@ import org.junit.Test;
 
 import com.google.gson.JsonSyntaxException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.ApisApi;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.ApisApi;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 
 /**
  * @author jasuryak

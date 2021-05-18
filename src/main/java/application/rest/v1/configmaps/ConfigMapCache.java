@@ -39,6 +39,7 @@ import application.rest.v1.MatchExpression.Operator;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -84,7 +85,7 @@ public class ConfigMapCache {
                 final CoreV1Api api = new CoreV1Api();
                 api.setApiClient(client);
                 final Selector selector = getSelector();
-                final V1ConfigMapList list = api.listConfigMapForAllNamespaces(null, null, null, selector.toString(), null, null, null, null, null);
+                final V1ConfigMapList list = api.listConfigMapForAllNamespaces(false, null, null, selector.toString(), 60, null, null, null, 60, false);
                 resourceVersion.set(list.getMetadata().getResourceVersion());
                 return list.getItems();
             }
@@ -94,7 +95,8 @@ public class ConfigMapCache {
                 final CoreV1Api api = new CoreV1Api();
                 api.setApiClient(client);
                 final Selector selector = getSelector();
-                return api.listConfigMapForAllNamespacesCall(null, null, null, selector.toString(), null, null, resourceVersion, null, Boolean.TRUE, null, null);
+                final ApiCallback callBack = null;
+                return api.listConfigMapForAllNamespacesCall(false, null, null, selector.toString(), 60, null, resourceVersion, null, 60, Boolean.TRUE, callBack);
             }
             
             @SuppressWarnings("serial")

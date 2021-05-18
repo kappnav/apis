@@ -19,5 +19,9 @@ package application.rest.v1;
 public class KAppNavExtension {
 
     public static void init() {
+        ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.put("Liberty-App", "kappnav.io/v1beta1");
+        ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.put("WAS-Traditional-App", "kappnav.io/v1beta1");
+        ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.put("Liberty-Collective", "kappnav.io/v1beta1");
+        ComponentInfoRegistry.CORE_KIND_TO_API_VERSION_MAP.put("WAS-ND-Cell", "kappnav.io/v1beta1");
     }
 }

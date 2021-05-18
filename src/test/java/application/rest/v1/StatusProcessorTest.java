@@ -34,10 +34,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.ApisApi;
-import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.ApisApi;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 
 /**
  * @author jasuryak
@@ -51,7 +51,7 @@ public class StatusProcessorTest {
         }
     };
     
-	private final CoreV1Api cv1a = mock.mock(CoreV1Api.class);   
+	///private final CoreV1Api cv1a = mock.mock(CoreV1Api.class);   
 	private final ApiClient ac = mock.mock(ApiClient.class);
 	private final ApisApi apis = mock.mock(ApisApi.class);
 	

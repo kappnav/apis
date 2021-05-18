@@ -92,7 +92,9 @@ public class Watcher {
                         ApiClient client = KAppNavEndpoint.getApiClient();
                         OkHttpClient httpClient = client.getHttpClient();
                         // Infinite timeout
-                        httpClient.setReadTimeout(0, TimeUnit.SECONDS);
+                        httpClient = new OkHttpClient.Builder()
+                            .readTimeout(0, TimeUnit.SECONDS)
+                            .build();
                         client.setHttpClient(httpClient);
                         
                         final AtomicReference<String> resourceVersion = new AtomicReference<>();

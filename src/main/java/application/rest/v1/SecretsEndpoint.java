@@ -107,7 +107,7 @@ public class SecretsEndpoint extends KAppNavEndpoint {
     private Object listSecrets(ApiClient client, String selector) throws ApiException {
         final CoreV1Api api = getCoreV1ApiForInternal();
         api.setApiClient(client);
-        final V1SecretList secrets = api.listSecretForAllNamespaces(null, null, null, selector, null, null, null, null, null);
+        final V1SecretList secrets = api.listSecretForAllNamespaces(false, null, null, selector, 60, null, null, null, 60, false);
         return secrets;
     }
     

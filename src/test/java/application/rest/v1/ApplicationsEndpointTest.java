@@ -35,11 +35,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 
 /**
  * @author jasuryak
@@ -180,7 +180,7 @@ public class ApplicationsEndpointTest {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).listNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", null,
-                        null, null, null);
+                        null, null, null, 60, null, 60, Boolean.FALSE);
                 will(returnValue(jsonObject2));
                 oneOf(ac).getJSON();
                 will(returnValue(json));
@@ -203,7 +203,7 @@ public class ApplicationsEndpointTest {
         mock.checking(new Expectations() {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
-                oneOf(coa).listClusterCustomObject("app.k8s.io", "v1beta1", "applications", null, null, null, null);
+                oneOf(coa).listClusterCustomObject("app.k8s.io", "v1beta1", "applications", null, null, null, null, 60, null, 60, Boolean.FALSE);   
                 will(returnValue(jsonObject2));
                 oneOf(ac).getJSON();
                 will(returnValue(json));
@@ -227,7 +227,7 @@ public class ApplicationsEndpointTest {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).listNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", null,
-                        null, null, null);
+                        null, null, null, 60, null, 60, Boolean.FALSE);
                 will(throwException(new ApiException(207, "Injection to throw ApiException.")));
             }
         });
@@ -253,8 +253,7 @@ public class ApplicationsEndpointTest {
                 will(returnValue(json));
                 oneOf(json).getGson();
                 will(returnValue(gson));
-                oneOf(coa).listClusterCustomObject("actions.kappnav.io", "v1", "kindactionmappings", null, null, null,
-                        null);
+                oneOf(coa).listClusterCustomObject("actions.kappnav.io", "v1", "kindactionmappings", null, null, null, null, 60, null, 60, Boolean.FALSE);            
             }
         });
 

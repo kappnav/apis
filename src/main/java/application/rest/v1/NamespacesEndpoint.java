@@ -94,7 +94,7 @@ public class NamespacesEndpoint extends KAppNavEndpoint {
     private Object listNamespaces(ApiClient client) throws ApiException {
         final CoreV1Api api = getCoreV1ApiForInternal();
         api.setApiClient(client);
-        final V1NamespaceList namespaces = api.listNamespace(null, null, null, null, null, null, null, null, null);
+        final V1NamespaceList namespaces = api.listNamespace(null, false, null, null, null, 60, null, null, 60, false);
         return namespaces;
     }
     

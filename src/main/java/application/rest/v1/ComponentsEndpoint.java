@@ -55,6 +55,7 @@ import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 
+
 @Path("/components")
 @Tag(name = "components", description="kAppNav Components API")
 public class ComponentsEndpoint extends KAppNavEndpoint {

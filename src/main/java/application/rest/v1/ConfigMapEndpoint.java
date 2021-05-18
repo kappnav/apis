@@ -148,7 +148,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1ConfigMap map = client.getJSON().deserialize(jsonstr, V1ConfigMap.class);
-            api.createNamespacedConfigMap(encodeURLParameter(namespace), map, null);
+            api.createNamespacedConfigMap(encodeURLParameter(namespace), map, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -178,7 +178,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1ConfigMap map = client.getJSON().deserialize(jsonstr, V1ConfigMap.class);
-            api.replaceNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), map, null);
+            api.replaceNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), map, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -207,7 +207,7 @@ public class ConfigMapEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1DeleteOptions options = new V1DeleteOptions();
-            api.deleteNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), options, null, 0, true, "");
+            api.deleteNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), null, null, 0, true, null, options);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {

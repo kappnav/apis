@@ -138,7 +138,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
-            api.createNamespacedSecret(encodeURLParameter(namespace), secret, null);
+            api.createNamespacedSecret(encodeURLParameter(namespace), secret, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -168,7 +168,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
-            api.replaceNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), secret, null);
+            api.replaceNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), secret, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -197,7 +197,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1DeleteOptions options = new V1DeleteOptions();
-            api.deleteNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), options, null, 0, true, "");
+            api.deleteNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), null, null, 0, true, null, options);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {
