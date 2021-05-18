@@ -39,11 +39,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.ApisApi;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
 
 /**
  * @author jasuryak
@@ -201,7 +203,7 @@ public class ApplicationCacheTest {
         mock.checking(new Expectations() {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
-                oneOf(coa).listClusterCustomObject("app.k8s.io", "v1beta1", "applications", null, null, null, null);
+                oneOf(coa).listClusterCustomObject("app.k8s.io", "v1beta1", "applications", null, null, null, null, 60, null, 60, Boolean.FALSE);  
                 will(returnValue(jsonObject1));
             }
 
@@ -220,7 +222,7 @@ public class ApplicationCacheTest {
         mock.checking(new Expectations() {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
-                oneOf(coa).listNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", null, null, null, null);
+                oneOf(coa).listNamespacedCustomObject("app.k8s.io", "v1beta1", "stock-trader", "applications", null, null, null, null, 60, null, 60, Boolean.FALSE);
                 will(returnValue(jsonObject1));
             }
         });

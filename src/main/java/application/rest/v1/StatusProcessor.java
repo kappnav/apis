@@ -29,7 +29,7 @@ import com.google.gson.JsonSyntaxException;
 import application.rest.v1.configmaps.StatusMappingConfigMapBuilder;
 import application.rest.v1.json.JSONPath;
 import application.rest.v1.json.JSONPathParser;
-import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.openapi.ApiClient;
 
 import com.ibm.kappnav.logging.Logger;
 

@@ -38,11 +38,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
 
 /**
  * @author jasuryak
@@ -191,7 +191,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(Object.class)),
-                        with(any(String.class)));
+                        with(any(String.class)), with(aNull(String.class)), with(aNull(String.class)));
             }
 
         });
@@ -212,7 +212,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(Object.class)),
-                        with(any(String.class)));
+                        with(any(String.class)), with(aNull(String.class)), with(aNull(String.class)));
                 will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
             }
 
@@ -234,7 +234,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).createNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(Object.class)),
-                        with(any(String.class)));
+                        with(any(String.class)), with(aNull(String.class)), with(aNull(String.class)));
                 will(throwException(new ApiException(207, "Injection to throw ApiException.")));
             }
 
@@ -297,7 +297,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(String.class)),
-                        with(any(Object.class)));
+                        with(any(Object.class)), with(aNull(String.class)), with(aNull(String.class)));
             }
         });
 
@@ -317,7 +317,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(String.class)),
-                        with(any(Object.class)));
+                        with(any(Object.class)), with(aNull(String.class)), with(aNull(String.class)));
                 will(throwException(new JsonSyntaxException("Injection to throw JsonSyntaxException.")));
             }
         });
@@ -338,7 +338,7 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).replaceNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(String.class)),
-                        with(any(Object.class)));
+                        with(any(Object.class)), with(aNull(String.class)), with(aNull(String.class)));
                 will(throwException(new ApiException(207, "Injection to throw ApiException.")));
             }
         });
@@ -359,8 +359,8 @@ public class ApplicationEndpointTest {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
                         with(any(String.class)), with(any(String.class)), with(any(String.class)),
-                        (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)),
-                        with(any(String.class)));
+                        with(any(Integer.class)), with(any(Boolean.class)), with(aNull(String.class)), 
+                        with(aNull(String.class)), (V1DeleteOptions) with(any(Object.class)));
             }
         });
 
@@ -379,9 +379,9 @@ public class ApplicationEndpointTest {
             {
                 oneOf(coa).setApiClient(with(any(ApiClient.class)));
                 oneOf(coa).deleteNamespacedCustomObject(with(any(String.class)), with(any(String.class)),
-                        with(any(String.class)), with(any(String.class)), with(any(String.class)),
-                        (V1DeleteOptions) with(any(Object.class)), with(any(Integer.class)), with(any(Boolean.class)),
-                        with(any(String.class)));
+                with(any(String.class)), with(any(String.class)), with(any(String.class)),
+                with(any(Integer.class)), with(any(Boolean.class)), with(aNull(String.class)), 
+                with(aNull(String.class)), (V1DeleteOptions) with(any(Object.class)));
                 will(throwException(new ApiException(207, "Injection to throw ApiException.")));
             }
         });

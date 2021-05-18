@@ -41,11 +41,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1Secret;
 
 import com.ibm.kappnav.logging.Logger;
 
@@ -138,7 +138,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
-            api.createNamespacedSecret(encodeURLParameter(namespace), secret, null);
+            api.createNamespacedSecret(encodeURLParameter(namespace), secret, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -168,7 +168,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1Secret secret = client.getJSON().deserialize(jsonstr, V1Secret.class);
-            api.replaceNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), secret, null);
+            api.replaceNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), secret, null, null, null);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | JsonParseException | ApiException e) {
@@ -197,7 +197,7 @@ public class SecretEndpoint extends KAppNavEndpoint {
             final CoreV1Api api = getCoreV1ApiForInternal();
             api.setApiClient(client);
             final V1DeleteOptions options = new V1DeleteOptions();
-            api.deleteNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), options, null, 0, true, "");
+            api.deleteNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), null, null, 0, true, null, options);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         }
         catch (IOException | ApiException e) {

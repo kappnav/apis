@@ -26,12 +26,8 @@ import com.google.gson.JsonArray;
 
 import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.KAppNavConfig;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.apis.CustomObjectsApi;
-
-import com.squareup.okhttp.OkHttpClient;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 
 
 /**
@@ -162,7 +158,7 @@ public class Logger {
             CustomObjectsApi coa = new CustomObjectsApi();
             coa.setApiClient(client);      
             //invoke CustomObjectApi to get list of custom resources       
-            Object cr = coa.listNamespacedCustomObject(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, null);  
+            Object cr = coa.listNamespacedCustomObject(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);  
             JsonObject obj = KAppNavEndpoint.getItemAsObject(client, cr);
             
             if (obj != null) {              

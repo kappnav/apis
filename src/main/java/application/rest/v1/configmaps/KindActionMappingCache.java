@@ -25,14 +25,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.Call;
 
 import application.rest.v1.KAppNavEndpoint;
 import application.rest.v1.Watcher;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.util.Watch;
+
+import okhttp3.Call;
+
 
 /**
  * Cache for all KindActionMappings in the cluster. Cached lists of kindactionmappings for a cluster (all
@@ -107,7 +110,7 @@ public class KindActionMappingCache {
                             KAM_GROUP + "\n version = " + KAM_VERSION + "\n plural = " + KAM_PLURAL);
                 }
 
-                Object kamCRs = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, null, null);
+                Object kamCRs = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, null, null, 60, null, 60, false);         
                 return Watcher.processCustomObjectsApiList(client, kamCRs, resourceVersion);
             }
 
@@ -115,8 +118,9 @@ public class KindActionMappingCache {
             public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
                 final CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
-                return coa.listClusterCustomObjectCall(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, resourceVersion,
-                        Boolean.TRUE, null, null);
+                final ApiCallback callBack = null;
+                return coa.listClusterCustomObjectCall(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, null, null, 60, resourceVersion, 60,
+                        Boolean.TRUE, callBack);
             }
 
             @SuppressWarnings("serial")
@@ -241,8 +245,8 @@ public class KindActionMappingCache {
                        KAM_GROUP + "\n version = " + KAM_VERSION + "\n plural = " + KAM_PLURAL);
         }
 
-        Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, 
-                             null, null, null);
+        Object kamResource = coa.listClusterCustomObject(KAM_GROUP, KAM_VERSION, KAM_PLURAL, null, null, 
+                             null, null, 60, null, 60, false);                     
         return KAppNavEndpoint.getItemAsList(client, kamResource);
     }
 }

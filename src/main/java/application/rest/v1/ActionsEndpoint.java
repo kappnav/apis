@@ -70,17 +70,18 @@ import application.rest.v1.actions.ResolutionContext.ResolvedValue;
 import application.rest.v1.actions.ValidationException;
 import application.rest.v1.actions.PatternException;
 import application.rest.v1.configmaps.ConfigMapProcessor;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.BatchV1Api;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobSpec;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1PodTemplateSpec;
+
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 
 import com.ibm.kappnav.logging.Logger;
 
@@ -321,8 +322,8 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                         "GLOBAL_NAMESPACE=" + GLOBAL_NAMESPACE + " ,labelSelector=" + labelSelector);
             }
 
-            final List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null,
-                    null, null, null, labelSelector, null, null, null, null));
+            final List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, false, null,
+                    null, labelSelector, 60, null, null, 60, false));
             final CommandsResponse response = new CommandsResponse();
 
             commands.forEach(v -> {
@@ -432,7 +433,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
             // Delete the specified job.
             final V1DeleteOptions options = new V1DeleteOptions();
-            batch.deleteNamespacedJob(jobName, GLOBAL_NAMESPACE, options, null, 0, true, "");
+            batch.deleteNamespacedJob(jobName, GLOBAL_NAMESPACE, "true", null, 0, true, null, options);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         } catch (final JsonSyntaxException e) {
             final Throwable cause = e.getCause();
@@ -744,7 +745,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
         // Submit the job to Kubernetes and return the job object to the caller.
         final BatchV1Api batch = new BatchV1Api();
         batch.setApiClient(client);
-        JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, null));
+        JsonObject response = getItemAsObject(client, batch.createNamespacedJob(GLOBAL_NAMESPACE, job, "true", null, null));
         return response;
     }
 

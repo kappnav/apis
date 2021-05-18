@@ -32,13 +32,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.ApisApi;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1APIGroup;
-import io.kubernetes.client.models.V1APIGroupList;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.ApisApi;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1APIGroup;
+import io.kubernetes.client.openapi.models.V1APIGroupList;
 
 import com.ibm.kappnav.logging.Logger;
 
@@ -348,7 +348,7 @@ public class ComponentInfoRegistry {
             //     }
             //   ]
             // }
-            final Object o = coa.listClusterCustomObject(group, version, ".", null, null, null, null);
+            final Object o = coa.listClusterCustomObject(group, version, ".", null, null, null, null, 60, null, 60, false);
             final JsonElement element = client.getJSON().getGson().toJsonTree(o);
             if (element != null && element.isJsonObject()) {
                 JsonObject root = element.getAsJsonObject();
@@ -481,7 +481,7 @@ public class ComponentInfoRegistry {
             CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             return coa.listClusterCustomObject(info.group, info.version, info.plural,
-                    pretty, labelSelector, resourceVersion, watch);
+                    pretty, null, null, labelSelector, 60, resourceVersion, 60, watch);                  
         }
 
         @Override
@@ -490,7 +490,7 @@ public class ComponentInfoRegistry {
             CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             return coa.listNamespacedCustomObject(info.group, info.version,
-                    namespace, info.plural, pretty, labelSelector, resourceVersion, watch);
+                    namespace, info.plural, pretty, null, null, labelSelector, 60, resourceVersion, 60, watch);
         }
 
         @Override
@@ -561,7 +561,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ConfigMapResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo=" + info 
                     + ", pretty=" + pretty + ", labelSelector="+ labelSelector + ", resourceVersion=" + resourceVersion + ", watch="+watch);
             }
-            return api.listConfigMapForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listConfigMapForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -571,7 +571,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ConfigMapResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace
                     + ", pretty=" + pretty + ", labelSelector="+ labelSelector + ", resourceVersion=" + resourceVersion + ", watch="+watch);
             }
-            return api.listNamespacedConfigMap(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedConfigMap(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -580,7 +580,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ConfigMapResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace + ", name=" + name);
             }
-            return api.readNamespacedConfigMap(name, namespace, null, null, null);
+            return api.readNamespacedConfigMap(name, namespace, null, false, false);
         }
     }
     
@@ -594,7 +594,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EndpointsResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", pretty="+pretty 
                     + ", labelSelector=" + labelSelector + ", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listEndpointsForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listEndpointsForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -604,7 +604,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EndpointsResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", pretty="+pretty 
                     + ", labelSelector=" + labelSelector + ", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedEndpoints(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedEndpoints(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -613,7 +613,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(EndpointsResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", name="+name);
             } 
-            return api.readNamespacedEndpoints(name, namespace, null, null, null);
+            return api.readNamespacedEndpoints(name, namespace, null, false, false);
         }
     }
     
@@ -627,7 +627,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EventResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info +", pretty="+pretty + ", labelSelector=" 
                     + labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listEventForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listEventForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -637,7 +637,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EventResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedEvent(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedEvent(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -660,7 +660,7 @@ public class ComponentInfoRegistry {
                 Logger.log(LimitRangeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listLimitRangeForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listLimitRangeForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -670,7 +670,7 @@ public class ComponentInfoRegistry {
                 Logger.log(LimitRangeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedLimitRange(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedLimitRange(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -679,7 +679,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(LimitRangeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedLimitRange(name, namespace, null, null, null);
+            return api.readNamespacedLimitRange(name, namespace, null, false, false);
         }
     }
     
@@ -693,7 +693,7 @@ public class ComponentInfoRegistry {
                 Logger.log(NamespaceResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespace(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespace(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -703,7 +703,7 @@ public class ComponentInfoRegistry {
                 Logger.log(NamespaceResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespace(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespace(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -712,7 +712,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(NamespaceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespace(name, null, null, null);
+            return api.readNamespace(name, null, false, false);
         }
     }
     
@@ -726,7 +726,7 @@ public class ComponentInfoRegistry {
                 Logger.log(NodeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNode(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNode(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -736,7 +736,7 @@ public class ComponentInfoRegistry {
                 Logger.log(NodeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNode(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNode(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -745,7 +745,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(NodeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }
-            return api.readNode(name, null, null, null);
+            return api.readNode(name, null, false, false);
         }
     }
     
@@ -759,7 +759,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PersistentVolumeResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listPersistentVolume(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listPersistentVolume(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -769,7 +769,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PersistentVolumeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listPersistentVolume(pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listPersistentVolume(pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -778,7 +778,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PersistentVolumeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }  
-            return api.readPersistentVolume(name, null, null, null);
+            return api.readPersistentVolume(name, null, false, false);
         }
     }
     
@@ -792,7 +792,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PersistentVolumeClaimResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listPersistentVolumeClaimForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listPersistentVolumeClaimForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -802,7 +802,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PersistentVolumeClaimResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPersistentVolumeClaim(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedPersistentVolumeClaim(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -811,7 +811,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PersistentVolumeClaimResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedPersistentVolumeClaim(name, namespace, null, null, null);
+            return api.readNamespacedPersistentVolumeClaim(name, namespace, null, false, false);
         }
     }
     
@@ -825,7 +825,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listPodForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listPodForAllNamespaces(null, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -835,7 +835,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPod(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedPod(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -844,7 +844,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PodResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedPod(name, namespace, null, null, null);
+            return api.readNamespacedPod(name, namespace, null, false, false);
         }
     }
     
@@ -858,7 +858,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodTemplateResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listPodTemplateForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listPodTemplateForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -868,7 +868,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodTemplateResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPodTemplate(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedPodTemplate(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -877,7 +877,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PodTemplateResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }
-            return api.readNamespacedPodTemplate(name, namespace, null, null, null);
+            return api.readNamespacedPodTemplate(name, namespace, null, false, false);
         }
     }
     
@@ -891,7 +891,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ReplicationControllerResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listReplicationControllerForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listReplicationControllerForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -901,7 +901,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ReplicationControllerResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedReplicationController(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedReplicationController(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -910,7 +910,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ReplicationControllerResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedReplicationController(name, namespace, null, null, null);
+            return api.readNamespacedReplicationController(name, namespace, null, false, false);
         }
     }
     
@@ -924,7 +924,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ResourceQuotaResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listResourceQuotaForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listResourceQuotaForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -934,7 +934,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ResourceQuotaResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedResourceQuota(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedResourceQuota(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -943,7 +943,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ResourceQuotaResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedResourceQuota(name, namespace, null, null, null);
+            return api.readNamespacedResourceQuota(name, namespace, null, false, false);
         }
     }
     
@@ -957,7 +957,7 @@ public class ComponentInfoRegistry {
                 Logger.log(SecretResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listSecretForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listSecretForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -967,7 +967,7 @@ public class ComponentInfoRegistry {
                 Logger.log(SecretResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedSecret(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedSecret(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -976,7 +976,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(SecretResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedSecret(name, namespace, null, null, null);
+            return api.readNamespacedSecret(name, namespace, null, false, false);
         }
     }
     
@@ -990,7 +990,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listServiceForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listServiceForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1000,7 +1000,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedService(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedService(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1009,7 +1009,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ServiceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedService(name, namespace, null, null, null);
+            return api.readNamespacedService(name, namespace, null, false, false);
         }
     }
     
@@ -1023,7 +1023,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceAccountResolver.class.getName(), "listClusterObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listServiceAccountForAllNamespaces(null, null, null, labelSelector, null, pretty, resourceVersion, null, watch);
+            return api.listServiceAccountForAllNamespaces(false, null, null, labelSelector, 60, pretty, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1033,7 +1033,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceAccountResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedServiceAccount(namespace, pretty, null, null, null, labelSelector, null, resourceVersion, null, watch);
+            return api.listNamespacedServiceAccount(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1042,7 +1042,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ServiceAccountResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedServiceAccount(name, namespace, null, null, null);
+            return api.readNamespacedServiceAccount(name, namespace, null, false, false);
         }
     }
 

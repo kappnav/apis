@@ -31,12 +31,15 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.kappnav.logging.Logger;
-import com.squareup.okhttp.Call;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.util.Watch;
+
+import okhttp3.Call;
+
 
 /**
  * Watch kappnav custom resource (CR) that have been installed by the kAppNav operator. 
@@ -70,7 +73,7 @@ public class CustomResourceWatcher {
                     throws ApiException {
                 CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
-                Object o = coa.listNamespacedCustomObject(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, null);
+                Object o = coa.listNamespacedCustomObject(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);
                 return Watcher.processCustomObjectsApiList(client, o, resourceVersion);
             }
 
@@ -78,7 +81,8 @@ public class CustomResourceWatcher {
             public Call createWatchCall(ApiClient client, String resourceVersion) throws ApiException {
                 CustomObjectsApi coa = new CustomObjectsApi();
                 coa.setApiClient(client);
-                return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, resourceVersion, Boolean.TRUE, null, null);
+                final ApiCallback callBack = null;
+                return coa.listNamespacedCustomObjectCall(KAPPNAV_CR_GROUP, KAPPNAV_CR_VERSION, KAPPNAV_NAMESPACE, KAPPNAV_CR_PLURAL, null, null, null, resourceVersion, 60, null, 60, Boolean.TRUE, callBack);
             }
             
             @SuppressWarnings("serial")

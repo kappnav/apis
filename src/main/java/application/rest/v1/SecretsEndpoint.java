@@ -36,10 +36,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1SecretList;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1SecretList;
 
 import com.ibm.kappnav.logging.Logger;
 
@@ -107,7 +107,7 @@ public class SecretsEndpoint extends KAppNavEndpoint {
     private Object listSecrets(ApiClient client, String selector) throws ApiException {
         final CoreV1Api api = getCoreV1ApiForInternal();
         api.setApiClient(client);
-        final V1SecretList secrets = api.listSecretForAllNamespaces(null, null, null, selector, null, null, null, null, null);
+        final V1SecretList secrets = api.listSecretForAllNamespaces(false, null, null, selector, 60, null, null, null, 60, false);
         return secrets;
     }
     

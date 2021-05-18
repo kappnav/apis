@@ -27,7 +27,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import application.rest.v1.MatchExpression.Operator;
-import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.openapi.ApiClient;
 
 /**
  * A selector in Kubernetes.

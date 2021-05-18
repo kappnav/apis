@@ -26,8 +26,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 
 import com.ibm.kappnav.logging.Logger;
 

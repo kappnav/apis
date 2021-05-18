@@ -92,7 +92,7 @@
         <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
-            <version>3.0.0</version>
+            <version>11.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -138,6 +138,16 @@
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>[1.60,)</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>3.14.9</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>30.1.1-jre</version>
         </dependency>
     </dependencies>
 

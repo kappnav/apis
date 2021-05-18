@@ -42,8 +42,8 @@ import com.google.gson.JsonObject;
 
 import application.rest.v1.configmaps.ConfigMapProcessor;
 import application.rest.v1.configmaps.SectionConfigMapProcessor;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 
 import com.ibm.kappnav.logging.Logger;
 

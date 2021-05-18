@@ -49,8 +49,8 @@ import application.rest.v1.configmaps.OwnerRef;
 import application.rest.v1.configmaps.SectionConfigMapBuilder;
 import application.rest.v1.configmaps.SectionConfigMapProcessor;
 import application.rest.v1.configmaps.StatusMappingConfigMapBuilder;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 
 @Path("/kindactionmapping")
 @Tag(name = "kindactionmapping", description="kAppNav kindationmapping API")
