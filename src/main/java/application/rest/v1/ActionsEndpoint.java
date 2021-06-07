@@ -26,9 +26,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.Map.Entry;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
 import java.sql.Timestamp;
@@ -322,7 +319,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
                         "GLOBAL_NAMESPACE=" + GLOBAL_NAMESPACE + " ,labelSelector=" + labelSelector);
             }
 
-            final List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(GLOBAL_NAMESPACE, null, false, null,
+            final List<JsonObject> commands = getItemsAsList(client, batch.listNamespacedJob(encodeURLParameter(GLOBAL_NAMESPACE), null, false, null,
                     null, labelSelector, 60, null, null, 60, false));
             final CommandsResponse response = new CommandsResponse();
 
@@ -422,7 +419,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             // Check that the specified job exists and is a command action.
             final Selector s = new Selector().addMatchLabel(KAPPNAV_JOB_TYPE, KAPPNAV_JOB_COMMAND_TYPE);
             final JsonObject job = getItemAsObject(client,
-                    batch.readNamespacedJob(jobName, GLOBAL_NAMESPACE, null, null, null));
+                    batch.readNamespacedJob(encodeURLParameter(jobName), encodeURLParameter(GLOBAL_NAMESPACE), null, null, null));
             if (!s.matches(job)) {
                 final String msg = "input-error: Job " + jobName + " is not found in command action.";
                 if (Logger.isErrorEnabled()) {
@@ -433,7 +430,7 @@ public class ActionsEndpoint extends KAppNavEndpoint {
 
             // Delete the specified job.
             final V1DeleteOptions options = new V1DeleteOptions();
-            batch.deleteNamespacedJob(jobName, GLOBAL_NAMESPACE, "true", null, 0, true, null, options);
+            batch.deleteNamespacedJob(encodeURLParameter(jobName), encodeURLParameter(GLOBAL_NAMESPACE), "true", null, 0, true, null, options);
             return Response.ok(getStatusMessageAsJSON("OK")).build();
         } catch (final JsonSyntaxException e) {
             final Throwable cause = e.getCause();
@@ -976,19 +973,6 @@ public class ActionsEndpoint extends KAppNavEndpoint {
             throw new ApiException(msg);
         }
         return timestamp;
-    }
-
-    // Decodes a URL encoded string using `UTF-8`
-    private static String urlDecode(final String value) {
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
-        } catch (final UnsupportedEncodingException ex) {
-            if (Logger.isErrorEnabled()) {
-                Logger.log(className, "urlDecode", Logger.LogType.ERROR,
-                        "Caught UnsupportedEncodingException " + ex.toString());
-            }
-            throw new RuntimeException(ex.getCause());
-        }
     }
 
     /**

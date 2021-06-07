@@ -536,7 +536,8 @@ public abstract class KAppNavEndpoint {
         }
         return null;
     }
-    
+
+   
     public static List<String> getAnnotationNamespaces(ApiClient client, Object application) {
         return getAnnotationNamespaces(client.getJSON().getGson().toJsonTree(application));
     }
@@ -818,7 +819,9 @@ public abstract class KAppNavEndpoint {
             sc.init(null, trustAllCerts, new SecureRandom());
               
             OkHttpClient httpClient = client.getHttpClient();
-            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
+            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+                                      .allEnabledCipherSuites()
+                                      .build();
            
             httpClient = new OkHttpClient.Builder()
                 .connectionSpecs(Collections.singletonList(spec))

@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import java.io.UnsupportedEncodingException;
+
 import javax.inject.Inject;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.DefaultValue;
@@ -277,4 +279,5 @@ public class KindActionMappingEndpoint extends KAppNavEndpoint {
         }
         return getItemAsObject(client, o);
     }
+   
 }
