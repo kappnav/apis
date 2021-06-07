@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import com.google.gson.JsonArray;
@@ -405,6 +408,19 @@ public class ComponentInfoRegistry {
         }
     }
 
+    private static String encodeURLParameter(String s) {
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        }
+        catch (UnsupportedEncodingException u) {
+            if (Logger.isDebugEnabled()) {
+                Logger.log(className, "encodeURLParameter", Logger.LogType.DEBUG, "Caught UnsupportedEncodingException " + u.toString());
+            }
+        }
+        // Should never happen, but return the unencoded string as a fallback.
+        return s;
+    }
+
     /**
      * Get all the apiVersions for a componentKind
      */
@@ -490,7 +506,7 @@ public class ComponentInfoRegistry {
             CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             return coa.listNamespacedCustomObject(info.group, info.version,
-                    namespace, info.plural, pretty, null, null, labelSelector, 60, resourceVersion, 60, watch);
+                    encodeURLParameter(namespace), info.plural, pretty, null, null, labelSelector, 60, resourceVersion, 60, watch);
         }
 
         @Override
@@ -499,7 +515,7 @@ public class ComponentInfoRegistry {
             CustomObjectsApi coa = getCustomObjectsApiForInternal();
             coa.setApiClient(client);
             try {
-                Object result = coa.getNamespacedCustomObject(info.group, info.version, namespace, info.plural, name);
+                Object result = coa.getNamespacedCustomObject(info.group, info.version, encodeURLParameter(namespace), info.plural, encodeURLParameter(name));
                 return result;
             } catch (ApiException e) {
                 if (Logger.isErrorEnabled()) {
@@ -571,7 +587,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ConfigMapResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace
                     + ", pretty=" + pretty + ", labelSelector="+ labelSelector + ", resourceVersion=" + resourceVersion + ", watch="+watch);
             }
-            return api.listNamespacedConfigMap(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedConfigMap(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -580,7 +596,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ConfigMapResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace="+namespace + ", name=" + name);
             }
-            return api.readNamespacedConfigMap(name, namespace, null, false, false);
+            return api.readNamespacedConfigMap(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -604,7 +620,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EndpointsResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", pretty="+pretty 
                     + ", labelSelector=" + labelSelector + ", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedEndpoints(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedEndpoints(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -613,7 +629,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(EndpointsResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo=" + info + ", namespace=" + namespace + ", name="+name);
             } 
-            return api.readNamespacedEndpoints(name, namespace, null, false, false);
+            return api.readNamespacedEndpoints(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -637,7 +653,7 @@ public class ComponentInfoRegistry {
                 Logger.log(EventResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedEvent(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedEvent(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -646,7 +662,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(EventResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedEvent(name, namespace, null, null, null);
+            return api.readNamespacedEvent(encodeURLParameter(name), encodeURLParameter(namespace), null, null, null);
         }
     }
     
@@ -670,7 +686,7 @@ public class ComponentInfoRegistry {
                 Logger.log(LimitRangeResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedLimitRange(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedLimitRange(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -679,7 +695,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(LimitRangeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedLimitRange(name, namespace, null, false, false);
+            return api.readNamespacedLimitRange(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -712,7 +728,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(NamespaceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespace(name, null, false, false);
+            return api.readNamespace(encodeURLParameter(name), null, false, false);
         }
     }
     
@@ -745,7 +761,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(NodeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }
-            return api.readNode(name, null, false, false);
+            return api.readNode(encodeURLParameter(name), null, false, false);
         }
     }
     
@@ -778,7 +794,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PersistentVolumeResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }  
-            return api.readPersistentVolume(name, null, false, false);
+            return api.readPersistentVolume(encodeURLParameter(name), null, false, false);
         }
     }
     
@@ -802,7 +818,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PersistentVolumeClaimResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPersistentVolumeClaim(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedPersistentVolumeClaim(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -811,7 +827,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PersistentVolumeClaimResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedPersistentVolumeClaim(name, namespace, null, false, false);
+            return api.readNamespacedPersistentVolumeClaim(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -835,7 +851,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPod(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedPod(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -844,7 +860,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PodResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedPod(name, namespace, null, false, false);
+            return api.readNamespacedPod(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -868,7 +884,7 @@ public class ComponentInfoRegistry {
                 Logger.log(PodTemplateResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedPodTemplate(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedPodTemplate(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -877,7 +893,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(PodTemplateResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);
             }
-            return api.readNamespacedPodTemplate(name, namespace, null, false, false);
+            return api.readNamespacedPodTemplate(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -901,7 +917,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ReplicationControllerResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedReplicationController(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedReplicationController(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -910,7 +926,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ReplicationControllerResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedReplicationController(name, namespace, null, false, false);
+            return api.readNamespacedReplicationController(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -934,7 +950,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ResourceQuotaResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedResourceQuota(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedResourceQuota(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -943,7 +959,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ResourceQuotaResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedResourceQuota(name, namespace, null, false, false);
+            return api.readNamespacedResourceQuota(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -967,7 +983,7 @@ public class ComponentInfoRegistry {
                 Logger.log(SecretResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedSecret(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedSecret(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -976,7 +992,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(SecretResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name); 
             } 
-            return api.readNamespacedSecret(name, namespace, null, false, false);
+            return api.readNamespacedSecret(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -1000,7 +1016,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedService(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedService(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1009,7 +1025,7 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ServiceResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedService(name, namespace, null, false, false);
+            return api.readNamespacedService(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
     
@@ -1033,7 +1049,7 @@ public class ComponentInfoRegistry {
                 Logger.log(ServiceAccountResolver.class.getName(), "listNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", pretty="+pretty  
                     + ", labelSelector="+ labelSelector +", resourceVersion=" + resourceVersion + ", watch=" + watch);
             }
-            return api.listNamespacedServiceAccount(namespace, pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
+            return api.listNamespacedServiceAccount(encodeURLParameter(namespace), pretty, false, null, null, labelSelector, 60, resourceVersion, null, 60, watch);
         }
 
         @Override
@@ -1042,8 +1058,10 @@ public class ComponentInfoRegistry {
             if (Logger.isDebugEnabled()) {
                 Logger.log(ServiceAccountResolver.class.getName(), "getNamespacedObject", Logger.LogType.DEBUG, "For componentInfo="+ info + ", namespace=" + namespace + ", name="+name);  
             }
-            return api.readNamespacedServiceAccount(name, namespace, null, false, false);
+            return api.readNamespacedServiceAccount(encodeURLParameter(name), encodeURLParameter(namespace), null, false, false);
         }
     }
+
+
 
 }

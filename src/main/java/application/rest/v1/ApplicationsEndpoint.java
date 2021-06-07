@@ -76,6 +76,7 @@ public class ApplicationsEndpoint extends KAppNavEndpoint {
                 o = ApplicationCache.listApplicationObject(client);
             }
             else {
+                
                 o = ApplicationCache.listNamespacedApplicationObject(client, namespace);
             }
             return processApplications(client, o);
