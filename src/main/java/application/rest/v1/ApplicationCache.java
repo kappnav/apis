@@ -16,9 +16,6 @@
 
 package application.rest.v1;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
@@ -282,7 +279,7 @@ public class ApplicationCache {
     private static List<JsonObject> listNamespacedApplicationObject0(ApiClient client, String namespace) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        final Object o = coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION, encodeURLParameter(namespace), APP_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);
+        final Object o = coa.listNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, null, null, null, null, 60, null, 60, Boolean.FALSE);
         return KAppNavEndpoint.getItemsAsList(client, o);
     }
     
@@ -322,24 +319,11 @@ public class ApplicationCache {
     private static JsonObject getNamespacedApplicationObject0(ApiClient client, String namespace, String name) throws ApiException {
     	final CustomObjectsApi coa = getCustomObjectsApi();
         coa.setApiClient(client);
-        final Object o = coa.getNamespacedCustomObject(APP_GROUP, APP_VERSION, encodeURLParameter(namespace), APP_PLURAL, encodeURLParameter(name));
+        final Object o = coa.getNamespacedCustomObject(APP_GROUP, APP_VERSION, namespace, APP_PLURAL, name);
         return KAppNavEndpoint.getItemAsObject(client, o);
     }
     
     public static long updateModCount() {
         return MOD_COUNT.incrementAndGet();
-    }
-
-    private static String encodeURLParameter(String s) {
-        try {
-            return URLEncoder.encode(s, "UTF-8");
-        }
-        catch (UnsupportedEncodingException u) {
-            if (Logger.isDebugEnabled()) {
-                Logger.log(CLASS_NAME, "encodeURLParameter", Logger.LogType.DEBUG, "Caught UnsupportedEncodingException " + u.toString());
-            }
-        }
-        // Should never happen, but return the unencoded string as a fallback.
-        return s;
     }
  }
