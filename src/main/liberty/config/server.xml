@@ -18,4 +18,6 @@
   
   <webContainer com.ibm.ws.webcontainer.disablexPoweredBy="true" />
 
+  <logging traceSpecification="*=info:application.rest.v1.*=all" />
+
 </server>
