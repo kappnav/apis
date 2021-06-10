@@ -57,8 +57,20 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.util.Config;
 
+
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+
 import okhttp3.OkHttpClient;
 import okhttp3.ConnectionSpec;
+import okhttp3.TlsVersion;
 
 
 public abstract class KAppNavEndpoint {
@@ -805,24 +817,16 @@ public abstract class KAppNavEndpoint {
     
     private static void trustAllCerts(ApiClient client) {
         try {
-            TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-            } };
-    
-            SSLContext sc = SSLContext.getInstance("TLSv1.2");
-            sc.init(null, trustAllCerts, new SecureRandom());
-              
             OkHttpClient httpClient = client.getHttpClient();
-            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
-           
+
+            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+                        .tlsVersions(TlsVersion.TLS_1_2)
+                        .allEnabledCipherSuites()
+                        .build();
+            
             httpClient = new OkHttpClient.Builder()
                 .connectionSpecs(Collections.singletonList(spec))
-                .sslSocketFactory(sc.getSocketFactory())
+                .sslSocketFactory(new TLSSocketFactory())  
                 .build();
         }
         catch (Exception e) {
@@ -968,5 +972,76 @@ public abstract class KAppNavEndpoint {
 
     protected Object deleteNamespacedApplicationObject(ApiClient client, String namespace, String name) throws ApiException {
         return deleteNamespacedGenericObject(client, APP_GROUP, APP_PLURAL, namespace, name); 
+    }
+
+
+    static final class TLSSocketFactory extends SSLSocketFactory {
+
+        private SSLSocketFactory delegate;
+        
+        public TLSSocketFactory() throws KeyManagementException, NoSuchAlgorithmException {
+
+            TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+            } };
+
+            SSLContext context = SSLContext.getInstance("TLSv1.2");
+            context.init(null, trustAllCerts, new SecureRandom());
+            delegate = context.getSocketFactory();
+        }
+        
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return delegate.getDefaultCipherSuites();
+        }
+        
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return delegate.getSupportedCipherSuites();
+        }
+        
+        @Override
+        public Socket createSocket() throws IOException {
+            return enableTLSOnSocket(delegate.createSocket());
+        }
+        
+        @Override
+        public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+            return enableTLSOnSocket(delegate.createSocket(s, host, port, autoClose));
+        }
+        
+        @Override
+        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+            return enableTLSOnSocket(delegate.createSocket(host, port));
+        }
+        
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+            return enableTLSOnSocket(delegate.createSocket(host, port, localHost, localPort));
+        }
+        
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            return enableTLSOnSocket(delegate.createSocket(host, port));
+        }
+        
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+            return enableTLSOnSocket(delegate.createSocket(address, port, localAddress, localPort));
+        }
+        
+        private Socket enableTLSOnSocket(Socket socket) {
+            if(socket != null && (socket instanceof SSLSocket)) {
+                ((SSLSocket)socket).setEnabledProtocols(new String[] {"TLSv1.2"});
+            }
+            
+            return socket;
+        }
+        
     }
 }
