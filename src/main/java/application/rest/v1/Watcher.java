@@ -29,6 +29,7 @@ import com.ibm.kappnav.logging.Logger;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.openapi.Configuration;
 
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
@@ -90,13 +91,12 @@ public class Watcher {
                     boolean gone = false;
                     try {
                         ApiClient client = KAppNavEndpoint.getApiClient();
-                        OkHttpClient httpClient = client.getHttpClient();
-                        // Infinite timeout
-                        httpClient = new OkHttpClient.Builder()
-                            .readTimeout(0, TimeUnit.SECONDS)
-                            .build();
-                        client.setHttpClient(httpClient);
-                        
+
+                        ApiClient localclient = client.setHttpClient(client.getHttpClient().newBuilder()
+                                                            .readTimeout(0, TimeUnit.SECONDS)
+                                                            .build());
+                        Configuration.setDefaultApiClient(localclient);                                    
+                       
                         final AtomicReference<String> resourceVersion = new AtomicReference<>();
                         long watchStartTime = 0L;
                         Watch<T> watch = null;

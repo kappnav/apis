@@ -56,6 +56,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.util.Config;
+import io.kubernetes.client.openapi.Configuration;
 
 import okhttp3.OkHttpClient;
 import okhttp3.ConnectionSpec;
@@ -593,7 +594,8 @@ public abstract class KAppNavEndpoint {
         }
         return result;
     }
-    
+
+    //private static ApiClient client;
     public static ApiClient getApiClient() throws IOException {
         final ApiClient client = Config.defaultClient();
         if (!DISABLE_TRUST_ALL_CERTS) {
@@ -803,33 +805,37 @@ public abstract class KAppNavEndpoint {
         return false;
     }
     
-    private static void trustAllCerts(ApiClient client) {
+    private static void trustAllCerts(ApiClient apiClient) {
+        ApiClient localApiClient = null;
         try {
             TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
                 @Override
                 public X509Certificate[] getAcceptedIssuers() {
-                    return null;
+                    return new X509Certificate[0];
                 }
                 public void checkClientTrusted(X509Certificate[] certs, String authType) {}
                 public void checkServerTrusted(X509Certificate[] certs, String authType) {}
             } };
-    
+
             SSLContext sc = SSLContext.getInstance("TLSv1.2");
-            sc.init(null, trustAllCerts, new SecureRandom());
-              
-            OkHttpClient httpClient = client.getHttpClient();
-            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
+
+            // use the same key manager as kube client
+            sc.init(apiClient.getKeyManagers(), trustAllCerts, new SecureRandom());
            
-            httpClient = new OkHttpClient.Builder()
-                .connectionSpecs(Collections.singletonList(spec))
-                .sslSocketFactory(sc.getSocketFactory())
-                .build();
-        }
-        catch (Exception e) {
+            ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).allEnabledCipherSuites().build();
+
+            localApiClient = apiClient.setHttpClient(apiClient.getHttpClient().newBuilder()
+                                                    .sslSocketFactory(sc.getSocketFactory(), (X509TrustManager)trustAllCerts[0])
+                                                    .connectionSpecs(Collections.singletonList((spec)))
+                                                    .build());
+            
+            Configuration.setDefaultApiClient(localApiClient);
+            
+        } catch (Exception e) {
             if (Logger.isDebugEnabled()) {
                 Logger.log(className, "trustAllCerts", Logger.LogType.DEBUG, "Caught Exception " + e.toString());
             }
-        }
+        }  
     }
     
     public static String encodeURLParameter(String s) {
